@@ -6,7 +6,7 @@
 /*   By: wester <wester@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2021/02/13 11:40:56 by wester        #+#    #+#                 */
-/*   Updated: 2021/02/16 16:17:51 by wester        ########   odam.nl         */
+/*   Updated: 2021/02/16 16:37:53 by wester        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,7 +58,7 @@ int         main(void)
         perror("listen");
         exit(1);
     }
-    fcntl(sockfd, F_SETFL, O_NONBLOCK);
+    // fcntl(sockfd, F_SETFL, O_NONBLOCK);
     client newclient(sockfd);
     // new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &addr_size);
         
