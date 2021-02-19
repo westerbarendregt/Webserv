@@ -6,7 +6,7 @@
 /*   By: totartar <totartar@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2021/02/19 20:08:39 by totartar      #+#    #+#                 */
-/*   Updated: 2021/02/19 23:04:10 by totartar      ########   odam.nl         */
+/*   Updated: 2021/02/19 23:15:49 by totartar      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -205,9 +205,7 @@ class	ConfigParser
 			switch (context)
 			{
 				case MAIN : return addServer(fields, tokens);
-							  break ;
 				case SERVER: return addRoute(fields, tokens);
-							  break ;
 			}
 			return INVALID;
 		}
@@ -217,9 +215,7 @@ class	ConfigParser
 			switch (context)
 			{
 				case SERVER : return addServerDirective(fields, tokens);
-							  break ;
 				case ROUTE : return addRouteDirective(fields, tokens);
-							  break ;
 			}
 			return INVALID;
 		}
