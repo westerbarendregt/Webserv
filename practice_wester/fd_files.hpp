@@ -1,40 +1,33 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        ::::::::            */
-/*   client.hpp                                         :+:    :+:            */
+/*   fd_files.hpp                                       :+:    :+:            */
 /*                                                     +:+                    */
 /*   By: wester <wester@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
-/*   Created: 2021/02/16 11:42:36 by wester        #+#    #+#                 */
-/*   Updated: 2021/02/19 14:08:34 by wester        ########   odam.nl         */
+/*   Created: 2021/02/18 13:56:35 by wester        #+#    #+#                 */
+/*   Updated: 2021/02/18 15:51:37 by wester        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef CLIENT_HPP
-# define CLIENT_HPP
+#ifndef FD_FILES_HPP
+# define FD_FILES_HPP
 
-# include "address.hpp"
-# include "fd_files.hpp"
+# include <sys/time.h>
 # include <iostream>
 
-class fd_files;
-
-class client
+class fd_files
 {
-    int newfd;
-    struct sockaddr_in their_addr;
-    socklen_t addr_size;
-    // fd_files fd;
-    
-    client();
-    char*       cutStr(char* msg, int num);
-    
   public:
-    client(int sockfd, fd_files& fd);
-    client(const client& other);
-    client& operator=(const client& other);
-    ~client();
+    fd_set  master;
+    fd_set  read_fds;
+    int     fdmax;
+    struct timeval tv;
     
+    fd_files();
+    fd_files(const fd_files& other);
+    fd_files&       operator=(const fd_files& other);
+    ~fd_files();
 };
 
 #endif

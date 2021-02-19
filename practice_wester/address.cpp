@@ -6,7 +6,7 @@
 /*   By: wester <wester@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2021/02/15 11:21:06 by wester        #+#    #+#                 */
-/*   Updated: 2021/02/16 16:16:20 by wester        ########   odam.nl         */
+/*   Updated: 2021/02/19 11:13:20 by wester        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@ address::address()
 {
     data.sin_family = AF_INET;
     data.sin_port = htons(MYPORT);
-    data.sin_addr.s_addr = inet_addr("0.0.0.0");
+    data.sin_addr.s_addr = inet_addr("127.0.0.1");
     memset(data.sin_zero, '\0', sizeof(data.sin_zero));
 }
 

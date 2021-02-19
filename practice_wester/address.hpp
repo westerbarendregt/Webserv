@@ -6,7 +6,7 @@
 /*   By: wester <wester@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2021/02/15 11:17:41 by wester        #+#    #+#                 */
-/*   Updated: 2021/02/16 15:17:48 by wester        ########   odam.nl         */
+/*   Updated: 2021/02/19 13:52:45 by wester        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 
 # include <iostream>
 # include <string>
+# include <string.h>
 # include <sys/types.h>
 # include <sys/socket.h>
 # include <netdb.h>
