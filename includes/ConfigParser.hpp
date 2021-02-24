@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        ::::::::            */
-/*   ConfigParser.hpp                                   :+:    :+:            */
-/*                                                     +:+                    */
-/*   By: totartar <totartar@student.codam.nl>         +#+                     */
-/*                                                   +#+                      */
-/*   Created: 2021/02/19 20:08:39 by totartar      #+#    #+#                 */
-/*   Updated: 2021/02/19 23:15:49 by totartar      ########   odam.nl         */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef CONFIG_PARSER_HPP
 # define CONFIG_PARSER_HPP
 
@@ -19,6 +7,7 @@
 # include <algorithm>
 # include <queue>
 # include <map>
+# include "Server.hpp"
 
 
 #define BLANKS "\t\v "
@@ -53,45 +42,45 @@ enum	e_status {
 	ERROR = 1
 };
 
-typedef	struct	s_routeToken
-{
-	s_routeToken(std::string &name) :path(name) {}
-	std::map<std::string, std::string> directives;
-	std::string path;//could just add path to directives, but clears confusion
-}				routeToken;
-
-typedef	struct	s_serverToken
-{
-	std::map<std::string, std::string> directives;
-	std::queue<routeToken>	routes;
-}				serverToken;
 
 
 static size_t	const hash_len[] = {1, 4, 5};
 
-static const char *blocks[] = {"server", "location",  "", 0};
+static const char *blocks[] = {"server", "location"};
 static const char *main_directives[] = {0};
 static const char *server_directives[] = {"listen", "server_name", "error_pages", "client_max_body_size", 0};
 static const char *route_directives[] = {"index", "limit_except", "root", "autoindex", "upload_store",  0}; //add cgi later
 static const char **directives_string[] = {main_directives, server_directives, route_directives};
 
-int		addServer(std::vector<std::string>&, std::queue<serverToken> &);
-int		addServerDirective(std::vector<std::string>&, std::queue<serverToken> &);
-int		addRoute(std::vector<std::string>&, std::queue<serverToken> &);
-int		addRouteDirective(std::vector<std::string>&, std::queue<serverToken> &);
-
-
+int		addServer(std::vector<std::string>&, std::queue<t_virtual_server_conf> &);
+int		addServerDirective(std::vector<std::string>&, std::queue<t_virtual_server_conf> &);
+int		addRoute(std::vector<std::string>&, std::queue<t_virtual_server_conf> &);
+int		addRouteDirective(std::vector<std::string>&, std::queue<t_virtual_server_conf> &);
 
 
 std::string sputnbr(size_t n);
 
+
 class	ConfigParser
 {
 	public:
+		typedef	std::queue<t_virtual_server_conf>	t_config_tokens;
+		typedef	std::vector<std::string>			t_fields;
 
-	static void	parse(char const *path, std::queue<serverToken> &tokens) { 
+	static	void	convertTokens(t_config_tokens &tokens, Server::t_v_servers &v_servers) {
+		t_virtual_server_conf	t;
+		while (!tokens.empty()) {
+			t = tokens.front();
+			v_servers[t.m_directives["listen"]].push_back(t);
+			tokens.pop();
+		}
+	}
 
-		std::vector<std::string> fields(2);
+
+	static void	parse(char const *path, Server::t_v_servers &v_servers) { 
+
+		t_fields fields(2);
+		t_config_tokens	tokens;
 		int	context = MAIN;
 		size_t n= 0;
 		std::string	line;
@@ -111,12 +100,17 @@ class	ConfigParser
 		if (tokens.empty())
 			throw(parseError(path, "empty file"));
 		file.close();
+		std::cout<<"after parsing"<<std::endl;
+		printServerTokens(tokens);
+		convertTokens(tokens, v_servers);
+		std::cout<<"after conversion"<<std::endl;
+		printVirtualServerConf(v_servers);
 	}
 
 	class parseError : public std::exception {
 		public:
 			parseError(const char *path, size_t n) 
-				: _error(std::string(path) + ": syntax error line " + sputnbr(n)) {
+				: _error(std::string(path) + ": syntax error line " + sputnbr(n) + "\n") {
 			}
 			parseError(const char *path, const char *message) 
 				: _error(std::string(path) + ": " + message) {
@@ -129,35 +123,55 @@ class	ConfigParser
 			std::string _error;
 	};
 
+	//debug functions to print convertedTokens
+	static void	printVirtualServerConf(Server::t_v_servers &v_servers) {
+		for (Server::t_v_servers::iterator ip_port = v_servers.begin() ;
+				ip_port != v_servers.end(); ++ip_port) {
+			std::cout <<"---"<<ip_port->first<<"----"<<std::endl;
+			for (size_t i = 0; i < ip_port->second.size(); ++i){
+				t_virtual_server_conf &t = ip_port->second[i];
+				std::cout << "\tSERVER"<<std::endl;
+				for (t_virtual_server_conf::t_directives::iterator it = t.m_directives.begin(); 
+						it != t.m_directives.end(); ++it) {
+					std::cout<<"\t\t"<<it->first<<" "<<it->second<<std::endl;
+				}
+				for (t_virtual_server_conf::t_routes::iterator path = t.m_routes.begin(); 
+						path != t.m_routes.end(); path++) {
+					std::cout << "\t\tROUTE "<<path->first<<std::endl;
+					for (t_virtual_server_conf::t_directives::iterator path_directives = path->second.begin()
+							; path_directives != path->second.end();
+							++path_directives)
+						std::cout<<"\t\t\t"<<path_directives->first<<" "<<path_directives->second<<std::endl;
+				}
+			}
+		}
+	}
+	//
 	//debug functions to print tokens after parsing
-	static void	printServer(std::queue<serverToken> tokens) {
+	static void	printServerTokens(t_config_tokens tokens) {
 		while (!tokens.empty()) {
-			serverToken	&t = tokens.front();
+			t_virtual_server_conf &t = tokens.front();
 			std::cout << "SERVER"<<std::endl;
-			for (std::map<std::string, std::string>::iterator it = t.directives.begin(); 
-					it != t.directives.end(); it++) {
+			for (t_virtual_server_conf::t_directives::iterator it = t.m_directives.begin(); 
+					it != t.m_directives.end(); ++it) {
 				std::cout<<"\t"<<it->first<<" "<<it->second<<std::endl;
 			}
-			printRoutes(t.routes);
+			for (t_virtual_server_conf::t_routes::iterator path = t.m_routes.begin(); 
+					path != t.m_routes.end(); path++) {
+				std::cout << "\tROUTE "<<path->first<<std::endl;
+				for (t_virtual_server_conf::t_directives::iterator path_directives = path->second.begin()
+						; path_directives != path->second.end();
+						++path_directives)
+					std::cout<<"\t\t"<<path_directives->first<<" "<<path_directives->second<<std::endl;
+			}
 			tokens.pop();
 		}
 	}
 
-	static void	printRoutes(std::queue<routeToken> tokens) {
-		while (!tokens.empty()) {
-			routeToken &t = tokens.front();
-			std::cout << "\tlocation "<<t.path<<std::endl;
-			for (std::map<std::string, std::string>::iterator it = t.directives.begin(); 
-					it != t.directives.end(); it++) {
-				std::cout<<"\t\t"<<it->first<<" "<<it->second<<std::endl;
-			}
-			tokens.pop();
-		}
-	}
 
 	private:
 	// parse a line into left/right fields, and store them into a vector
-		static void	sampleLine(std::string &line, std::vector<std::string> &fields) {
+		static void	sampleLine(std::string &line, t_fields &fields) {
 			size_t	start = line.find_first_not_of(BLANKS, 0);
 			size_t	end	= line.find_first_of(BLANKS, start);
 			if (line.empty())
@@ -170,20 +184,20 @@ class	ConfigParser
 		}
 
 		//  server {
-		static int		addServer(std::vector<std::string>&fields, std::queue<serverToken> &tokens) {
+		static int		addServer(t_fields &fields, t_config_tokens &tokens) {
 			if (fields[RIGHT].empty() || fields[RIGHT][0] != '{')
 				return INVALID;
-			tokens.push(serverToken()); // new server block
+			tokens.push(t_virtual_server_conf()); // new server block
 			fields[LEFT].assign(fields[RIGHT].begin() + 1, fields[RIGHT].end()); // offset parsing to rest of the line
 			return SERVER; //update context
 		}
 
 		//  location /images {
-		static int		addRoute(std::vector<std::string>& fields, std::queue<serverToken> &tokens) {
+		static int		addRoute(t_fields &fields, t_config_tokens &tokens) {
 			size_t	bracket = fields[RIGHT].find_first_of("{", 0);
 			size_t	delimiter = fields[RIGHT].find_first_of(BLANKS, 0);
 			std::string		path;
-			std::queue<routeToken> &routes = tokens.back().routes;
+			//std::map<std::string, std::map<std::string, std::string> > &parsedroutes = tokens.back().m_routes;
 			if (bracket == std::string::npos || !bracket)
 				return INVALID;
 			size_t	end = delimiter > bracket ;
@@ -194,14 +208,16 @@ class	ConfigParser
 			if (!end)
 				return INVALID;
 			path.assign(fields[RIGHT].begin(), fields[RIGHT].begin() + end); //extract path
-			routes.push(routeToken(path));
+			t_virtual_server_conf	&current_server = tokens.back();
+			current_server.m_routes[path] = t_virtual_server_conf::t_directives();
+			current_server.m_route_indexes.push_back(path);
 			/*maybe add check to see if a route with the same path already exists*/
 			if (!fields[RIGHT].empty())
 				fields[LEFT].assign(fields[RIGHT].begin() + bracket + 1, fields[RIGHT].end());
 			return ROUTE;
 		}
 
-		static int addBlock(std::vector<std::string>& fields, std::queue<serverToken> &tokens, int context) {
+		static int addBlock(t_fields &fields, t_config_tokens &tokens, int context) {
 			switch (context)
 			{
 				case MAIN : return addServer(fields, tokens);
@@ -211,7 +227,7 @@ class	ConfigParser
 		}
 
 
-		static int addDirective(std::vector<std::string>& fields, std::queue<serverToken> &tokens, int context) {
+		static int addDirective(t_fields &fields, t_config_tokens &tokens, int context) {
 			switch (context)
 			{
 				case SERVER : return addServerDirective(fields, tokens);
@@ -222,35 +238,35 @@ class	ConfigParser
 
 
 		// get arguments until ; and push to corresponding directives
-		static int addServerDirective(std::vector<std::string>& fields, std::queue<serverToken> &tokens) {
+		static int addServerDirective(t_fields &fields, t_config_tokens &tokens) {
 			size_t	end = fields[RIGHT].find_first_of(";", 0);
 			if (end == std::string::npos)
 				return INVALID;
-			tokens.back().directives[fields[LEFT]] = fields[RIGHT].substr(0, end); //pushing to directives map
+			tokens.back().m_directives[fields[LEFT]] = fields[RIGHT].substr(0, end); //pushing to directives map
 			if (!fields[RIGHT].empty()) //shift fields if we didn't reach eol
 				fields[LEFT].assign(fields[RIGHT].begin() + end + 1, fields[RIGHT].end());
 			return SUCCESS;
 		}
 
-		static int addRouteDirective(std::vector<std::string>& fields, std::queue<serverToken> &tokens) {
+		static int addRouteDirective(t_fields &fields, t_config_tokens &tokens) {
 			size_t	end = fields[RIGHT].find_first_of(";", 0);
 			if (end == std::string::npos)
 				return INVALID;
-			tokens.back().routes.back().directives[fields[LEFT]] = fields[RIGHT].substr(0, end);
+			t_virtual_server_conf& current_server = tokens.back();
+			std::string &current_route = current_server.m_route_indexes.back();
+			current_server.m_routes[current_route][fields[LEFT]] = fields[RIGHT].substr(0, end);
 			if (!fields[RIGHT].empty())
 				fields[LEFT].assign(fields[RIGHT].begin() + end + 1, fields[RIGHT].end());
 			return SUCCESS;
 		}
-
-
 		//for each line, checks lhs against valid directive corresponding on context
 		//recursive if multiple directives in a line
 		//return updated context 
-		static int		contextParse(int context, std::vector<std::string> &fields, std::queue<serverToken> &tokens) {
+		static int		contextParse(int context, std::vector<std::string> &fields, std::queue<t_virtual_server_conf> &tokens) {
 			int		updated_context = context;
 			const char **directive;
 
-			if (fields[LEFT] == blocks[context]) {
+			if (context < ROUTE && fields[LEFT] == blocks[context]) {
 				updated_context = addBlock(fields, tokens, context);
 			} 
 			else if (fields[LEFT][0] == '}') // close block

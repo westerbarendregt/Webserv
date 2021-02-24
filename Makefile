@@ -6,7 +6,7 @@
 #    By: totartar <totartar@student.codam.nl>         +#+                      #
 #                                                    +#+                       #
 #    Created: 2021/02/19 22:47:41 by totartar      #+#    #+#                  #
-#    Updated: 2021/02/19 23:00:47 by totartar      ########   odam.nl          #
+#    Updated: 2021/02/24 11:38:30 by totartar      ########   odam.nl          #
 #                                                                              #
 # **************************************************************************** #
 
@@ -22,7 +22,8 @@ INCLUDES	=	-Iincludes
 SRC_DIR		= 	srcs
 
 SRCS=	$(SRC_DIR)/main.cpp \
-				$(SRC_DIR)/utils.cpp
+				$(SRC_DIR)/utils.cpp \
+				$(SRC_DIR)/Server.cpp
 
 OBJ			= $(SRCS:.cpp=.o)
 
