@@ -24,6 +24,7 @@ void	Server::run(){
 	//fd_set master, read_fs;
 	int range;
 	int	s_listen, s_new;
+
 	struct sockaddr_storage clientaddr;
 	struct sockaddr_storage serveraddr;
 	socklen_t	addrlen;
@@ -83,7 +84,10 @@ void	Server::run(){
 	struct timeval tv;
 	char buf[1000];
 	memset(buf, 0, sizeof(buf));
-	for (;;) {
+
+
+
+	for (;;) {//run
 		read_fs = master;
 		write_fs = master;
 		tv.tv_sec = 1; //on linux, tv is modified so need to reset for every call
