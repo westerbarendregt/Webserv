@@ -52,32 +52,29 @@ static const char *server_directives[] = {"listen", "server_name", "error_pages"
 static const char *route_directives[] = {"index", "limit_except", "root", "autoindex", "upload_store",  0}; //add cgi later
 static const char **directives_string[] = {main_directives, server_directives, route_directives};
 
-int		addServer(std::vector<std::string>&, std::queue<t_virtual_server_conf> &);
-int		addServerDirective(std::vector<std::string>&, std::queue<t_virtual_server_conf> &);
-int		addRoute(std::vector<std::string>&, std::queue<t_virtual_server_conf> &);
-int		addRouteDirective(std::vector<std::string>&, std::queue<t_virtual_server_conf> &);
-
-
 std::string sputnbr(size_t n);
 
 
 class	ConfigParser
 {
 	public:
-		typedef	std::queue<t_virtual_server_conf>	t_config_tokens;
+		typedef Server::t_v_server_conf		t_v_server_conf;
+		typedef Server::t_v_server			t_v_server;
+		typedef Server::t_v_server_map			t_v_server_map;
+		typedef	std::queue<t_v_server_conf>	t_config_tokens;
 		typedef	std::vector<std::string>			t_fields;
 
-	static	void	convertTokens(t_config_tokens &tokens, Server::t_v_servers &v_servers) {
-		t_virtual_server_conf	t;
+	static	void	convertTokens(t_config_tokens &tokens, t_v_server_map &v_server_map) {
+		t_v_server_conf	conf;
 		while (!tokens.empty()) {
-			t = tokens.front();
-			v_servers[t.m_directives["listen"]].push_back(t);
+			conf = tokens.front();
+			v_server_map[conf.m_directives["listen"]].push_back(t_v_server(conf));
 			tokens.pop();
 		}
 	}
 
 
-	static void	parse(char const *path, Server::t_v_servers &v_servers) { 
+	static void	parse(char const *path, t_v_server_map &v_server_map) { 
 
 		t_fields fields(2);
 		t_config_tokens	tokens;
@@ -102,9 +99,9 @@ class	ConfigParser
 		file.close();
 		std::cout<<"after parsing"<<std::endl;
 		printServerTokens(tokens);
-		convertTokens(tokens, v_servers);
+		convertTokens(tokens, v_server_map);
 		std::cout<<"after conversion"<<std::endl;
-		printVirtualServerConf(v_servers);
+		printVirtualServerConf(v_server_map);
 	}
 
 	class parseError : public std::exception {
@@ -124,21 +121,21 @@ class	ConfigParser
 	};
 
 	//debug functions to print convertedTokens
-	static void	printVirtualServerConf(Server::t_v_servers &v_servers) {
-		for (Server::t_v_servers::iterator ip_port = v_servers.begin() ;
-				ip_port != v_servers.end(); ++ip_port) {
+	static void	printVirtualServerConf(t_v_server_map &v_server_map) {
+		for (t_v_server_map::iterator ip_port = v_server_map.begin() ;
+				ip_port != v_server_map.end(); ++ip_port) {
 			std::cout <<"---"<<ip_port->first<<"----"<<std::endl;
 			for (size_t i = 0; i < ip_port->second.size(); ++i){
-				t_virtual_server_conf &t = ip_port->second[i];
+				t_v_server_conf &t = ip_port->second[i].m_configs;
 				std::cout << "\tSERVER"<<std::endl;
-				for (t_virtual_server_conf::t_directives::iterator it = t.m_directives.begin(); 
+				for (t_v_server_conf::t_directives::iterator it = t.m_directives.begin(); 
 						it != t.m_directives.end(); ++it) {
 					std::cout<<"\t\t"<<it->first<<" "<<it->second<<std::endl;
 				}
-				for (t_virtual_server_conf::t_routes::iterator path = t.m_routes.begin(); 
+				for (t_v_server_conf::t_routes::iterator path = t.m_routes.begin(); 
 						path != t.m_routes.end(); path++) {
 					std::cout << "\t\tROUTE "<<path->first<<std::endl;
-					for (t_virtual_server_conf::t_directives::iterator path_directives = path->second.begin()
+					for (t_v_server_conf::t_directives::iterator path_directives = path->second.begin()
 							; path_directives != path->second.end();
 							++path_directives)
 						std::cout<<"\t\t\t"<<path_directives->first<<" "<<path_directives->second<<std::endl;
@@ -150,16 +147,16 @@ class	ConfigParser
 	//debug functions to print tokens after parsing
 	static void	printServerTokens(t_config_tokens tokens) {
 		while (!tokens.empty()) {
-			t_virtual_server_conf &t = tokens.front();
+			t_v_server_conf &t = tokens.front();
 			std::cout << "SERVER"<<std::endl;
-			for (t_virtual_server_conf::t_directives::iterator it = t.m_directives.begin(); 
+			for (t_v_server_conf::t_directives::iterator it = t.m_directives.begin(); 
 					it != t.m_directives.end(); ++it) {
 				std::cout<<"\t"<<it->first<<" "<<it->second<<std::endl;
 			}
-			for (t_virtual_server_conf::t_routes::iterator path = t.m_routes.begin(); 
+			for (t_v_server_conf::t_routes::iterator path = t.m_routes.begin(); 
 					path != t.m_routes.end(); path++) {
 				std::cout << "\tROUTE "<<path->first<<std::endl;
-				for (t_virtual_server_conf::t_directives::iterator path_directives = path->second.begin()
+				for (t_v_server_conf::t_directives::iterator path_directives = path->second.begin()
 						; path_directives != path->second.end();
 						++path_directives)
 					std::cout<<"\t\t"<<path_directives->first<<" "<<path_directives->second<<std::endl;
@@ -187,7 +184,7 @@ class	ConfigParser
 		static int		addServer(t_fields &fields, t_config_tokens &tokens) {
 			if (fields[RIGHT].empty() || fields[RIGHT][0] != '{')
 				return INVALID;
-			tokens.push(t_virtual_server_conf()); // new server block
+			tokens.push(t_v_server_conf()); // new server block
 			fields[LEFT].assign(fields[RIGHT].begin() + 1, fields[RIGHT].end()); // offset parsing to rest of the line
 			return SERVER; //update context
 		}
@@ -208,8 +205,8 @@ class	ConfigParser
 			if (!end)
 				return INVALID;
 			path.assign(fields[RIGHT].begin(), fields[RIGHT].begin() + end); //extract path
-			t_virtual_server_conf	&current_server = tokens.back();
-			current_server.m_routes[path] = t_virtual_server_conf::t_directives();
+			t_v_server_conf	&current_server = tokens.back();
+			current_server.m_routes[path] = t_v_server_conf::t_directives();
 			current_server.m_route_indexes.push_back(path);
 			/*maybe add check to see if a route with the same path already exists*/
 			if (!fields[RIGHT].empty())
@@ -252,7 +249,7 @@ class	ConfigParser
 			size_t	end = fields[RIGHT].find_first_of(";", 0);
 			if (end == std::string::npos)
 				return INVALID;
-			t_virtual_server_conf& current_server = tokens.back();
+			t_v_server_conf& current_server = tokens.back();
 			std::string &current_route = current_server.m_route_indexes.back();
 			current_server.m_routes[current_route][fields[LEFT]] = fields[RIGHT].substr(0, end);
 			if (!fields[RIGHT].empty())
@@ -262,7 +259,7 @@ class	ConfigParser
 		//for each line, checks lhs against valid directive corresponding on context
 		//recursive if multiple directives in a line
 		//return updated context 
-		static int		contextParse(int context, std::vector<std::string> &fields, std::queue<t_virtual_server_conf> &tokens) {
+		static int		contextParse(int context, std::vector<std::string> &fields, std::queue<t_v_server_conf> &tokens) {
 			int		updated_context = context;
 			const char **directive;
 
