@@ -9,6 +9,7 @@
 # include <map>
 # include "Server.hpp"
 # include "Conf.hpp"
+# include "WebServer.hpp"
 
 
 #define BLANKS "\t\v "
