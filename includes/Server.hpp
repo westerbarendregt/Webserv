@@ -22,12 +22,10 @@ class	Server
 		Server(char const *path);
 		~Server();
 		void	run();
-		//void	read(t_client const &client)
 		int		read(int socket);
 		int		read(t_client const & c);
 		void	accept();
 		void	addClient();
-		//void	handleRequest(t_client const &client)
 		void	handleRequest(int socket);
 	private:
 			t_v_server_map	m_v_server_map;

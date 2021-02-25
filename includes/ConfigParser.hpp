@@ -8,6 +8,7 @@
 # include <queue>
 # include <map>
 # include "Server.hpp"
+# include "Conf.hpp"
 
 
 #define BLANKS "\t\v "
@@ -36,11 +37,6 @@ enum	e_fields{
 	RIGHT
 };
 
-enum	e_status {
-	INVALID = -1,
-	SUCCESS = 0,
-	ERROR = 1
-};
 
 
 
