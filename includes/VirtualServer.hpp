@@ -13,7 +13,7 @@ class	VirtualServer
 		explicit VirtualServer(t_v_server_conf conf);
 	private:
 		int						m_socket;
-		t_v_server_conf	m_configs;
+		t_v_server_conf			m_configs;
 };
 
 #endif

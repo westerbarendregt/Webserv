@@ -16,6 +16,7 @@ int	main(int ac, char **av) {
 	try
 	{
 		Server s(path);
+		//s.run();
 	}
 	catch(std::exception &e)
 	{

@@ -6,7 +6,7 @@
 #    By: totartar <totartar@student.codam.nl>         +#+                      #
 #                                                    +#+                       #
 #    Created: 2021/02/19 22:47:41 by totartar      #+#    #+#                  #
-#    Updated: 2021/02/25 12:13:03 by totartar      ########   odam.nl          #
+#    Updated: 2021/02/25 14:00:09 by totartar      ########   odam.nl          #
 #                                                                              #
 # **************************************************************************** #
 
@@ -24,7 +24,10 @@ SRC_DIR		= 	srcs
 SRCS=	$(SRC_DIR)/main.cpp \
 				$(SRC_DIR)/utils.cpp \
 				$(SRC_DIR)/Server.cpp \
-				$(SRC_DIR)/VirtualServer.cpp
+				$(SRC_DIR)/VirtualServer.cpp \
+				$(SRC_DIR)/ServerRun.cpp \
+				$(SRC_DIR)/ServerRead.cpp \
+				$(SRC_DIR)/Client.cpp \
 
 OBJ			= $(SRCS:.cpp=.o)
 
