@@ -15,6 +15,7 @@ SRCS=	$(SRC_DIR)/main.cpp \
 				$(SRC_DIR)/VirtualServer.cpp \
 				$(SRC_DIR)/ServerRun.cpp \
 				$(SRC_DIR)/ServerRead.cpp \
+				$(SRC_DIR)/ServerInit.cpp \
 				$(SRC_DIR)/Client.cpp \
 
 OBJ			= $(SRCS:.cpp=.o)

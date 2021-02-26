@@ -1,5 +1,6 @@
 #define DEFAULT_PATH "./webserv.conf"
 #include <iostream>
+#include <unistd.h>
 #include "Server.hpp"
 
 int	usage() {
@@ -16,7 +17,8 @@ int	main(int ac, char **av) {
 	try
 	{
 		Server s(path);
-		//s.run();
+		s.init();
+		s.close();
 	}
 	catch(std::exception &e)
 	{

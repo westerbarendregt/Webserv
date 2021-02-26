@@ -22,6 +22,8 @@ class	Server
 		Server(char const *path);
 		~Server();
 		void	run();
+		void	init();
+		void	close();
 		int		read(int socket);
 		int		read(t_client const & c);
 		void	accept();

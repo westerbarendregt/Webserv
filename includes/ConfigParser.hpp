@@ -58,18 +58,29 @@ class	ConfigParser
 		typedef Server::t_v_server_conf		t_v_server_conf;
 		typedef Server::t_v_server			t_v_server;
 		typedef Server::t_v_server_map			t_v_server_map;
+		typedef Server::t_ip_port			t_ip_port;
 		typedef	std::queue<t_v_server_conf>	t_config_tokens;
 		typedef	std::vector<std::string>			t_fields;
 
+
+	static	t_ip_port convertAddr(std::string const &addr) {
+		size_t	end = addr.find_first_of(":", 0);
+		if (end != std::string::npos)
+			return addr;
+		t_ip_port	full_addr("0.0.0.0:");
+		full_addr.insert(full_addr.end(), addr.begin(), addr.end());
+		return full_addr;
+	}
 	static	void	convertTokens(t_config_tokens &tokens, t_v_server_map &v_server_map) {
 		t_v_server_conf	conf;
 		while (!tokens.empty()) {
 			conf = tokens.front();
-			v_server_map[conf.m_directives["listen"]].push_back(t_v_server(conf));
+			std::string &addr = conf.m_directives["listen"];
+			addr = convertAddr(addr);
+			v_server_map[addr].push_back(t_v_server(conf));
 			tokens.pop();
 		}
 	}
-
 
 	static void	parse(char const *path, t_v_server_map &v_server_map) { 
 
@@ -94,10 +105,7 @@ class	ConfigParser
 		if (tokens.empty())
 			throw(parseError(path, "empty file"));
 		file.close();
-		std::cout<<"after parsing"<<std::endl;
-		printServerTokens(tokens);
 		convertTokens(tokens, v_server_map);
-		std::cout<<"after conversion"<<std::endl;
 		printVirtualServerConf(v_server_map);
 	}
 
@@ -166,10 +174,16 @@ class	ConfigParser
 	private:
 	// parse a line into left/right fields, and store them into a vector
 		static void	sampleLine(std::string &line, t_fields &fields) {
-			size_t	start = line.find_first_not_of(BLANKS, 0);
-			size_t	end	= line.find_first_of(BLANKS, start);
 			if (line.empty())
 				return ;
+			size_t	start = line.find_first_not_of(BLANKS, 0);
+			if (start == std::string::npos)
+			{
+				fields[LEFT].clear();
+				fields[RIGHT].clear();
+				return ;
+			}
+			size_t	end	= line.find_first_of(BLANKS, start);
 			fields[LEFT] = line.substr(start, end);
 			if (line.size() == 1)
 				fields[RIGHT].clear();
@@ -260,6 +274,8 @@ class	ConfigParser
 			int		updated_context = context;
 			const char **directive;
 
+			if (fields[LEFT].empty())
+				return context;
 			if (context < ROUTE && fields[LEFT] == blocks[context]) {
 				updated_context = addBlock(fields, tokens, context);
 			} 
