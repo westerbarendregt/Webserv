@@ -7,6 +7,7 @@
 #include <errno.h>
 #include "Error.hpp"
 #include "utils.hpp"
+#include "Server.hpp"
 
 
 VirtualServer::VirtualServer(t_v_server_conf conf) : m_configs(conf) {
@@ -33,16 +34,9 @@ void	VirtualServer::init() {
 		throw(serverError("socket", strerror(errno)));
 	if (setsockopt(this->m_socket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) == -1)
 		throw(serverError("setsockopt", strerror(errno)));
-	if (bind(this->m_socket,  reinterpret_cast<struct sockaddr*>(&this->m_sockaddr), sizeof(this->m_sockaddr)) == -1)
-	{
-		//since v_server is mapped by ip:port, *:5000 and 127.0.0.1:5000 would throw already in use
-		if (errno != EADDRINUSE)
-			throw(serverError("bind", strerror(errno)));
-	}
-	else if (listen(this->m_socket, 128) == -1)
-		throw(serverError("listen", strerror(errno)));
 }
 
 void	VirtualServer::close() {
 	::close(this->m_socket);
 }
+

@@ -165,7 +165,7 @@ void	Server::run(){
 	//AF_INET ipv4
 
 
-	close(s_listen);
+	::close(s_listen);
 
 	(void) master; (void)read_fs;
 	(void)range;
