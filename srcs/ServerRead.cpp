@@ -28,7 +28,7 @@ int	Server::read(int socket) {
 			std::cout<<"closing connection "<<socket<<std::endl; //log
 		else
 			std::cout<<"recv: "<<strerror(errno)<<std::endl; //log
-		close(socket);
+		::close(socket);
 		//FD_CLR(i, &master);
 	}
 	return (nbytes);
@@ -69,7 +69,7 @@ int		Server::read(t_client const & c)
 			std::cout<<"closing connection "<<c.m_socket<<std::endl; //log
 		else
 			std::cout<<"recv: "<<strerror(errno)<<std::endl; //log
-		close(c.m_socket);
+		::close(c.m_socket);
 		//FD_CLR(i, &master);
 	}
 	return (nbytes);

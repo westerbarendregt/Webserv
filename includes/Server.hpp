@@ -29,6 +29,8 @@ class	Server
 		void	accept();
 		void	addClient();
 		void	handleRequest(int socket);
+		void	connectVirtualServer(t_v_server &v_server);
+		t_v_server	*getVirtualServer(int socket);
 	private:
 			t_v_server_map	m_v_server_map;
 };
