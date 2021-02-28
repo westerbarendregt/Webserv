@@ -21,7 +21,9 @@ void	VirtualServer::setAddr() {
 	if (port.empty() || port.find_first_not_of("0123456789", 0) != std::string::npos)
 		throw serverError("server init", "invalid port");
 	this->m_sockaddr.sin_family = AF_INET;
+	//std::cout<<"inet_() "<<config_addr.substr(0, c)<<std::endl;
 	this->m_sockaddr.sin_addr.s_addr = inet_addr(config_addr.substr(0, c).c_str());
+	//std::cout<<"inet_ntoa()"<<inet_ntoa(this->m_sockaddr.sin_addr)<<std::endl;
 	this->m_sockaddr.sin_port = hostToNetworkShort(ftAtoi(port.c_str()));
 	memset(this->m_sockaddr.sin_zero, 0, sizeof(this->m_sockaddr.sin_zero));
 }
@@ -39,4 +41,3 @@ void	VirtualServer::init() {
 void	VirtualServer::close() {
 	::close(this->m_socket);
 }
-
