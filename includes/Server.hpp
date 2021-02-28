@@ -31,6 +31,7 @@ class	Server
 		void	handleRequest(int socket);
 		void	connectVirtualServer(t_v_server &v_server);
 		t_v_server	*getVirtualServer(int v_server_socket);
+		t_v_server	*getVirtualServer(unsigned short port);
 	private:
 			t_v_server_map	m_v_server_map;
 };

@@ -28,7 +28,7 @@ void	Server::connectVirtualServer(VirtualServer &v_server) {
 		//so we just try to link it with an already existing socket
 		if (errno == EADDRINUSE) {
 			VirtualServer	*other;
-			if ((other = this->getVirtualServer(v_server.m_socket)))
+			if ((other = this->getVirtualServer(v_server.m_sockaddr.sin_port)))
 			{
 				if (::close(v_server.m_socket) == -1)
 					throw(serverError("close", strerror(errno)));
