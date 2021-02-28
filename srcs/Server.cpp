@@ -3,6 +3,8 @@
 
 Server::Server(char const *path) {
 	ConfigParser::parse(path, this->m_v_server_map);
+	FD_ZERO(&this->m_all_fd);
+	m_range_fd = 0;
 }
 
 VirtualServer *Server::getVirtualServer(int v_server_socket) {

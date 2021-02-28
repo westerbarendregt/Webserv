@@ -42,11 +42,17 @@ void	Server::connectVirtualServer(VirtualServer &v_server) {
 		throw(serverError("listen", strerror(errno)));
 	if (fcntl(v_server.m_socket, F_SETFL, O_NONBLOCK) == -1)
 		throw(serverError("fcntl: ", strerror(errno)));
+	FD_SET(v_server.m_socket, &this->m_all_fd);
+	if (v_server.m_socket > this->m_range_fd)
+		this->m_range_fd = v_server.m_socket;
 }
 
 void	Server::close() {
 	for (t_v_server_map::iterator it = this->m_v_server_map.begin(); 
-			it != this->m_v_server_map.end(); ++it)
-		it->second[0].close();
-
+			it != this->m_v_server_map.end(); ++it) {
+		if (FD_ISSET(it->second[0].m_socket, &this->m_all_fd)) {
+			::close(it->second[0].m_socket);
+			FD_CLR(it->second[0].m_socket, &this->m_all_fd);
+		}
+	}
 }

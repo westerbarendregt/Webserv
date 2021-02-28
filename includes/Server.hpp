@@ -33,7 +33,9 @@ class	Server
 		t_v_server	*getVirtualServer(int v_server_socket);
 		t_v_server	*getVirtualServer(unsigned short port);
 	private:
-			t_v_server_map	m_v_server_map;
+		t_v_server_map	m_v_server_map;
+		fd_set	m_all_fd;
+		int		m_range_fd;
 };
 
 #endif
