@@ -6,7 +6,7 @@
 /*   By: wester <wester@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2021/02/23 12:17:47 by wester        #+#    #+#                 */
-/*   Updated: 2021/03/01 16:39:14 by wester        ########   odam.nl         */
+/*   Updated: 2021/03/01 17:02:21 by wester        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,13 +85,14 @@ typedef struct  s_request
 	char                        m_path[1024];
 	int                  	    m_protocol;
 	size_t						m_content_length;
-	bool						done; 
+	bool						done;
+	std::string					body;
 
 }               t_request;
 
 namespace RequestParser
 { 
-	int            GetFirstLine(client )
+	int            GetFirstLine(std::istringstream& stream, t_request *data)
 	{
 		std::string line;
 		
@@ -131,12 +132,20 @@ namespace RequestParser
 		return SUCCESS;
 	}
 	
+	int				GetBody(std::istringstream& stream, t_request *data)
+	{
+		data->m_content_length = atol(data->m_headers[CONTENTLENGTH].c_str());
+		data->body = 
+	}
+	
 	void				ErrorRequest(int line)
 	{
 		if (line == 0)
 			throw "Error on Request line 1";
 		if (line == 1)
 			throw "Error with Request headers";
+		if (line == 2)
+			throw "Error with Body";
 	}
 
 	void				CleanData(t_request *data)
@@ -178,17 +187,21 @@ namespace RequestParser
 			std::cout << headers[i] << ":" << data->m_headers[i] << std::endl;
 	}
 	
-	void		Parse(char *request, t_request& data)
+	void		Parse(client _client)//char *request, t_request& data)
 	{
 		size_t n = 0;
 		
 		std::istringstream stream;
-		stream.str(request);
-		CleanData(&data);	
-		if (GetFirstLine(stream, &data))
+		stream.str(_client.request);
+		if (_client.data.done)
+			CleanData(&(_client.data));	
+		if (GetFirstLine(stream, &(_client.data)))
 			return ErrorRequest(0);
-		if (GetHeaders(stream, &data))
+		if (GetHeaders(stream, &(_client.data)))
 			return ErrorRequest(1);
+		if (_client.data->m_headers[CONTENTLENGTH][0] != 0 && (_client.data->m_method = POST || _client.data->m_method = PUT))
+			if (GetBody(stream, &(_client.data)))
+				return ErrorRequest(2);
 	}
 	
 };
