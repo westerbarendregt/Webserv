@@ -87,11 +87,9 @@ typedef struct  s_request
 
 }               t_request;
 
-class RequestParser
-{
-  private:
-  
-	static int            GetFirstLine(std::istringstream& stream, t_request *data)
+namespace RequestParser
+{ 
+	int            GetFirstLine(std::istringstream& stream, t_request *data)
 	{
 		std::string line;
 		
@@ -114,7 +112,7 @@ class RequestParser
 		return ERROR;
 	}
 	
-	static int				GetHeaders(std::istringstream& stream, t_request *data)
+	int				GetHeaders(std::istringstream& stream, t_request *data)
 	{
 		std::string line;
 		
@@ -131,19 +129,21 @@ class RequestParser
 		return SUCCESS;
 	}
 	
-	static void				ErrorRequest(int line)
+	void				ErrorRequest(int line)
 	{
-		if (line == 0){
-			std::cout << "error on first line of HTTP-request" << std::endl;
-			return ;
-		}
-		if (line == 1){
-			std::cout << "error with headers of HTTP-request" << std::endl;
-			return ;
-		}
+		if (line == 0)
+			throw "Error on Request line 1";
+		if (line == 1)
+			throw "Error with Request headers";
 	}
 
-  public:
+	void				CleanData(t_request *data)
+	{
+		data->m_protocol = -1;
+		data->m_method = -1;
+		memset(data->m_path, 0, 1024);// = (char *)"";
+	}
+
 
 	// RequestParser(){};
 	// RequestParser(const RequestParser& other){
@@ -155,7 +155,7 @@ class RequestParser
 	// }
 	// ~RequestParser(){};
 		
-	static void		Print(t_request *data)
+	void		Print(t_request *data)
 	{
 		switch (data->m_method)
 		{
@@ -176,16 +176,16 @@ class RequestParser
 			std::cout << headers[i] << ":" << data->m_headers[i] << std::endl;
 	}
 	
-	static void		Parse(char *request, t_request *data)
+	void		Parse(char *request, t_request& data)
 	{
 		size_t n = 0;
 		
 		std::istringstream stream;
 		stream.str(request);
-
-		if (GetFirstLine(stream, data))
+		CleanData(&data);	
+		if (GetFirstLine(stream, &data))
 			return ErrorRequest(0);
-		if (GetHeaders(stream, data))
+		if (GetHeaders(stream, &data))
 			return ErrorRequest(1);
 	}
 	
