@@ -1,20 +1,10 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        ::::::::            */
-/*   utils.cpp                                          :+:    :+:            */
-/*                                                     +:+                    */
-/*   By: totartar <totartar@student.codam.nl>         +#+                     */
-/*                                                   +#+                      */
-/*   Created: 2021/02/19 22:47:36 by totartar      #+#    #+#                 */
-/*   Updated: 2021/02/19 22:47:37 by totartar      ########   odam.nl         */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include <string>//std::string
 #include <string.h>//memset
 #include <unistd.h>//size_t
+#include <stdint.h>
+#include <limits.h>
 
-size_t		write_reverse(size_t n, char *buf)
+static size_t		write_reverse(size_t n, char *buf)
 {
 	size_t	len;
 
@@ -55,4 +45,74 @@ std::string sputnbr(size_t n)
 		end++;
 	}
 	return (std::string(buf));
+}
+
+
+static int	atoiIsBlank(char c)
+{
+	return (c == '\t' || c == '\v' || c == '\f'
+				|| c == '\r' || c == '\n' || c == ' ');
+}
+
+static int	atoiConvert(const char *str, int sign)
+{
+	long int	result;
+	int			i;
+
+	result = 0;
+	i = 0;
+	while (str[i] >= 48 && str[i] <= 57)
+	{
+		if (result && LONG_MAX / result == 10)
+			return (((int)result * 10 + (str[i] - '0')) * sign);
+		if (result && LONG_MAX / result < 10 && sign == -1)
+			return (0);
+		if (result && LONG_MAX / result < 10 && sign == 1)
+			return (-1);
+		result = result * 10 + (str[i] - '0');
+		i++;
+	}
+	return (((int)result) * sign);
+}
+
+int			ftAtoi(const char *str)
+{
+	int			i;
+	int			sign;
+
+	i = 0;
+	sign = 1;
+	while (atoiIsBlank(str[i]))
+		i++;
+	if (str[i] == '-' || str[i] == '+')
+	{
+		if (str[i] == '-')
+			sign = -1;
+		i++;
+	}
+	return (atoiConvert(str + i, sign));
+}
+
+bool isBigEndian() {
+	union {
+		uint32_t i;
+		uint8_t	 c[4];
+	} u = {0x01020304};
+
+	return u.c[0] == 1;
+}
+
+uint32_t hostToNetworkLong(uint32_t hostlong) {
+	if (isBigEndian())
+		return hostlong;
+	return (hostlong & 0x000000FF) << 24 |
+		   (hostlong & 0x0000FF00) << 8 |
+		   (hostlong & 0x00FF0000) >> 8 |
+		   (hostlong & 0xFF000000) >> 24;
+}
+
+uint16_t hostToNetworkShort(uint16_t hostshort) {
+	if (isBigEndian())
+		return hostshort;
+	return (hostshort & 0x00FF) << 8 | (hostshort & 0xFF00) >> 8;
 }

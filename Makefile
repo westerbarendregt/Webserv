@@ -1,15 +1,3 @@
-# **************************************************************************** #
-#                                                                              #
-#                                                         ::::::::             #
-#    Makefile                                           :+:    :+:             #
-#                                                      +:+                     #
-#    By: totartar <totartar@student.codam.nl>         +#+                      #
-#                                                    +#+                       #
-#    Created: 2021/02/19 22:47:41 by totartar      #+#    #+#                  #
-#    Updated: 2021/02/19 23:00:47 by totartar      ########   odam.nl          #
-#                                                                              #
-# **************************************************************************** #
-
 NAME		=	webserv
 FLAGS		=	-Wall -Wextra -Werror -std=c++98 -pedantic
 
@@ -17,12 +5,27 @@ ifdef DEBUG
 FLAGS+= -g -fsanitize=address
 endif
 
+LOG_FILE=
+
+ifdef LOG
+LOG_FILE+=  2>&1 | tee webserv.log
+endif
+
 INCLUDES	=	-Iincludes
 
 SRC_DIR		= 	srcs
 
 SRCS=	$(SRC_DIR)/main.cpp \
-				$(SRC_DIR)/utils.cpp
+				$(SRC_DIR)/utils.cpp \
+				$(SRC_DIR)/Server.cpp \
+				$(SRC_DIR)/VirtualServer.cpp \
+				$(SRC_DIR)/ServerRun.cpp \
+				$(SRC_DIR)/ServerReceive.cpp \
+				$(SRC_DIR)/ServerInit.cpp \
+				$(SRC_DIR)/ServerHandleRequest.cpp \
+				$(SRC_DIR)/ServerAccept.cpp \
+				$(SRC_DIR)/ServerRespond.cpp \
+				$(SRC_DIR)/Client.cpp \
 
 OBJ			= $(SRCS:.cpp=.o)
 
@@ -48,6 +51,6 @@ re:
 	$(MAKE) all
 
 run: re
-		./$(NAME)
+		./$(NAME) $(LOG_FILE)
 
 .PHONY: all clean fclean re

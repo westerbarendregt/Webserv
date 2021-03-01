@@ -1,10 +1,11 @@
 #define DEFAULT_PATH "./webserv.conf"
 #include <iostream>
-# include "ConfigParser.hpp"
+#include <unistd.h>
+#include "Server.hpp"
 
 int	usage() {
 	std::cerr<< "usage: webserv [conf_file]" <<std::endl;
-	return (ERROR);
+	return (1);
 }
 
 int	main(int ac, char **av) {
@@ -15,14 +16,14 @@ int	main(int ac, char **av) {
 
 	try
 	{
-		std::queue<serverToken> tokens;
-		ConfigParser::parse(path, tokens);
-		ConfigParser::printServer(tokens);
+		Server s(path);
+		s.init();
+		s.run();
 	}
 	catch(std::exception &e)
 	{
-		std::cerr<< "error: " << e.what() << std::endl;
-		return (ERROR);
+		std::cerr<< "error: " << e.what() <<std::endl;
+		return (1);
 	}
 	return (0);
 }
