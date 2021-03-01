@@ -6,7 +6,7 @@
 /*   By: wester <wester@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2021/02/23 12:17:47 by wester        #+#    #+#                 */
-/*   Updated: 2021/02/25 15:12:05 by wester        ########   odam.nl         */
+/*   Updated: 2021/03/01 16:39:14 by wester        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,12 +84,14 @@ typedef struct  s_request
 	int                     	m_method;
 	char                        m_path[1024];
 	int                  	    m_protocol;
+	size_t						m_content_length;
+	bool						done; 
 
 }               t_request;
 
 namespace RequestParser
 { 
-	int            GetFirstLine(std::istringstream& stream, t_request *data)
+	int            GetFirstLine(client )
 	{
 		std::string line;
 		
