@@ -117,38 +117,21 @@ uint16_t hostToNetworkShort(uint16_t hostshort) {
 	return (hostshort & 0x00FF) << 8 | (hostshort & 0xFF00) >> 8;
 }
 
-int		ft_getline(int fd, std::string& line)
+int		ft_getline(std::string& total, std::string& line, int line_break) // make line_break 1 if you want it in, zero if you don't
 {
-	int ret = 1;
-	line = "";
+	static size_t start;
+	size_t len;
 
-	static std::string extra = "";
-	while (ret > 0)
+	if (total.find('\n', start) != std::string::npos)
 	{
-		if (extra.find('\n') != std::string::npos)
-		{
-			size_t found = extra.find_first_of('\n');
-			line = extra.substr(0, found);
-			extra = extra.substr(found + 1, extra.size() - found);
-			return 2;
-		}
-		char *buf = (char*) malloc(1024);
-		ret = read(fd, buf, 1023);
-		if (ret == 0 && extra[0] != 0)
-		{
-			line = extra;
-			extra = "";
-			return 1;
-		}
-		buf[ret] = 0;
-		line.append(buf);
-		if (line.find('\n') != std::string::npos)
-		{
-			size_t found = line.find_first_of('\n');
-			extra = line.substr(found + 1, line.size() - found);
-			line = line.substr(0, found);
-			return 2;
-		}
+		len = total.find_first_of('\n', start) - start;
+		line = total.substr(start, len + line_break);
+		start = total.find_first_of('\n', start) + 1;
+		return 1;
+	}
+	else {
+		line = total.substr(start, total.size() - start);
+		start = 0;
 	}
 	return 0;
 }

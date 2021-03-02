@@ -4,15 +4,9 @@
 # include <iostream>
 # include "VirtualServer.hpp"
 
-class	Client
+struct	Request
 {
-	public:
-		friend class Server;
-		explicit Client(VirtualServer *v_server, int socket);
-		Client(int socket);
-		Client();
-		bool	fullHttpRequest();
-		std::string	m_request;
+		Request();
 		int                     			m_method;
 		char                        		m_path[1024];
 		int                  	    		m_protocol;
@@ -21,14 +15,29 @@ class	Client
 		bool								m_if_body;
 		std::string							m_body;
 		bool								m_done;
+};
+
+class	Client
+{
+	public:
+		friend class Server;
+		friend class RequestParser;
+
+		explicit Client(VirtualServer *v_server, int socket);
+		Client(int socket);
+		Client();
+		bool	fullHttpRequest();
 
 	private:
-		VirtualServer	*m_v_server;
-		int		m_socket;
-		bool m_received;
-		bool m_treated;
-		struct	sockaddr_storage m_sockaddr;
-		socklen_t	m_addrlen;
+
+		std::string							m_request;
+		VirtualServer						*m_v_server;
+		int									m_socket;
+		bool 								m_received;
+		bool 								m_treated;
+		struct	sockaddr_storage 			m_sockaddr;
+		socklen_t							m_addrlen;
+		Request								m_data;
 };
 
 #endif
