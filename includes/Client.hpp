@@ -4,11 +4,6 @@
 # include <iostream>
 # include "VirtualServer.hpp"
 
-struct  t_request
-{
-
-};
-
 class	Client
 {
 	public:
@@ -18,7 +13,6 @@ class	Client
 		Client();
 		bool	fullHttpRequest();
 		std::string	m_request;
-		// t_request*	m_data;			
 		int                     			m_method;
 		char                        		m_path[1024];
 		int                  	    		m_protocol;
@@ -35,9 +29,6 @@ class	Client
 		bool m_treated;
 		struct	sockaddr_storage m_sockaddr;
 		socklen_t	m_addrlen;
-
-
-		//t_request	m_struct;
 };
 
 #endif
