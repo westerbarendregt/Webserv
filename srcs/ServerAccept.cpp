@@ -7,6 +7,9 @@
 
 Server::t_client *Server::accept(int v_server_socket) {
 	t_client	c;
+	// c.m_data->m_if_body = false;
+	// c.m_data->m_done = false;
+
 	if ((c.m_socket = ::accept(v_server_socket, reinterpret_cast<struct sockaddr *>(&c.m_sockaddr), &c.m_addrlen)) == -1) {
 		std::cout<<"accept: "<<strerror(errno)<<std::endl;
 		return 0; //can throw WOULDBLOCK
