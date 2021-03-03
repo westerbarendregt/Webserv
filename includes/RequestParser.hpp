@@ -6,7 +6,7 @@
 /*   By: wester <wester@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2021/02/23 12:17:47 by wester        #+#    #+#                 */
-/*   Updated: 2021/03/02 22:59:40 by wester        ########   odam.nl         */
+/*   Updated: 2021/03/03 09:24:31 by totartar      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 # include <stdbool.h>
 # include <vector>
 # include <string>
+# include <string.h> //memset
 # include <iostream>
 # include <algorithm>
 
