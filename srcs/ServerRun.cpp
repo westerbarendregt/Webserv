@@ -53,6 +53,7 @@ void	Server::run(){
 				//update response state
 				
 			}
+			// while (1);
 		}
 	}
 }
