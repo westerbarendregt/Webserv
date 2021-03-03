@@ -16,6 +16,8 @@
 #include <fcntl.h>
 
 
+
+
 void	Server::run(){
 	
 	struct timeval tv;
@@ -39,21 +41,35 @@ void	Server::run(){
 				else
 				{
 					this->receive(i);
-					//if fullHttpRequest
-					//	parse
-					//	if client.m_request.done
-					//		add to write_all
+					// if this->receive(i) > 0
+					// {
+					// 		if (!c->m_request.parsed) { //metadata parsed
+					// 			if (!fullMetadata()) // fullHttpRequest with better name
+					// 				continue ;
+					// 			RequestParser::Parse(*c);
+					// 			handleMetadata(*c); 
+					// 			//perform checks, lstat, detects chunk fields.. and update m_request_parse and c->m_request done if no body to expect
+					// 			//
+					// 		}
+					// 		if (c->m_request.done)
+					// 			handleRequest(); // either get resource or execute cgi, both populating the response and adding client_socket to write_all
+					// 		else
+					// 			handleBody(); // adds to body, updates necessary information, compares lenght of body with Content-Length header field
+					// 						// if chunk, appends to body and searches for end chunk
+					// 						//updates c->m_request.done when detects end of body
+					// }
+					// if we detect any errors that requires responding with an error page,
+					// we can call something that sets the response to the appropriate status page and add the client's socket to write_all
+					// it would also mark the request as done
 				}
 
 			}
 			else if (FD_ISSET(i, &this->m_write_fd)) {
 				std::cout<<"found write connection fd: "<<i<<std::endl;
-				this->handleRequest(i);
-				//reset request
-				//update response state
+				this->handleRequest(i); // to be replaced by this->Respond
+				//respond can close connection if the response is an error
 				
 			}
-			// while (1);
 		}
 	}
 }

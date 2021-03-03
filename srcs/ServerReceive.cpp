@@ -16,6 +16,7 @@
 #include <fcntl.h>
 #include "Error.hpp"
 
+
 void	Server::receive(int client_socket) {
 	char buf[1000]; // can have buf elsewhere
 
@@ -37,7 +38,7 @@ void	Server::receive(int client_socket) {
 	}
 	else
 	{
-		if (c->fullHttpRequest())
+		if (c->fullHttpRequest()) //  this whole if statement would be integrated elsewhere
 		{
 			std::cout<<c->m_request<<std::endl;
 			RequestParser::Parse(*c);
@@ -45,8 +46,6 @@ void	Server::receive(int client_socket) {
 			FD_SET(c->m_socket, &this->m_write_all);
 			std::cout<<"received full http request"<<std::endl;
 		}
-		//just to test
-		std::cout<<"---current request---"<<std::endl;
 	}
 }
 
