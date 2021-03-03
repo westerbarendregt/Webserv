@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include "RequestParser.hpp"
 
 #include <iostream>
 #include <stdio.h>
@@ -38,12 +39,14 @@ void	Server::receive(int client_socket) {
 	{
 		if (c->fullHttpRequest())
 		{
+			std::cout<<c->m_request<<std::endl;
+			RequestParser::Parse(*c);
+			RequestParser::Print(*c);
 			FD_SET(c->m_socket, &this->m_write_all);
 			std::cout<<"received full http request"<<std::endl;
 		}
 		//just to test
 		std::cout<<"---current request---"<<std::endl;
-		std::cout<<c->m_request<<std::endl;
 	}
 }
 

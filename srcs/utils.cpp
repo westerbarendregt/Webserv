@@ -116,3 +116,22 @@ uint16_t hostToNetworkShort(uint16_t hostshort) {
 		return hostshort;
 	return (hostshort & 0x00FF) << 8 | (hostshort & 0xFF00) >> 8;
 }
+
+int		ft_getline(std::string& total, std::string& line, int line_break) // make line_break 1 if you want it in, zero if you don't
+{
+	static size_t start;
+	size_t len;
+
+	if (total.find('\n', start) != std::string::npos)
+	{
+		len = total.find_first_of('\n', start) - start;
+		line = total.substr(start, len + line_break);
+		start = total.find_first_of('\n', start) + 1;
+		return 1;
+	}
+	else {
+		line = total.substr(start, total.size() - start);
+		start = 0;
+	}
+	return 0;
+}

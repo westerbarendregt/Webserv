@@ -2,10 +2,16 @@
 #include "Server.hpp"
 #include "Error.hpp"
 
-Client::Client() 
-	: m_v_server(0), m_socket(-1), m_request(""), m_received(false), m_treated(false), m_sockaddr(), m_addrlen(sizeof(m_sockaddr))
+Request::Request()
+	: m_method(-1), m_path(""), m_protocol(-1), m_content_length(0), m_headers(0), m_if_body(false), m_body(""), m_done(false) 
 {
+	for (int i = 0; i < 18; ++i)
+		m_headers.push_back("");
+}
 
+Client::Client() 
+	: m_request(""), m_v_server(0), m_socket(-1), m_received(false), m_treated(false), m_sockaddr(), m_addrlen(sizeof(m_sockaddr))
+{
 }
 
 bool	Client::fullHttpRequest() {
@@ -15,7 +21,7 @@ bool	Client::fullHttpRequest() {
 
 
 Client::Client(int socket) 
-	: m_v_server(0), m_socket(socket), m_request(""), m_received(false), m_sockaddr(), m_addrlen(sizeof(m_sockaddr))
+	: m_request(""), m_v_server(0), m_socket(socket), m_received(false), m_sockaddr(), m_addrlen(sizeof(m_sockaddr))
 {
 
 }
