@@ -1,21 +1,10 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        ::::::::            */
-/*   RequestParser.hpp                                  :+:    :+:            */
-/*                                                     +:+                    */
-/*   By: wester <wester@student.codam.nl>             +#+                     */
-/*                                                   +#+                      */
-/*   Created: 2021/02/23 12:17:47 by wester        #+#    #+#                 */
-/*   Updated: 2021/03/02 22:59:40 by wester        ########   odam.nl         */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef REQUESTPARSER_HPP
 # define REQUESTPARSER_HPP
 
 # include <stdbool.h>
 # include <vector>
 # include <string>
+#include <string.h>
 # include <iostream>
 # include <algorithm>
 
