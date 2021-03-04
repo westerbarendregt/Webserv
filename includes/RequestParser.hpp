@@ -1,21 +1,10 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        ::::::::            */
-/*   RequestParser.hpp                                  :+:    :+:            */
-/*                                                     +:+                    */
-/*   By: wester <wester@student.codam.nl>             +#+                     */
-/*                                                   +#+                      */
-/*   Created: 2021/02/23 12:17:47 by wester        #+#    #+#                 */
-/*   Updated: 2021/03/03 15:20:21 by wester        ########   odam.nl         */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef REQUESTPARSER_HPP
 # define REQUESTPARSER_HPP
 
 # include <stdbool.h>
 # include <vector>
 # include <string>
+#include <string.h>
 # include <iostream>
 # include <algorithm>
 
@@ -83,16 +72,16 @@ class RequestParser
 	{
 		std::string line;
 		
-		if (ft_getline(c.m_request, line, 0))
+		if (ft_getline(c.m_request_str, line, 0))
 		{
 			for (int i = 0; methods[i]; ++i){
 				if (!line.compare(0, line.find_first_of(BLANKS), methods[i])){
-					c.m_data.m_method = i;
-					size_t ret = line.copy(c.m_data.m_path, (line.find("HTTP") -1) -
+					c.m_request_data.m_method = i;
+					size_t ret = line.copy(c.m_request_data.m_path, (line.find("HTTP") -1) -
 					(line.find_first_of(BLANKS) + 1), line.find_first_of(BLANKS) + 1);
-					c.m_data.m_path[ret] = 0;
+					c.m_request_data.m_path[ret] = 0;
 					if (line.find(protocol) != std::string::npos){
-						c.m_data.m_protocol = HTTP1;
+						c.m_request_data.m_protocol = HTTP1;
 						return SUCCESS;
 					}
 				}
@@ -106,7 +95,7 @@ class RequestParser
 	{
 		std::string line;
 		
-		while (ft_getline(c.m_request, line, 0))
+		while (ft_getline(c.m_request_str, line, 0))
 		{
 			if (line[0] == 0)
 				return SUCCESS;
@@ -114,7 +103,7 @@ class RequestParser
 				line[j] = std::toupper(line[j]);
 			for (int i = 0; headers[i]; ++i){
 				if (line.find(headers[i]) != std::string::npos)
-					c.m_data.m_headers[i] = line.substr(line.find(": ") + 2, line.size() - (line.find(":") + 1));
+					c.m_request_data.m_headers[i] = line.substr(line.find(": ") + 2, line.size() - (line.find(":") + 1));
 			}
 		}
 		return SUCCESS;
@@ -125,16 +114,16 @@ class RequestParser
 		std::string line;
 		int ret = 1;
 		
-		c.m_data.m_if_body = true;
+		c.m_request_data.m_if_body = true;
 		while (ret){
-			ret = ft_getline(c.m_request, line, 1);
-			c.m_data.m_body.append(line);
+			ret = ft_getline(c.m_request_str, line, 1);
+			c.m_request_data.m_body.append(line);
 		}
-		if (c.m_data.m_body.size() == c.m_data.m_content_length)
-			c.m_data.m_done = true;
+		if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
+			c.m_request_data.m_done = true;
 		else 
-			c.m_data.m_done = false;
-		std::cout << "---------!!: " << c.m_data.m_body.size() << std::endl;
+			c.m_request_data.m_done = false;
+		std::cout << "---------!!: " << c.m_request_data.m_body.size() << std::endl;
 		return SUCCESS;
 	}
 	
@@ -150,19 +139,20 @@ class RequestParser
 
 	static void				CleanData(Client& c)
 	{
-		c.m_data.m_method = -1;
-		memset(c.m_data.m_path, 0, 1024);
-		c.m_data.m_protocol = -1;
-		c.m_data.m_content_length = 0;
-		c.m_data.m_headers.clear();
-		c.m_data.m_if_body = false;
-		c.m_data.m_body = "";
-		c.m_data.m_done = false;
+		c.m_request_data.m_method = -1;
+		memset(c.m_request_data.m_path, 0, 1024); //std::fill
+		c.m_request_data.m_protocol = -1;
+		c.m_request_data.m_content_length = 0;
+		c.m_request_data.m_headers.clear();
+		c.m_request_data.m_if_body = false;
+		c.m_request_data.m_body.clear();
+		c.m_request_data.m_done = false;
+		c.m_request_data.m_metadata_parsed = false;
 	}
   public:
 	static void		Print(Client& c)
 	{
-		switch (c.m_data.m_method)
+		switch (c.m_request_data.m_method)
 		{
 			case GET : std::cout << "method: " << "GET" << std::endl; 
 				break ;
@@ -175,25 +165,25 @@ class RequestParser
 			case DELETE : std::cout << "method: " << "DELETE" << std::endl;
 				break ;
 		}
-		switch (c.m_data.m_protocol)
+		switch (c.m_request_data.m_protocol)
 		{
 			case HTTP1 : std::cout << "protocol: " << "HTTP/1.1" << std::endl;
 				break ;
 		}
-		std::cout << "path: " << c.m_data.m_path << std::endl;
+		std::cout << "path: " << c.m_request_data.m_path << std::endl;
 		for (int i = 0; i < 18; ++i)
-			std::cout << headers[i] << ":" << c.m_data.m_headers[i] << std::endl;
-		std::cout << std::endl << "BODY-length: " << c.m_data.m_content_length << std::endl;
-		std::cout << "BODY:" << c.m_data.m_body << std::endl << std::endl;
-		if (c.m_data.m_done)
+			std::cout << headers[i] << ":" << c.m_request_data.m_headers[i] << std::endl;
+		std::cout << std::endl << "BODY-length: " << c.m_request_data.m_content_length << std::endl;
+		std::cout << "BODY:" << c.m_request_data.m_body << std::endl << std::endl;
+		if (c.m_request_data.m_done)
 			std::cout << "PARSING IS DONE" << std::endl;
 		else 
 			std::cout << "PARSING IS NOT FINISHED" << std::endl;
 	}
 	
-	static void		Parse(Client& c)
+	static void	Parse(Client& c)
 	{
-		if (c.m_data.m_if_body == true && c.m_data.m_done == false){
+		if (c.m_request_data.m_if_body == true && c.m_request_data.m_done == false){
 			if (GetBody(c))
 				return ErrorRequest(2);
 			return ;	
@@ -203,14 +193,21 @@ class RequestParser
 			return ErrorRequest(0);
 		if (GetHeaders(c))
 			return ErrorRequest(1);
-		if (c.m_data.m_headers[CONTENTLENGTH][0] != 0 && (c.m_data.m_method == POST || c.m_data.m_method == PUT))
+		if (c.m_request_data.m_headers[CONTENTLENGTH][0] != 0 && (c.m_request_data.m_method == POST || c.m_request_data.m_method == PUT))
 		{
-			c.m_data.m_content_length = ftAtoi(c.m_data.m_headers[CONTENTLENGTH].c_str());
+			c.m_request_data.m_content_length = ftAtoi(c.m_request_data.m_headers[CONTENTLENGTH].c_str());
 			if (GetBody(c))
 				return ErrorRequest(2);
 		}
 		else 
-			c.m_data.m_done = true;
+			c.m_request_data.m_done = true;
+	}
+
+	static	void	HandleBody(Client &) {
+ 			// adds to body, updates necessary information, compares lenght of body with Content-Length header field
+			// if chunk, appends to body and searches for end chunk
+			//updates c->m_request.done when detects end of body
+			// it would also mark the request as done if body is complete
 	}
 };
 
