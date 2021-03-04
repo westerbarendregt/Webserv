@@ -14,7 +14,25 @@ struct	Request
 		std::vector<std::string> 			m_headers;
 		bool								m_if_body;
 		std::string							m_body;
+		bool								m_metadata_parsed;
 		bool								m_done;
+		bool								m_chunked;
+		int									m_error;
+};
+
+struct	Response
+{
+		Response();
+		int                     			m_method;
+		char                        		m_path[1024];
+		int                  	    		m_protocol;
+		size_t								m_content_length;
+		std::vector<std::string> 			m_headers;
+		bool								m_if_body;
+		std::string							m_body;
+		bool								m_metadata_parsed;
+		bool								m_done;
+		int									m_error;
 };
 
 class	Client
@@ -22,22 +40,25 @@ class	Client
 	public:
 		friend class Server;
 		friend class RequestParser;
+		friend class RequestHandler;
 
 		explicit Client(VirtualServer *v_server, int socket);
 		Client(int socket);
 		Client();
-		bool	fullHttpRequest();
+		bool	fullMetaData();
 
 	private:
 
-		std::string							m_request;
+		std::string							m_request_str;
 		VirtualServer						*m_v_server;
 		int									m_socket;
 		bool 								m_received;
 		bool 								m_treated;
 		struct	sockaddr_storage 			m_sockaddr;
 		socklen_t							m_addrlen;
-		Request								m_data;
+		Request								m_request_data;
+		Response							m_reponse_data;
+		std::string							m_response_str;
 };
 
 #endif
