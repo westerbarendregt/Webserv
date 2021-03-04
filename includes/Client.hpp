@@ -16,6 +16,7 @@ struct	Request
 		std::string							m_body;
 		bool								m_metadata_parsed;
 		bool								m_done;
+		bool								m_chunked;
 		int									m_error;
 };
 

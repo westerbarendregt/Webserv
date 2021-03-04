@@ -27,7 +27,7 @@ int	Server::receive(int client_socket) {
 	int	nbytes = recv(client_socket, buf, sizeof(buf), 0);
 	const char *to_append = buf;
 	c->m_request_str.append(to_append);
-	if (nbytes <= 0){
+	if (nbytes <= 0){ // should we handle closing a connection in the ServerRun loop
 		if (nbytes == 0)
 			std::cout<<"closing connection "<<client_socket<<std::endl; //log
 		else
@@ -38,29 +38,3 @@ int	Server::receive(int client_socket) {
 	}
 	return nbytes;
 }
-
-//void	Server::read(t_client * c)
-//{
-//	char buf[1000]; // can have buf elsewhere
-//
-//	std::cout<<"reading... on "<<c->m_socket<<std::endl;
-//	memset(buf, 0, sizeof(buf));
-//	if (!c)
-//		throw(serverError("getClient ", "client not registered"));
-//	int	nbytes = recv(c->m_socket, buf, sizeof(buf), 0);
-//	const char *to_append = buf;
-//	c->m_request.append(to_append);
-//	if (nbytes <= 0){
-//		if (nbytes == 0)
-//			std::cout<<"closing connection "<<c->m_socket<<std::endl; //log
-//		else
-//			std::cout<<"recv: "<<strerror(errno)<<std::endl; //log
-//		::close(c->m_socket);
-//		FD_CLR(c->m_socket, &this->m_all_fd);
-//		this->removeClient(c->m_socket);
-//	}
-//	else {
-//		std::cout<<"---current request---"<<std::endl;
-//		std::cout<<c->m_request<<std::endl;
-//	}
-//}

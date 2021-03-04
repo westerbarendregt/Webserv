@@ -62,13 +62,12 @@ void	Server::run(){
 					 		else
 					 			RequestParser::HandleBody(*c);
 					 }
-					}
+				}
 			}
 			else if (FD_ISSET(i, &this->m_write_fd)) {
 				std::cout<<"found write connection fd: "<<i<<std::endl;
-				this->respond(i); // to be replaced by this->Respond
+				this->respond(i);
 				//can close connection if the response is an error
-				
 			}
 		}
 	}
