@@ -6,7 +6,7 @@
 /*   By: wester <wester@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2021/02/23 12:17:47 by wester        #+#    #+#                 */
-/*   Updated: 2021/03/02 22:59:40 by wester        ########   odam.nl         */
+/*   Updated: 2021/03/03 15:20:21 by wester        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -198,7 +198,7 @@ class RequestParser
 				return ErrorRequest(2);
 			return ;	
 		}
-		CleanData(c);	
+		CleanData(c);
 		if (GetFirstLine(c))
 			return ErrorRequest(0);
 		if (GetHeaders(c))
