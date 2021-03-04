@@ -25,7 +25,7 @@ std::string sputnbr(size_t n)
 	char	buf[20];
 	char	swap;
 
-	memset(buf, 0, 20);
+	memset(buf, 0, 20);//fill
 	end = 0;
 	if (!n)
 	{

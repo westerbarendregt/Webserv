@@ -22,10 +22,10 @@ SRCS=	$(SRC_DIR)/main.cpp \
 				$(SRC_DIR)/ServerRun.cpp \
 				$(SRC_DIR)/ServerReceive.cpp \
 				$(SRC_DIR)/ServerInit.cpp \
-				$(SRC_DIR)/ServerHandleRequest.cpp \
 				$(SRC_DIR)/ServerAccept.cpp \
 				$(SRC_DIR)/ServerRespond.cpp \
 				$(SRC_DIR)/Client.cpp \
+				$(SRC_DIR)/RequestHandler.cpp \
 
 OBJ			= $(SRCS:.cpp=.o)
 

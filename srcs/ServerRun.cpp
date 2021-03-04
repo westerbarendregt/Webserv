@@ -1,6 +1,7 @@
 #include "Server.hpp"
 #include "Error.hpp"
 #include "Client.hpp"
+#include "RequestParser.hpp"
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,38 +41,33 @@ void	Server::run(){
 					c = this->accept(i);
 				else
 				{
-					this->receive(i);
-					// if this->receive(i) > 0
-					// {
-					// 		if (!c->m_request.parsed) { //metadata parsed
-					// 			if (!fullMetadata()) // fullHttpRequest with better name
-					// 				continue ;
-					// 			RequestParser::Parse(*c);
-					// 			handleMetadata(*c); 
-					// 			//perform checks, lstat, detects chunk fields.. and update m_request_parse and c->m_request done if no body to expect
-					// 			//
-					// 		}
-					// 		if (c->m_request.done)
-					// 			handleRequest(); // either get resource or execute cgi, both populating the response and adding client_socket to write_all
-					// 		else
-					// 			handleBody(); // adds to body, updates necessary information, compares lenght of body with Content-Length header field
-					// 						// if chunk, appends to body and searches for end chunk
-					// 						//updates c->m_request.done when detects end of body
-					// }
-					// if we detect any errors that requires responding with an error page,
-					// we can call something that sets the response to the appropriate status page and add the client's socket to write_all
-					// it would also mark the request as done
-				}
+					if (this->receive(i) > 0) {
 
+					 		if (!c->m_request_data.m_metadata_parsed) {
+					 			if (!c->fullMetaData())
+					 				continue ;
+								std::cout<<"received full http request"<<std::endl;
+								// if (parse != error)
+								// 	this->handleMetadata(*c); 
+								// 	if error, flag the request as done, and as erroneous, so handle request can generate a error page.
+					 			RequestParser::Parse(*c);
+								RequestParser::Print(*c);
+					 			this->m_request_handler.handleMetadata(*c); 
+					 		}
+					 		if (c->m_request_data.m_done)
+							{
+					 			this->m_request_handler.handleRequest(*c);
+								FD_SET(c->m_socket, &this->m_write_all);
+							}
+					 		else
+					 			RequestParser::HandleBody(*c);
+					 }
+					}
 			}
 			else if (FD_ISSET(i, &this->m_write_fd)) {
 				std::cout<<"found write connection fd: "<<i<<std::endl;
-				this->handleRequest(i); // to be replaced by this->Respond
-				//respond
-				//reset request
-				//update response state
-				//Respond
-				//respond can close connection if the response is an error
+				this->respond(i); // to be replaced by this->Respond
+				//can close connection if the response is an error
 				
 			}
 		}
