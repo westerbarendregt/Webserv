@@ -38,15 +38,15 @@ void	Server::run(){
 				v_server = getVirtualServer(i); //find corresponding v_server
 				std::cout<<"found read connection fd: "<<i<<std::endl;
 				if (v_server)
-					c = this->accept(i);
+					this->accept(i);
 				else
 				{
-					if (this->receive(i) > 0) {
-
+					c = getClient(i);
+					if (this->receive(c) > 0) {
 					 		if (!c->m_request_data.m_metadata_parsed) {
 					 			if (!c->fullMetaData())
 					 				continue ;
-								std::cout<<"received full http request"<<std::endl;
+								std::cout<<"received full metadata"<<std::endl;
 								// if (parse != error)
 								// 	this->handleMetadata(*c); 
 								// 	if error, flag the request as done, and as erroneous, so handle request can generate a error page.
@@ -58,6 +58,7 @@ void	Server::run(){
 							{
 					 			this->m_request_handler.handleRequest(*c);
 								FD_SET(c->m_socket, &this->m_write_all);
+								c->m_request_str.clear();
 							}
 					 		else
 					 			RequestParser::HandleBody(*c);

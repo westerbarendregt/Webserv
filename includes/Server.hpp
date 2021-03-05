@@ -29,9 +29,9 @@ class	Server
 		void	run();
 		void	init();
 		void	close();
-		int		receive(int socket);
+		int		receive(t_client *c);
 		void	respond(int client_socket);
-		t_client *accept(int v_server_socket); // looks for listeners based on the socket, if found accepts it, if not just returns
+		void	accept(int v_server_socket);
 		void	addClient();
 		void	connectVirtualServer(t_v_server &v_server);
 		void	removeClient(int client_socket);

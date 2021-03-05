@@ -13,6 +13,7 @@ void	Server::init(){
 	FD_ZERO(&this->m_read_all);
 	FD_ZERO(&this->m_write_fd);
 	FD_ZERO(&this->m_read_fd);
+	this->m_range_fd = 0;
 	for (t_v_server_map::iterator it = this->m_v_server_map.begin(); 
 			it != this->m_v_server_map.end(); ++it) {
 		it->second[0].init(); // start default virtual server
@@ -24,8 +25,6 @@ void	Server::init(){
 			it->second[server_block].m_sockaddr = it->second[0].m_sockaddr;
 		}
 		std::cout<<"v_server port "<<it->first<<" listens on socket "<<it->second[0].m_socket<<std::endl;
-		std::cout<<it->second[0].m_sockaddr.sin_addr.s_addr<<std::endl;
-		std::cout<<it->second[0].m_sockaddr.sin_port<<std::endl;
 	}
 }
 
