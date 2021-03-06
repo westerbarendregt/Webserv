@@ -2,6 +2,8 @@
 
 void	RequestHandler::handleMetadata(t_client &c) {
 	std::cout<<"handling metadata.."<<std::endl;
+	//selecting a virtual server for based on client's request
+	//
 	c.m_request_data.m_done = true;
 }
 

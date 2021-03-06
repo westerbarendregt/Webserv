@@ -20,6 +20,9 @@ class	Server
 		typedef	VirtualServer						t_v_server;
 		typedef	RequestHandler						t_request_handler;
 		typedef std::map<t_ip_port, std::vector<t_v_server> > t_v_server_map;
+		//typedef	int									t_port;
+		//typedef std::map<t_ip_port, std::vector<t_v_server> > t_v_server_port;
+		//typedef std::map<t_port, t_server_port> t_v_server_map;
 		typedef std::map<int, t_client> 	t_client_map;
 
 		friend class RequestHandler;

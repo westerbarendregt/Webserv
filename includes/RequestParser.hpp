@@ -4,11 +4,7 @@
 # include <stdbool.h>
 # include <vector>
 # include <string>
-<<<<<<< HEAD
-# include <string.h> //memset
-=======
 #include <string.h>
->>>>>>> fixClientConnection
 # include <iostream>
 # include <algorithm>
 
