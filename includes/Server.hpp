@@ -8,6 +8,7 @@
 #include "Conf.hpp"
 #include "VirtualServer.hpp"
 #include "Client.hpp"
+#include "RequestHandler.hpp"
 
 class	Server
 {
@@ -17,19 +18,21 @@ class	Server
 		typedef	Client								t_client;
 		typedef	std::string							t_ip_port;
 		typedef	VirtualServer						t_v_server;
+		typedef	RequestHandler						t_request_handler;
 		typedef std::map<t_ip_port, std::vector<t_v_server> > t_v_server_map;
 		typedef std::map<int, t_client> 	t_client_map;
+
+		friend class RequestHandler;
 
 		Server(char const *path);
 		~Server();
 		void	run();
 		void	init();
 		void	close();
-		void	receive(int socket);
-		void	respond(t_client &c);
-		t_client *accept(int v_server_socket); // looks for listeners based on the socket, if found accepts it, if not just returns
+		int		receive(t_client *c);
+		void	respond(int client_socket);
+		void	accept(int v_server_socket);
 		void	addClient();
-		void	handleRequest(int socket);
 		void	connectVirtualServer(t_v_server &v_server);
 		void	removeClient(int client_socket);
 		t_v_server	*getVirtualServer(int v_server_socket);
@@ -43,6 +46,7 @@ class	Server
 	private:
 			t_v_server_map	m_v_server_map;
 			t_client_map	m_client_map;
+			t_request_handler	m_request_handler;
 };
 
 #endif
