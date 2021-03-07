@@ -1,24 +1,26 @@
-#include "Server.hpp"
 #include "ConfigParser.hpp"
+#include "Server.hpp"
 
 Server::Server(char const *path) {
-	ConfigParser::parse(path, this->m_v_server_map);
+	ConfigParser::parse(path, this->m_v_server_all);
 }
 
-Server::t_v_server	*Server::getVirtualServer(int v_server_socket) {
-	for (t_v_server_map::iterator it = this->m_v_server_map.begin(); it != this->m_v_server_map.end(); ++it) {
-		if (it->second[0].m_socket == v_server_socket)
-			return (&it->second[0]);
+Server::t_v_context *Server::getVirtualContext(int port) {
+	t_v_server_all::iterator	found;
+
+	if ((found = this->m_v_server_all.find(port)) != this->m_v_server_all.end()) {
+		return &found->second;
 	}
-	return (0);
+	return 0;
 }
 
-Server::t_v_server	*Server::getVirtualServer(unsigned short port) {
-	for (t_v_server_map::iterator it = this->m_v_server_map.begin(); it != this->m_v_server_map.end(); ++it) {
-		if (it->second[0].m_sockaddr.sin_port == port)
-			return (&it->second[0]);
+Server::t_v_server	*Server::getVirtualServer(int socket) {
+	t_v_server	*found = 0;
+	for (t_v_server_all::iterator port = this->m_v_server_all.begin(); port != this->m_v_server_all.end(); ++port) {
+		if ((found = port->second.getVirtualServer(socket)))
+			return found;
 	}
-	return (0);
+	return 0;
 }
 
 Server::t_client	*Server::getClient(int client_socket) {

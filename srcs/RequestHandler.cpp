@@ -1,10 +1,21 @@
 #include "RequestHandler.hpp"
+#include "RequestParser.hpp" // just for enums
+#include "Server.hpp"
 
 void	RequestHandler::handleMetadata(t_client &c) {
 	std::cout<<"handling metadata.."<<std::endl;
-	//selecting a virtual server for based on client's request
-	//
-	c.m_request_data.m_done = true;
+	// http 1.1 request without a host header should return error 400
+	if (c.m_request_data.m_headers[HOST].empty()) {
+		c.m_request_data.m_error = 400;
+		c.m_request_data.m_done = true;
+		return ;
+	}
+	t_v_server	*v_server;
+	//selecting a virtual server based on client request's host header
+	if (!(v_server = c.m_v_context->getVirtualServer(c.m_request_data.m_headers[HOST]))) {
+		//invalid host
+		std::cout<<"invalid host"<<std::endl;
+	}
 }
 
 void	RequestHandler::handleRequest(t_client &c) {

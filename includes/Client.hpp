@@ -36,14 +36,15 @@ struct	Response
 class	Client
 {
 	public:
-		typedef	Request		t_request_data;
-		typedef	Response	t_response_data;
+		typedef	Request							t_request_data;
+		typedef	Response						t_response_data;
+		typedef VirtualServer					t_v_server;
+		typedef VirtualServer::t_v_server_conf	t_v_server_conf;
+		typedef VirtualContext					t_v_context;
 		friend class Server;
 		friend class RequestParser;
 		friend class RequestHandler;
 
-		explicit Client(VirtualServer *v_server, int socket);
-		Client(int socket);
 		Client();
 		bool	fullMetaData();
 	private:
@@ -51,6 +52,7 @@ class	Client
 		std::string							m_response_str;
 		t_request_data 						m_request_data;
 		t_response_data						m_response_data;
+		t_v_context							*m_v_context;
 		int									m_socket;
 		struct	sockaddr_storage 			m_sockaddr;
 		socklen_t							m_addrlen;

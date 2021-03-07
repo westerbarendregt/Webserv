@@ -22,7 +22,6 @@
 void	Server::run(){
 	
 	struct timeval tv;
-	t_v_server	*v_server;
 	t_client 	*c;
 
 	for (;;) {//run
@@ -35,41 +34,37 @@ void	Server::run(){
 		std::cout<<"listening..."<<std::endl;
 		for (int i =0; i <= this->m_range_fd ; ++i){
 			if (FD_ISSET(i, &this->m_read_fd)) {
-				v_server = getVirtualServer(i); //find corresponding v_server
 				std::cout<<"found read connection fd: "<<i<<std::endl;
-				if (v_server)
-					this->accept(i);
-				else
-				{
-					c = getClient(i);
-					if (this->receive(c) > 0) {
-					 		if (!c->m_request_data.m_metadata_parsed) {
-					 			if (!c->fullMetaData())
-					 				continue ;
-								std::cout<<"received full metadata"<<std::endl;
-								// if (parse != error)
-								// 	this->handleMetadata(*c); 
-								// 	if error, flag the request as done, and as erroneous, so handle request can generate a error page.
-					 			RequestParser::Parse(*c);
-								RequestParser::Print(*c);
-					 			this->m_request_handler.handleMetadata(*c); 
-					 		}
-					 		if (c->m_request_data.m_done)
-							{
-					 			this->m_request_handler.handleRequest(*c);
-								FD_SET(c->m_socket, &this->m_write_all);
-								c->m_request_str.clear();
-							}
-					 		else
-					 			RequestParser::HandleBody(*c);
-					 }
-				}
+				if (this->accept(i) == SUCCESS)
+					continue ;
+				c = getClient(i);
+				if (this->receive(c) > 0) {
+				 	if (!c->m_request_data.m_metadata_parsed) {
+				 		if (!c->fullMetaData())
+				 			continue ;
+						std::cout<<"received full metadata"<<std::endl;
+						// if (parse != error)
+						// 	this->handleMetadata(*c); 
+						// 	if error, flag the request as done, and as erroneous, so handle request can generate a error page.
+				 		RequestParser::Parse(*c);
+						RequestParser::Print(*c);
+				 		this->m_request_handler.handleMetadata(*c); 
+				 	}
+				 	if (c->m_request_data.m_done)
+					{
+				 		this->m_request_handler.handleRequest(*c);
+						FD_SET(c->m_socket, &this->m_write_all);
+						c->m_request_str.clear();
+					}
+				 	else
+				 		RequestParser::HandleBody(*c);
+				 }
 			}
 			else if (FD_ISSET(i, &this->m_write_fd)) {
 				std::cout<<"found write connection fd: "<<i<<std::endl;
 				this->respond(i);
 				//can close connection if the response is an error
 			}
-		}
 	}
+}
 }

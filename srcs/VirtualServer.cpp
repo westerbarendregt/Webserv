@@ -10,7 +10,12 @@
 #include "Server.hpp"
 
 
-VirtualServer::VirtualServer(t_v_server_conf conf) : m_configs(conf) {
+VirtualServer::VirtualServer(std::string host, t_v_server_conf conf) 
+: m_host(host),
+m_socket(-1),
+m_configs(conf),
+m_sockaddr() 
+{
 	memset(&this->m_sockaddr, 0, sizeof(this->m_sockaddr));//fill
 }
 
@@ -38,6 +43,44 @@ void	VirtualServer::init() {
 		throw(serverError("setsockopt", strerror(errno)));
 }
 
-void	VirtualServer::close() {
-	::close(this->m_socket);
+VirtualServer::t_v_server_conf	VirtualServer::*getVServerConf(std::string &) {
+	return 0;
+}
+
+//VirtualContext
+
+
+VirtualContext::VirtualContext() 
+: m_port(-1), 
+m_v_server_host(),  
+m_catch_all(0)
+{}
+
+void	VirtualContext::setCatchAll() {
+	for (t_v_server_host::iterator host = this->m_v_server_host.begin();
+			host != this->m_v_server_host.end(); ++host) {
+		if (!host->first.compare(0, 7, "0.0.0.0")) {
+			this->m_catch_all = &host->second[0];
+			return ;
+		}
+	}
+}
+
+VirtualContext::t_v_server *VirtualContext::getVirtualServer(std::string &host) {
+	(void)host;
+	return 0;
+}
+
+VirtualContext::t_v_server *VirtualContext::getVirtualServer(int socket) {
+	if (this->m_catch_all) {
+		if (this->m_catch_all->m_socket)
+			return this->m_catch_all;
+		return 0;
+	}
+	for (t_v_server_host::iterator host = this->m_v_server_host.begin();
+			host != this->m_v_server_host.end(); ++host) {
+		if (host->second[0].m_socket == socket)
+			return &host->second[0];
+	}
+	return 0;
 }

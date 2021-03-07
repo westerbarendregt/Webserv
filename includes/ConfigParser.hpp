@@ -10,6 +10,7 @@
 # include "Server.hpp"
 # include "Conf.hpp"
 # include "WebServer.hpp"
+# include "utils.hpp"
 
 
 #define BLANKS "\t\v "
@@ -57,32 +58,40 @@ class	ConfigParser
 	public:
 		typedef Server::t_v_server_conf		t_v_server_conf;
 		typedef Server::t_v_server			t_v_server;
-		typedef Server::t_v_server_map			t_v_server_map;
+		typedef Server::t_v_server_all		t_v_server_all;
 		typedef Server::t_ip_port			t_ip_port;
+		typedef Server::t_v_context			t_v_context;
+		typedef Server::t_v_server_host		t_v_server_host;
 		typedef	std::queue<t_v_server_conf>	t_config_tokens;
 		typedef	std::vector<std::string>			t_fields;
 
 
-	static	t_ip_port convertAddr(std::string const &addr) {
-		size_t	end = addr.find_first_of(":", 0);
-		if (end != std::string::npos)
-			return addr;
-		t_ip_port	full_addr("0.0.0.0:");
-		full_addr.insert(full_addr.end(), addr.begin(), addr.end());
-		return full_addr;
+	static void	setIpPort(std::string &host, int &port) {
+		size_t	end = host.find_first_of(":", 0);
+		if (end == std::string::npos) {
+			host.insert(0, "0.0.0.0:");
+			port = ftAtoi(host.substr(8, host.size()).c_str());
+		}
+		else {
+			port = ftAtoi(host.substr(end + 1, host.size()).c_str());
+		}
 	}
-	static	void	convertTokens(t_config_tokens &tokens, t_v_server_map &v_server_map) {
+
+	static	void	convertTokens(t_config_tokens &tokens, t_v_server_all &v_server_all) {
 		t_v_server_conf	conf;
+		int				port;
 		while (!tokens.empty()) {
 			conf = tokens.front();
-			std::string &addr = conf.m_directives["listen"];
-			addr = convertAddr(addr);
-			v_server_map[addr].push_back(t_v_server(conf));
+			std::string &host = conf.m_directives["listen"];
+			setIpPort(host, port);
+			//add check for invalid ip:port
+			v_server_all[port].m_v_server_host[host].push_back(t_v_server(host, conf));
+			v_server_all[port].m_port = port;
 			tokens.pop();
 		}
 	}
 
-	static void	parse(char const *path, t_v_server_map &v_server_map) { 
+	static void	parse(char const *path, t_v_server_all &v_server_all) { 
 
 		t_fields fields(2);
 		t_config_tokens	tokens;
@@ -105,8 +114,8 @@ class	ConfigParser
 		if (tokens.empty())
 			throw(parseError(path, "empty file"));
 		file.close();
-		convertTokens(tokens, v_server_map);
-		printVirtualServerConf(v_server_map);
+		convertTokens(tokens, v_server_all);
+		printVirtualContext(v_server_all);
 	}
 
 	class parseError : public std::exception {
@@ -125,25 +134,33 @@ class	ConfigParser
 			std::string _error;
 	};
 
-	//debug functions to print convertedTokens
-	static void	printVirtualServerConf(t_v_server_map &v_server_map) {
-		for (t_v_server_map::iterator ip_port = v_server_map.begin() ;
-				ip_port != v_server_map.end(); ++ip_port) {
-			std::cout <<"---"<<ip_port->first<<"----"<<std::endl;
-			for (size_t i = 0; i < ip_port->second.size(); ++i){
-				t_v_server_conf &t = ip_port->second[i].m_configs;
-				std::cout << "\tSERVER"<<std::endl;
-				for (t_v_server_conf::t_directives::iterator it = t.m_directives.begin(); 
-						it != t.m_directives.end(); ++it) {
-					std::cout<<"\t\t"<<it->first<<" "<<it->second<<std::endl;
-				}
-				for (t_v_server_conf::t_routes::iterator path = t.m_routes.begin(); 
-						path != t.m_routes.end(); path++) {
-					std::cout << "\t\tROUTE "<<path->first<<std::endl;
-					for (t_v_server_conf::t_directives::iterator path_directives = path->second.begin()
-							; path_directives != path->second.end();
-							++path_directives)
-						std::cout<<"\t\t\t"<<path_directives->first<<" "<<path_directives->second<<std::endl;
+	static void	printVirtualContext(t_v_server_all &v_server_all) {
+		for (t_v_server_all::iterator port = v_server_all.begin() ;
+				port != v_server_all.end(); ++port) {
+			std::cout <<"---"<<port->first<<"----"<<std::endl;
+			t_v_context& v_context = port->second;
+			std::cout <<"\tport:"<<v_context.m_port<<std::endl;
+			t_v_server_host & v_server_host = v_context.m_v_server_host;
+			for (t_v_server_host::iterator host = v_server_host.begin()
+					; host != v_server_host.end(); ++host){
+
+				std::cout << "\t\t---"<<host->first<<"---"<<std::endl;
+				for (size_t	i = 0; i < host->second.size(); ++i)
+				{
+					t_v_server_conf &c = host->second[i].m_configs;
+					std::cout << "\t\tSERVER"<<std::endl;
+					for (t_v_server_conf::t_directives::iterator it = c.m_directives.begin(); 
+							it != c.m_directives.end(); ++it) {
+						std::cout<<"\t\t\t"<<it->first<<" "<<it->second<<std::endl;
+					}
+					for (t_v_server_conf::t_routes::iterator path = c.m_routes.begin(); 
+							path != c.m_routes.end(); path++) {
+						std::cout << "\t\t\tROUTE "<<path->first<<std::endl;
+						for (t_v_server_conf::t_directives::iterator path_directives = path->second.begin()
+								; path_directives != path->second.end();
+								++path_directives)
+							std::cout<<"\t\t\t\t"<<path_directives->first<<" "<<path_directives->second<<std::endl;
+					}
 				}
 			}
 		}
