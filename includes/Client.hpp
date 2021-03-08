@@ -8,7 +8,7 @@ struct	Request
 {
 		Request();
 		int                     			m_method;
-		char                        		m_path[1024];
+		std::string							m_path;
 		int                  	    		m_protocol;
 		size_t								m_content_length;
 		std::vector<std::string> 			m_headers;
@@ -47,6 +47,15 @@ class	Client
 		Client();
 		bool	fullMetaData();
 
+		void		testingRequest(std::string str){
+			m_request_str = str;
+		}
+		int									testGetError(){
+			return m_request_data.m_error;
+		}
+		Request&							getRequest(){
+			return m_request_data;						
+		}
 	private:
 
 		std::string							m_request_str;

@@ -11,7 +11,8 @@
 # include "Client.hpp"
 # include "utils.hpp"
 
-#define BLANKS "\t\v "
+#define BLANKS "\t\v\n "
+#define CHUNK  "\r\n"
 
 class Client;
 
@@ -77,70 +78,79 @@ class RequestParser
 			for (int i = 0; methods[i]; ++i){
 				if (!line.compare(0, line.find_first_of(BLANKS), methods[i])){
 					c.m_request_data.m_method = i;
-					size_t ret = line.copy(c.m_request_data.m_path, (line.find("HTTP") -1) -
-					(line.find_first_of(BLANKS) + 1), line.find_first_of(BLANKS) + 1);
-					c.m_request_data.m_path[ret] = 0;
+					int first = line.find_first_of(' ') + 1;
+					int last = line.find_last_of(' ');
+					if (last != line.find_first_of(' ', first)){
+						c.m_request_data.m_error = 404; // no whitespaces aloud in startline except two seperating single space
+						return ERROR;
+					}
+					c.m_request_data.m_path = line.substr(first, last - first);
+					// size_t ret = line.copy(c.m_request_data.m_path, (line.find("HTTP") -1) -
+					// (line.find_first_of(BLANKS) + 1), line.find_first_of(BLANKS) + 1);
+					// c.m_request_data.m_path[ret] = 0;
 					if (line.find(protocol) != std::string::npos){
 						c.m_request_data.m_protocol = HTTP1;
 						return SUCCESS;
 					}
+					c.m_request_data.m_error = 400; // Bad Request (not HTTP/1.1)
 				}
 			}
-			return ERROR;    
+			c.m_request_data.m_error = 501; // method not implemented (or no method found)
+			return ERROR;
 		}
+		c.m_request_data.m_error = 400; // Bad Request (not HTTP/1.1)
 		return ERROR;
 	}
 	
 	static int				GetHeaders(Client& c)
 	{
 		std::string line;
-		
+		bool first = true;
+
 		while (ft_getline(c.m_request_str, line, 0))
 		{
+			if (ft_compare(line[0], (char*)BLANKS)){
+				c.m_request_data.m_error = 400; // Bad request (blanks between start line and first header)
+				return ERROR;
+			}
 			if (line[0] == 0)
 				return SUCCESS;
-			for (int j = 0; line[j] != ':' && line[j]; ++j)
+			first = false;
+			for (int j = 0; line[j] != ':' && line[j]; ++j){
 				line[j] = std::toupper(line[j]);
+				if (ft_compare(line[j], (char*)BLANKS)){
+					c.m_request_data.m_error = 400; // Bad request (blanks before colon)
+					return ERROR;
+				}
+			}
 			for (int i = 0; headers[i]; ++i){
-				if (line.find(headers[i]) != std::string::npos)
-					c.m_request_data.m_headers[i] = line.substr(line.find(": ") + 2, line.size() - (line.find(":") + 1));
+				if (line.find(headers[i]) != std::string::npos){
+					std::string header = line.substr(line.find(':') + 1, line.size() - (line.find(":") + 1));
+					size_t start = header.find_first_not_of(BLANKS);
+					size_t len = (header.find_last_not_of(BLANKS) + 1) - start;
+					c.m_request_data.m_headers[i] = header.substr(start, len); //trimming start and end of whitespaces
+				}
 			}
 		}
 		return SUCCESS;
 	}
 	
-	static int				GetBody(Client& c)
-	{
-		std::string line;
-		int ret = 1;
-		
-		c.m_request_data.m_if_body = true;
-		while (ret){
-			ret = ft_getline(c.m_request_str, line, 1);
-			c.m_request_data.m_body.append(line);
-		}
-		if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
-			c.m_request_data.m_done = true;
-		else 
-			c.m_request_data.m_done = false;
-		std::cout << "---------!!: " << c.m_request_data.m_body.size() << std::endl;
-		return SUCCESS;
-	}
 	
-	static void				ErrorRequest(int line)
+	static int				ErrorRequest(int line)
 	{
 		if (line == 0)
-			throw "Error on Request line 1";
+			std::cout <<  "Error on Request line 1" << std::endl;
 		if (line == 1)
-			throw "Error with Request headers";
+			std::cout <<  "Error with Request headers" << std::endl;
 		if (line == 2)
-			throw "Error with Body";
+			std::cout <<  "Error with Body" << std::endl;
+		return ERROR;
 	}
 
 	static void				CleanData(Client& c)
 	{
 		c.m_request_data.m_method = -1;
-		memset(c.m_request_data.m_path, 0, 1024); //std::fill
+		c.m_request_data.m_path.clear();
 		c.m_request_data.m_protocol = -1;
 		c.m_request_data.m_content_length = 0;
 		c.m_request_data.m_headers.clear();
@@ -148,8 +158,88 @@ class RequestParser
 		c.m_request_data.m_body.clear();
 		c.m_request_data.m_done = false;
 		c.m_request_data.m_metadata_parsed = false;
+		c.m_request_data.m_chunked = false;
+		c.m_request_data.m_error = 0;
 	}
+
+	static void				CheckHeaderData(Client& c)
+	{
+		// std::cout << "say hi \n"  << "hier: " << c.m_request_data.m_headers[TRANSFERENCODING] << std::endl;
+		c.m_request_data.m_content_length = ftAtoi(c.m_request_data.m_headers[CONTENTLENGTH].c_str());
+		if (c.m_request_data.m_headers[TRANSFERENCODING].find("chunked") != std::string::npos){
+			c.m_request_data.m_chunked = true;
+			c.m_request_data.m_if_body = true;
+		}
+		if (c.m_request_data.m_content_length > 0)
+			c.m_request_data.m_if_body = true;
+	}
+
+	static bool					ChunkedData(Client& c)
+	{
+		std::string line;
+		int ret = 1;
+
+		std::cout << c.m_request_str << std::endl;
+		if (ft_getline(c.m_request_str, line, 1))
+		{
+			std::cout << "hier: "<< line << std::endl;
+			size_t current_chunk_size = ftAtoi(line.c_str());
+			std::cout << "hier!!!!!!!!!" << current_chunk_size << std::endl;
+			if (current_chunk_size == 0)
+			{
+				c.m_request_data.m_done = true;
+				if (c.m_request_data.m_body.size() != c.m_request_data.m_content_length)
+					return SUCCESS;
+				return ERROR;
+			}
+			if (line.find(CHUNK) != std::string::npos)
+			{
+				c.m_request_data.m_content_length += current_chunk_size;
+				while (ret)
+				{
+					ret = ft_getline(c.m_request_str, line, 1);
+					if (line.find(CHUNK) != std::string::npos){
+						c.m_request_data.m_body.append(line.substr(0, line.size() - 2));
+						std::cout << "size:" << c.m_request_data.m_body.size() << "   other:" << c.m_request_data.m_content_length << std::endl;
+						if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
+							return SUCCESS;
+						std::cout << "hier\n";
+						return ERROR;
+					}
+					c.m_request_data.m_body.append(line);
+				}
+			}
+		}
+			std::cout << "hallo\n";
+		return ERROR;
+	}
+
   public:
+	static int				GetBody(Client& c)
+	{
+		std::string line;
+		int ret = 1;
+
+		std::cout << "are we chunking?" << std::endl;
+		if (c.m_request_data.m_chunked == true)
+		{
+			if (ChunkedData(c))
+				return ERROR;
+			return SUCCESS;
+		}
+		else if (c.m_request_data.m_chunked == false){
+			while (ret){
+				ret = ft_getline(c.m_request_str, line, 1);
+				c.m_request_data.m_body.append(line);
+			}
+		}
+		if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
+			c.m_request_data.m_done = true;
+		else 
+			c.m_request_data.m_done = false;
+		return SUCCESS;
+	}
+
 	static void		Print(Client& c)
 	{
 		switch (c.m_request_data.m_method)
@@ -181,26 +271,23 @@ class RequestParser
 			std::cout << "PARSING IS NOT FINISHED" << std::endl;
 	}
 	
-	static void	Parse(Client& c)
+	static int		Parse(Client& c)
 	{
-		if (c.m_request_data.m_if_body == true && c.m_request_data.m_done == false){
-			if (GetBody(c))
-				return ErrorRequest(2);
-			return ;	
-		}
 		CleanData(c);
+		// c.m_request_data.m_metadata_parsed == true;
 		if (GetFirstLine(c))
 			return ErrorRequest(0);
 		if (GetHeaders(c))
 			return ErrorRequest(1);
-		if (c.m_request_data.m_headers[CONTENTLENGTH][0] != 0 && (c.m_request_data.m_method == POST || c.m_request_data.m_method == PUT))
+		CheckHeaderData(c);
+		if ((c.m_request_data.m_if_body || c.m_request_data.m_chunked ) && (c.m_request_data.m_method == POST || c.m_request_data.m_method == PUT))
 		{
-			c.m_request_data.m_content_length = ftAtoi(c.m_request_data.m_headers[CONTENTLENGTH].c_str());
 			if (GetBody(c))
 				return ErrorRequest(2);
 		}
 		else 
 			c.m_request_data.m_done = true;
+		return SUCCESS;
 	}
 
 	static	void	HandleBody(Client &) {

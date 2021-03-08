@@ -135,3 +135,11 @@ int		ft_getline(std::string& total, std::string& line, int line_break) // make l
 	}
 	return 0;
 }
+
+bool	ft_compare(char c, char *str)
+{
+	for (int i = 0; str[i]; ++i)
+		if (str[i] == c)
+			return true;
+	return false;
+}

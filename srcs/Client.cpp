@@ -1,6 +1,6 @@
-#include "Client.hpp"
-#include "Server.hpp"
-#include "Error.hpp"
+#include "../includes/Client.hpp"
+#include "../includes/Server.hpp"
+#include "../includes/Error.hpp"
 
 Request::Request()
 	: m_method(-1), m_path(""), m_protocol(-1), m_content_length(0), m_headers(0), m_if_body(false), m_body(""), m_done(false) 

@@ -16,9 +16,6 @@
 #include <exception>
 #include <fcntl.h>
 
-
-
-
 void	Server::run(){
 	
 	struct timeval tv;
@@ -54,13 +51,13 @@ void	Server::run(){
 								RequestParser::Print(*c);
 					 			this->m_request_handler.handleMetadata(*c); 
 					 		}
+					 		if (!c->m_request_data.m_done)
+					 			RequestParser::GetBody(*c);
 					 		if (c->m_request_data.m_done)
 							{
 					 			this->m_request_handler.handleRequest(*c);
 								FD_SET(c->m_socket, &this->m_write_all);
 							}
-					 		else
-					 			RequestParser::HandleBody(*c);
 					 }
 				}
 			}
