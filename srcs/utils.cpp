@@ -3,6 +3,7 @@
 #include <unistd.h>//size_t
 #include <stdint.h>
 #include <limits.h>
+#include <iostream>
 
 static size_t		write_reverse(size_t n, char *buf)
 {
@@ -117,9 +118,8 @@ uint16_t hostToNetworkShort(uint16_t hostshort) {
 	return (hostshort & 0x00FF) << 8 | (hostshort & 0xFF00) >> 8;
 }
 
-int		ft_getline(std::string& total, std::string& line, int line_break) // make line_break 1 if you want it in, zero if you don't
+int		ft_getline(std::string& total, std::string& line, int line_break, size_t& start) // make line_break 1 if you want it in, zero if you don't
 {
-	static size_t start;
 	size_t len;
 
 	if (total.find('\n', start) != std::string::npos)
@@ -133,6 +133,7 @@ int		ft_getline(std::string& total, std::string& line, int line_break) // make l
 		line = total.substr(start, total.size() - start);
 		start = 0;
 	}
+		std::cout << "found" << std::endl;
 	return 0;
 }
 

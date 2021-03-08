@@ -39,7 +39,7 @@ void	Server::run(){
 				else
 				{
 					if (this->receive(i) > 0) {
-
+						std::cout << "---------------"<< std::endl;
 					 		if (!c->m_request_data.m_metadata_parsed) {
 					 			if (!c->fullMetaData())
 					 				continue ;
@@ -51,7 +51,7 @@ void	Server::run(){
 								RequestParser::Print(*c);
 					 			this->m_request_handler.handleMetadata(*c); 
 					 		}
-					 		if (!c->m_request_data.m_done)
+					 		else if (!c->m_request_data.m_done)
 					 			RequestParser::GetBody(*c);
 					 		if (c->m_request_data.m_done)
 							{
@@ -63,7 +63,10 @@ void	Server::run(){
 			}
 			else if (FD_ISSET(i, &this->m_write_fd)) {
 				std::cout<<"found write connection fd: "<<i<<std::endl;
+				// this->m_request_handler.handleRequest(*c);
+				RequestParser::ResetClient(*c);
 				this->respond(i);
+				// truncate start if not full response has been send
 				//can close connection if the response is an error
 			}
 		}

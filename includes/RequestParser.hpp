@@ -73,15 +73,15 @@ class RequestParser
 	{
 		std::string line;
 		
-		if (ft_getline(c.m_request_str, line, 0))
+		if (ft_getline(c.m_request_str, line, 0, c.m_request_data.m_start))
 		{
 			for (int i = 0; methods[i]; ++i){
 				if (!line.compare(0, line.find_first_of(BLANKS), methods[i])){
 					c.m_request_data.m_method = i;
 					int first = line.find_first_of(' ') + 1;
 					int last = line.find_last_of(' ');
-					if (last != line.find_first_of(' ', first)){
-						c.m_request_data.m_error = 404; // no whitespaces aloud in startline except two seperating single space
+					if (line.find_last_of(' ') != line.find_first_of(' ', first)){
+						c.m_request_data.m_error = 400; // no whitespaces aloud in startline except two seperating single space // maybe a 404
 						return ERROR;
 					}
 					c.m_request_data.m_path = line.substr(first, last - first);
@@ -107,7 +107,7 @@ class RequestParser
 		std::string line;
 		bool first = true;
 
-		while (ft_getline(c.m_request_str, line, 0))
+		while (ft_getline(c.m_request_str, line, 0, c.m_request_data.m_start))
 		{
 			if (ft_compare(line[0], (char*)BLANKS)){
 				c.m_request_data.m_error = 400; // Bad request (blanks between start line and first header)
@@ -136,8 +136,10 @@ class RequestParser
 	}
 	
 	
-	static int				ErrorRequest(int line)
+	static int				ErrorRequest(Client &c, int line)
 	{
+		c.m_request_data.m_start = 0;
+		c.m_request_data.m_done = true;
 		if (line == 0)
 			std::cout <<  "Error on Request line 1" << std::endl;
 		if (line == 1)
@@ -160,6 +162,8 @@ class RequestParser
 		c.m_request_data.m_metadata_parsed = false;
 		c.m_request_data.m_chunked = false;
 		c.m_request_data.m_error = 0;
+		c.m_request_data.m_start = 0;
+
 	}
 
 	static void				CheckHeaderData(Client& c)
@@ -179,13 +183,13 @@ class RequestParser
 		std::string line;
 		int ret = 1;
 
-		std::cout << c.m_request_str << std::endl;
-		if (ft_getline(c.m_request_str, line, 1))
+		// std::cout << c.m_request_str << std::endl;
+			// std::cout << "hier:--------------- "<< line << std::endl;
+		if (ft_getline(c.m_request_str, line, 1, c.m_request_data.m_start))
 		{
-			std::cout << "hier: "<< line << std::endl;
 			size_t current_chunk_size = ftAtoi(line.c_str());
-			std::cout << "hier!!!!!!!!!" << current_chunk_size << std::endl;
-			if (current_chunk_size == 0)
+			// std::cout << "hier!!!!!!!!!" << current_chunk_size << std::endl;
+			if (current_chunk_size == 0 && line == "0\r\n")
 			{
 				c.m_request_data.m_done = true;
 				if (c.m_request_data.m_body.size() != c.m_request_data.m_content_length)
@@ -197,39 +201,49 @@ class RequestParser
 				c.m_request_data.m_content_length += current_chunk_size;
 				while (ret)
 				{
-					ret = ft_getline(c.m_request_str, line, 1);
+					ret = ft_getline(c.m_request_str, line, 1, c.m_request_data.m_start);
 					if (line.find(CHUNK) != std::string::npos){
 						c.m_request_data.m_body.append(line.substr(0, line.size() - 2));
-						std::cout << "size:" << c.m_request_data.m_body.size() << "   other:" << c.m_request_data.m_content_length << std::endl;
+						// std::cout << "size:" << c.m_request_data.m_body.size() << "   other:" << c.m_request_data.m_content_length << std::endl;
 						if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
 							return SUCCESS;
-						std::cout << "hier\n";
+						// std::cout << "hier\n";
 						return ERROR;
 					}
 					c.m_request_data.m_body.append(line);
 				}
 			}
 		}
-			std::cout << "hallo\n";
+			// std::cout << "------------hallo\n";
 		return ERROR;
 	}
 
   public:
+
+	static void				ResetClient(Client &c)
+	{
+		c.m_request_str.clear();
+		CleanData(c);
+	}
+
 	static int				GetBody(Client& c)
 	{
 		std::string line;
 		int ret = 1;
 
-		std::cout << "are we chunking?" << std::endl;
+		// std::cout << "are we chunking?" << std::endl;
 		if (c.m_request_data.m_chunked == true)
 		{
-			if (ChunkedData(c))
+			if (ChunkedData(c)){
+				c.m_request_data.m_start = 0;
 				return ERROR;
+			}
+			c.m_request_data.m_start = 0;
 			return SUCCESS;
 		}
 		else if (c.m_request_data.m_chunked == false){
 			while (ret){
-				ret = ft_getline(c.m_request_str, line, 1);
+				ret = ft_getline(c.m_request_str, line, 1, c.m_request_data.m_start);
 				c.m_request_data.m_body.append(line);
 			}
 		}
@@ -237,6 +251,7 @@ class RequestParser
 			c.m_request_data.m_done = true;
 		else 
 			c.m_request_data.m_done = false;
+		c.m_request_data.m_start = 0;
 		return SUCCESS;
 	}
 
@@ -274,16 +289,16 @@ class RequestParser
 	static int		Parse(Client& c)
 	{
 		CleanData(c);
-		// c.m_request_data.m_metadata_parsed == true;
+		c.m_request_data.m_metadata_parsed = true;
 		if (GetFirstLine(c))
-			return ErrorRequest(0);
+			return ErrorRequest(c, 0);
 		if (GetHeaders(c))
-			return ErrorRequest(1);
+			return ErrorRequest(c, 1);
 		CheckHeaderData(c);
 		if ((c.m_request_data.m_if_body || c.m_request_data.m_chunked ) && (c.m_request_data.m_method == POST || c.m_request_data.m_method == PUT))
 		{
 			if (GetBody(c))
-				return ErrorRequest(2);
+				return ErrorRequest(c, 2);
 		}
 		else 
 			c.m_request_data.m_done = true;

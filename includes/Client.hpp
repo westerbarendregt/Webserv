@@ -18,6 +18,7 @@ struct	Request
 		bool								m_done;
 		bool								m_chunked;
 		int									m_error;
+		size_t								m_start;
 };
 
 struct	Response
