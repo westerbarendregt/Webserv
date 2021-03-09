@@ -12,7 +12,9 @@ Request::Request()
 	m_body(""),
 	m_metadata_parsed(false),
 	m_done(false),
+	m_chunked(false),
 	m_error(0)
+	m_start(0)
 {
 	for (int i = 0; i < 18; ++i)
 		m_headers.push_back("");
@@ -82,3 +84,10 @@ void	Server::removeClient(int client_socket) {
 	if (this->m_client_map.erase(client_socket) != 1)
 		throw serverError("removeClient: ", "trying to remove unexisting client");
 }
+
+// bool	Client::fullMetaData()
+// {
+// 	if (m_request_str.find("\n\n") != std::string::npos)
+// 		return true;
+// 	return false;
+// }
