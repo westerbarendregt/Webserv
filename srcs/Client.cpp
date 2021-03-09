@@ -38,6 +38,7 @@ Client::Client()
 	m_request_data(),
 	m_response_data(),
 	m_v_context(),
+	m_v_server(0),
 	m_socket(-1),
 	m_sockaddr(),
 	m_addrlen(sizeof(m_sockaddr))
@@ -50,6 +51,7 @@ Client::Client(t_v_context &v_context)
 	m_request_data(),
 	m_response_data(),
 	m_v_context(&v_context),
+	m_v_server(0),
 	m_socket(-1),
 	m_sockaddr(),
 	m_addrlen(sizeof(m_sockaddr))

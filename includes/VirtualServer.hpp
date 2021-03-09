@@ -42,7 +42,7 @@ class	VirtualContext
 		typedef	 std::map<std::string, std::vector<t_v_server> > 	t_v_server_host;
 		VirtualContext();
 		t_v_server	*getVirtualServer(std::string &host);
-		t_v_server	&getVirtualServer(std::string &host, struct sockaddr_storage const &client_addr);
+		t_v_server	*getVirtualServer(std::string &host, struct sockaddr_storage const &client_addr);
 		t_v_server	*getVirtualServer(int socket);
 	private:
 		int				m_port;

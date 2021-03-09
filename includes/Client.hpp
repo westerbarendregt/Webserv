@@ -55,6 +55,7 @@ class	Client
 		t_request_data 						m_request_data;
 		t_response_data						m_response_data;
 		t_v_context							*m_v_context;
+		t_v_server							*m_v_server;
 		int									m_socket;
 		struct	sockaddr_storage 			m_sockaddr;
 		socklen_t							m_addrlen;

@@ -38,7 +38,6 @@ void	Server::run(){
 				if (this->accept(i) == SUCCESS)
 					continue ;
 				c = getClient(i);
-				// if c->respond() is not already populated
 				if (this->receive(c) > 0) {
 				 	if (!c->m_request_data.m_metadata_parsed) {
 				 		if (!c->fullMetaData())

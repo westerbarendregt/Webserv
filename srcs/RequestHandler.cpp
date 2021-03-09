@@ -15,10 +15,9 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		return ;
 	}
 	//selecting a virtual server based on client request's host header
-	t_v_server	&v_server = c.m_v_context->getVirtualServer(c.m_request_data.m_headers[HOST],
-			c.m_sockaddr);//WIP
-	std::cout<<"-------FETCHED BLOCK-------\n\tLISTEN "<<v_server.m_configs.m_directives["listen"]<<"\n\tSERVER_NAME "<<
-		v_server.m_configs.m_directives["server_name"]<<"\n--------------"<<std::endl;
+	c.m_v_server = c.m_v_context->getVirtualServer(c.m_request_data.m_headers[HOST],c.m_sockaddr);//WIP
+	std::cout<<"-------FETCHED BLOCK-------\n\tLISTEN "<<c.m_v_server->m_configs.m_directives["listen"]<<"\n\tSERVER_NAME "<<
+		c.m_v_server->m_configs.m_directives["server_name"]<<"\n--------------"<<std::endl;
 	//
 }
 
