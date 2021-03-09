@@ -13,7 +13,7 @@ Request::Request()
 	m_metadata_parsed(false),
 	m_done(false),
 	m_chunked(false),
-	m_error(0)
+	m_error(0),
 	m_start(0)
 {
 	for (int i = 0; i < 18; ++i)
