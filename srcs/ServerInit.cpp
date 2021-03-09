@@ -12,23 +12,13 @@ void	Server::init(){
 	FD_ZERO(&this->m_write_fd);
 	FD_ZERO(&this->m_read_fd);
 	this->m_range_fd = 0;
-	for (t_v_server_all::iterator port = this->m_v_server_all.begin(); 
-			port != this->m_v_server_all.end(); ++port) {
-		t_v_context	&v_context = port->second;
-		v_context.setCatchAll();
-		if (v_context.m_catch_all){
-			(*(v_context.m_catch_all))[0].init();
-			this->connectVirtualServer((*v_context.m_catch_all)[0]);
-			for (t_v_server_host::iterator host = v_context.m_v_server_host.begin();
-					host != v_context.m_v_server_host.end(); ++host)
-						host->second[0].m_socket = (*(v_context.m_catch_all))[0].m_socket;
-		}
-		else {
-			for (t_v_server_host::iterator host = v_context.m_v_server_host.begin();
-					host != v_context.m_v_server_host.end(); ++host) {
-					host->second[0].init();
-					this->connectVirtualServer(host->second[0]);
-				}
+	for (t_v_server_all::iterator v_server = this->m_v_server_all.begin(); 
+			v_server != this->m_v_server_all.end(); ++v_server) {
+		v_server->second[0].init();
+		this->connectVirtualServer(v_server->second[0]);
+		size_t	i = 0;
+		while (++i < v_server->second.size()) {
+			v_server->second[i].m_socket = v_server->second[0].m_socket;
 		}
 	}
 }
@@ -43,22 +33,13 @@ void	Server::connectVirtualServer(t_v_server &v_server) {
 	FD_SET(v_server.m_socket, &this->m_read_all);
 	if (v_server.m_socket > this->m_range_fd)
 		this->m_range_fd = v_server.m_socket;
-	std::cout<<v_server.m_host<<" listens on socket "<<v_server.m_socket<<std::endl;
+	std::cout<<v_server.m_configs.m_directives["listen"]<<" listens on socket "<<v_server.m_socket<<std::endl;
 }
 
 void	Server::close() {
-	for (t_v_server_all::iterator port = this->m_v_server_all.begin(); 
-			port != this->m_v_server_all.end(); ++port)
-	{
-		t_v_context	&v_context = port->second;
-		if (v_context.m_catch_all) {
-			::close((*(v_context.m_catch_all))[0].m_socket);
-			break ;
-		}
-		for (t_v_server_host::iterator host = v_context.m_v_server_host.begin();
-				host != v_context.m_v_server_host.end(); ++host)
-			::close(host->second[0].m_socket);
-	}
+	for (t_v_server_all::iterator v_server = this->m_v_server_all.begin(); 
+			v_server != this->m_v_server_all.end(); ++v_server)
+		::close(v_server->second[0].m_socket);
 	FD_ZERO(&this->m_write_all);
 	FD_ZERO(&this->m_read_all);
 	FD_ZERO(&this->m_write_fd);

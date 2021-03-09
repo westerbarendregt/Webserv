@@ -41,15 +41,15 @@ class	Client
 		typedef	Response						t_response_data;
 		typedef VirtualServer					t_v_server;
 		typedef VirtualServer::t_v_server_conf	t_v_server_conf;
-		typedef VirtualContext					t_v_context;
+		typedef	std::vector<t_v_server>			t_v_server_blocks;
 		friend class Server;
 		friend class RequestParser;
 		friend class RequestHandler;
 
-		Client(t_v_context &v_context);
 		Client();
 		Client(Client const & src);
 		bool	fullMetaData();
+		void	updateServerConf();
 
 		void		testingRequest(std::string str){
 			m_request_str = str;
@@ -65,8 +65,8 @@ class	Client
 		std::string							m_response_str;
 		t_request_data 						m_request_data;
 		t_response_data						m_response_data;
-		t_v_context							*m_v_context;
 		t_v_server							*m_v_server;
+		t_v_server_blocks					*m_v_server_blocks;
 		int									m_socket;
 		struct	sockaddr_storage 			m_sockaddr;
 		socklen_t							m_addrlen;

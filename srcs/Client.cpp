@@ -1,6 +1,7 @@
 #include "Client.hpp"
 #include "Server.hpp"
 #include "Error.hpp"
+#include "WebServer.hpp"
 
 Request::Request()
 	: m_method(-1),
@@ -39,20 +40,6 @@ Client::Client()
 	m_response_str(""),
 	m_request_data(),
 	m_response_data(),
-	m_v_context(),
-	m_v_server(0),
-	m_socket(-1),
-	m_sockaddr(),
-	m_addrlen(sizeof(m_sockaddr))
-{
-}
-
-Client::Client(t_v_context &v_context) 
-	: m_request_str(""),
-	m_response_str(""),
-	m_request_data(),
-	m_response_data(),
-	m_v_context(&v_context),
 	m_v_server(0),
 	m_socket(-1),
 	m_sockaddr(),
@@ -66,7 +53,6 @@ Client::Client(Client const & src)
 	m_response_str(src.m_response_str),
 	m_request_data(src.m_request_data),
 	m_response_data(src.m_response_data),
-	m_v_context(src.m_v_context),
 	m_socket(src.m_socket),
 	m_sockaddr(src.m_sockaddr),
 	m_addrlen(src.m_addrlen)
@@ -85,9 +71,15 @@ void	Server::removeClient(int client_socket) {
 		throw serverError("removeClient: ", "trying to remove unexisting client");
 }
 
-// bool	Client::fullMetaData()
-// {
-// 	if (m_request_str.find("\n\n") != std::string::npos)
-// 		return true;
-// 	return false;
-// }
+void	Client::updateServerConf()
+{
+	std::string host2 = this->m_request_data.m_headers[HOST];
+	host2.resize(host2.size() - 1); // remove when problem fixed in RequestParser
+	for (size_t i = 0; i < (*(this->m_v_server_blocks)).size(); ++i) {
+		if ((*(this->m_v_server_blocks))[i].m_configs.m_directives["server_name"] == host2) {
+			this->m_v_server = &(*(this->m_v_server_blocks))[i];//select server by server_name
+			return ;
+		}
+	}
+	this->m_v_server = &((*(this->m_v_server_blocks))[0]);//if not found, return the first added,default one
+}

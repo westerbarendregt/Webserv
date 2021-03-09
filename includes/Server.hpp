@@ -20,14 +20,9 @@ class	Server
 		typedef	std::string							t_ip_port;
 		typedef	VirtualServer						t_v_server;
 		typedef	RequestHandler						t_request_handler;
-		//typedef std::map<t_ip_port, std::vector<t_v_server> > t_v_server_map;
 		typedef	int									t_port;
-		//typedef std::map<t_port, t_server_port> t_v_server_all;
-		typedef std::map<t_ip_port, std::vector<t_v_server> > t_v_server_host;
-
-		typedef	VirtualContext t_v_context;
-		typedef std::map<t_port, t_v_context> t_v_server_all;
-
+		typedef	std::vector<t_v_server>				t_v_server_blocks;
+		typedef std::map<t_ip_port, t_v_server_blocks> t_v_server_all;
 		typedef std::map<int, t_client> 	t_client_map;
 
 		friend class RequestHandler;
@@ -43,7 +38,7 @@ class	Server
 		void	addClient();
 		void	connectVirtualServer(t_v_server &v_server);
 		void	removeClient(int client_socket);
-		t_v_server	*getVirtualServer(int socket);
+		t_v_server_blocks	*getVirtualServer(int socket);
 		t_client	*getClient(int client_socket);
 		fd_set		m_read_all;
 		fd_set		m_write_all;

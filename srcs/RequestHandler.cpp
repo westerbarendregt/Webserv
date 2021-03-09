@@ -1,5 +1,5 @@
 #include "RequestHandler.hpp"
-#include "RequestParser.hpp" // just for enums
+#include "WebServer.hpp"
 #include "Server.hpp"
 
 #include <sys/socket.h>
@@ -14,11 +14,10 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		c.m_request_data.m_done = true;
 		return ;
 	}
-	//selecting a virtual server based on client request's host header
-	c.m_v_server = c.m_v_context->getVirtualServer(c.m_request_data.m_headers[HOST],c.m_sockaddr);//WIP
+	//updating virtual server pointer based on client request's host header
+	c.updateServerConf();
 	std::cout<<"-------FETCHED BLOCK-------\n\tLISTEN "<<c.m_v_server->m_configs.m_directives["listen"]<<"\n\tSERVER_NAME "<<
 		c.m_v_server->m_configs.m_directives["server_name"]<<"\n--------------"<<std::endl;
-	//
 }
 
 

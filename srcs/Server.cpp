@@ -5,11 +5,10 @@ Server::Server(char const *path) {
 	ConfigParser::parse(path, this->m_v_server_all);
 }
 
-Server::t_v_server	*Server::getVirtualServer(int socket) {
-	t_v_server	*found = 0;
-	for (t_v_server_all::iterator port = this->m_v_server_all.begin(); port != this->m_v_server_all.end(); ++port) {
-		if ((found = port->second.getVirtualServer(socket)) && found->m_socket == socket)
-			return found;
+std::vector<Server::t_v_server> *Server::getVirtualServer(int socket) {
+	for (t_v_server_all::iterator v_server = this->m_v_server_all.begin(); v_server != this->m_v_server_all.end(); ++v_server) {
+		if (v_server->second[0].m_socket == socket)
+			return &v_server->second;
 	}
 	return 0;
 }
