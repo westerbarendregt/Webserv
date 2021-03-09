@@ -37,11 +37,39 @@ Client::Client()
 	m_response_str(""),
 	m_request_data(),
 	m_response_data(),
+	m_v_context(),
 	m_socket(-1),
 	m_sockaddr(),
 	m_addrlen(sizeof(m_sockaddr))
 {
 }
+
+Client::Client(t_v_context &v_context) 
+	: m_request_str(""),
+	m_response_str(""),
+	m_request_data(),
+	m_response_data(),
+	m_v_context(&v_context),
+	m_socket(-1),
+	m_sockaddr(),
+	m_addrlen(sizeof(m_sockaddr))
+{
+}
+
+
+Client::Client(Client const & src)
+	: m_request_str(src.m_request_str),
+	m_response_str(src.m_response_str),
+	m_request_data(src.m_request_data),
+	m_response_data(src.m_response_data),
+	m_v_context(src.m_v_context),
+	m_socket(src.m_socket),
+	m_sockaddr(src.m_sockaddr),
+	m_addrlen(src.m_addrlen)
+{
+
+}
+
 
 bool	Client::fullMetaData() {
 	return (!this->m_request_str.empty()

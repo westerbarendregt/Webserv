@@ -5,19 +5,10 @@ Server::Server(char const *path) {
 	ConfigParser::parse(path, this->m_v_server_all);
 }
 
-Server::t_v_context *Server::getVirtualContext(int port) {
-	t_v_server_all::iterator	found;
-
-	if ((found = this->m_v_server_all.find(port)) != this->m_v_server_all.end()) {
-		return &found->second;
-	}
-	return 0;
-}
-
 Server::t_v_server	*Server::getVirtualServer(int socket) {
 	t_v_server	*found = 0;
 	for (t_v_server_all::iterator port = this->m_v_server_all.begin(); port != this->m_v_server_all.end(); ++port) {
-		if ((found = port->second.getVirtualServer(socket)))
+		if ((found = port->second.getVirtualServer(socket)) && found->m_socket == socket)
 			return found;
 	}
 	return 0;

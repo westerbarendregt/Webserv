@@ -38,6 +38,7 @@ void	Server::run(){
 				if (this->accept(i) == SUCCESS)
 					continue ;
 				c = getClient(i);
+				// if c->respond() is not already populated
 				if (this->receive(c) > 0) {
 				 	if (!c->m_request_data.m_metadata_parsed) {
 				 		if (!c->fullMetaData())
@@ -46,6 +47,9 @@ void	Server::run(){
 						// if (parse != error)
 						// 	this->handleMetadata(*c); 
 						// 	if error, flag the request as done, and as erroneous, so handle request can generate a error page.
+						std::cout<<"======"<<std::endl;
+						std::cout<<c->m_request_str<<std::endl;
+						std::cout<<"======"<<std::endl;
 				 		RequestParser::Parse(*c);
 						RequestParser::Print(*c);
 				 		this->m_request_handler.handleMetadata(*c); 
@@ -54,7 +58,11 @@ void	Server::run(){
 					{
 				 		this->m_request_handler.handleRequest(*c);
 						FD_SET(c->m_socket, &this->m_write_all);
+						// reset client struct and request.str()
 						c->m_request_str.clear();
+						//maybe at this point we want to remove it from the read_all
+						//set, to not get a read from select while we haven't
+						//sent the full response
 					}
 				 	else
 				 		RequestParser::HandleBody(*c);
@@ -64,6 +72,7 @@ void	Server::run(){
 				std::cout<<"found write connection fd: "<<i<<std::endl;
 				this->respond(i);
 				//can close connection if the response is an error
+				//resetResponse
 			}
 	}
 }

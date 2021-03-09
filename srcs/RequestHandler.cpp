@@ -2,6 +2,10 @@
 #include "RequestParser.hpp" // just for enums
 #include "Server.hpp"
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 void	RequestHandler::handleMetadata(t_client &c) {
 	std::cout<<"handling metadata.."<<std::endl;
 	// http 1.1 request without a host header should return error 400
@@ -10,13 +14,14 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		c.m_request_data.m_done = true;
 		return ;
 	}
-	t_v_server	*v_server;
 	//selecting a virtual server based on client request's host header
-	if (!(v_server = c.m_v_context->getVirtualServer(c.m_request_data.m_headers[HOST]))) {
-		//invalid host
-		std::cout<<"invalid host"<<std::endl;
-	}
+	t_v_server	&v_server = c.m_v_context->getVirtualServer(c.m_request_data.m_headers[HOST],
+			c.m_sockaddr);//WIP
+	std::cout<<"-------FETCHED BLOCK-------\n\tLISTEN "<<v_server.m_configs.m_directives["listen"]<<"\n\tSERVER_NAME "<<
+		v_server.m_configs.m_directives["server_name"]<<"\n--------------"<<std::endl;
+	//
 }
+
 
 void	RequestHandler::handleRequest(t_client &c) {
  // either get resource or execute cgi, both populating the response and adding client_socket to write_all

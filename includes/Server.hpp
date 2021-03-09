@@ -39,13 +39,10 @@ class	Server
 		void	close();
 		int		receive(t_client *c);
 		void	respond(int client_socket);
-		//void	accept(int v_server_socket);
 		int		accept(int socket);
 		void	addClient();
 		void	connectVirtualServer(t_v_server &v_server);
 		void	removeClient(int client_socket);
-		//t_v_server_host *getVirtualServer(int socket);
-		t_v_context	*getVirtualContext(int port);
 		t_v_server	*getVirtualServer(int socket);
 		t_client	*getClient(int client_socket);
 		fd_set		m_read_all;

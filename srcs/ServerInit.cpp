@@ -17,11 +17,11 @@ void	Server::init(){
 		t_v_context	&v_context = port->second;
 		v_context.setCatchAll();
 		if (v_context.m_catch_all){
-			v_context.m_catch_all->init();
-			this->connectVirtualServer(*v_context.m_catch_all);
+			(*(v_context.m_catch_all))[0].init();
+			this->connectVirtualServer((*v_context.m_catch_all)[0]);
 			for (t_v_server_host::iterator host = v_context.m_v_server_host.begin();
 					host != v_context.m_v_server_host.end(); ++host)
-						host->second[0].m_socket = v_context.m_catch_all->m_socket;
+						host->second[0].m_socket = (*(v_context.m_catch_all))[0].m_socket;
 		}
 		else {
 			for (t_v_server_host::iterator host = v_context.m_v_server_host.begin();
@@ -52,7 +52,7 @@ void	Server::close() {
 	{
 		t_v_context	&v_context = port->second;
 		if (v_context.m_catch_all) {
-			::close(v_context.m_catch_all->m_socket);
+			::close((*(v_context.m_catch_all))[0].m_socket);
 			break ;
 		}
 		for (t_v_server_host::iterator host = v_context.m_v_server_host.begin();

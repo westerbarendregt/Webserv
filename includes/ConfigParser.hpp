@@ -85,8 +85,10 @@ class	ConfigParser
 			std::string &host = conf.m_directives["listen"];
 			setIpPort(host, port);
 			//add check for invalid ip:port
-			v_server_all[port].m_v_server_host[host].push_back(t_v_server(host, conf));
-			v_server_all[port].m_port = port;
+
+			t_v_context		&v_context =  v_server_all[port];
+			v_context.m_v_server_host[host].push_back(t_v_server(v_context, host, conf));
+			v_context.m_port = port;
 			tokens.pop();
 		}
 	}

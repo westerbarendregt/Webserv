@@ -45,7 +45,9 @@ class	Client
 		friend class RequestParser;
 		friend class RequestHandler;
 
+		Client(t_v_context &v_context);
 		Client();
+		Client(Client const & src);
 		bool	fullMetaData();
 	private:
 		std::string							m_request_str;

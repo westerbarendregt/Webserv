@@ -11,5 +11,6 @@ void	Server::respond(int client_socket) {
 	}
 	 if (send(c->m_socket, c->m_response_str.c_str(), c->m_response_str.size() + 1, 0) == -1)
 		 std::cout<<"send: "<<strerror(errno)<<std::endl;
-	 FD_CLR(c->m_socket, &this->m_write_all);
+	 //check return value of send and see if we sent everything
+	 FD_CLR(c->m_socket, &this->m_write_all);// only if full response sent
 }
