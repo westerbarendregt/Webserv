@@ -42,6 +42,8 @@ void	VirtualServer::init() {
 		throw(serverError("socket", strerror(errno)));
 	if (setsockopt(this->m_socket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) == -1)
 		throw(serverError("setsockopt", strerror(errno)));
+	if (setsockopt(this->m_socket, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(int)) == -1)
+		throw(serverError("setsockopt", strerror(errno)));
 }
 
 VirtualServer::t_v_server_conf	VirtualServer::*getVServerConf(std::string &) {
@@ -84,7 +86,9 @@ VirtualContext::t_v_server *VirtualContext::getVirtualServer(std::string &host, 
 	std::cout<<"client ip:port "<<ip_port<<std::endl;
 	std::cout<<"host request "<<host<<std::endl;
 	std::vector<t_v_server>		*listener = 0;
-	t_v_server_host::iterator	blocks = this->m_v_server_host.find(host);//doesnt work because host is one byte too long, needs to be fixed in RequestParser
+	std::string host2 = host;
+	host2.resize(host.size() - 1);
+	t_v_server_host::iterator	blocks = this->m_v_server_host.find(host2);//doesnt work because host is one byte too long, needs to be fixed in RequestParser
 	if (blocks == this->m_v_server_host.end()) {
 		if (this->m_catch_all)
 			listener = m_catch_all;
