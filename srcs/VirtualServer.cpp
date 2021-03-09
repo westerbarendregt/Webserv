@@ -84,7 +84,7 @@ VirtualContext::t_v_server *VirtualContext::getVirtualServer(std::string &host, 
 	std::cout<<"client ip:port "<<ip_port<<std::endl;
 	std::cout<<"host request "<<host<<std::endl;
 	std::vector<t_v_server>		*listener = 0;
-	t_v_server_host::iterator	blocks = this->m_v_server_host.find(host);
+	t_v_server_host::iterator	blocks = this->m_v_server_host.find(host);//doesnt work because host is one byte too long, needs to be fixed in RequestParser
 	if (blocks == this->m_v_server_host.end()) {
 		if (this->m_catch_all)
 			listener = m_catch_all;
