@@ -25,8 +25,10 @@ int	Server::receive(int client_socket) {
 	if (!c)
 		throw(serverError("getClient ", "client not registered"));
 	int	nbytes = recv(client_socket, buf, sizeof(buf), 0);
+	std::cout << "bytes: " << nbytes << std::endl;
 	const char *to_append = buf;
 	c->m_request_str.append(to_append);
+	std::cout << c->m_request_str << std::endl;
 	if (nbytes <= 0){ // should we handle closing a connection in the ServerRun loop
 		if (nbytes == 0)
 			std::cout<<"closing connection "<<client_socket<<std::endl; //log

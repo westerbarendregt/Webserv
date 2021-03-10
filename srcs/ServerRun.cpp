@@ -42,8 +42,11 @@ void	Server::run(){
 				else
 				{
 					if (this->receive(i) > 0) {
+								std::cout<<"need fixing here!!"<<std::endl;
+								std::cout << c->m_request_str << std::endl;
 
 					 		if (!c->m_request_data.m_metadata_parsed) {
+								std::cout<<"need fixing here!!2"<<std::endl;
 					 			if (!c->fullMetaData())
 					 				continue ;
 								std::cout<<"received full http request"<<std::endl;

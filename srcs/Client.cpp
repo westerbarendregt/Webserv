@@ -21,10 +21,10 @@ Client::Client()
 {
 }
 
-bool	Client::fullMetaData() {
-	return (!this->m_request_str.empty()
-			&& this->m_request_str.find("\r\n\r\n") != std::string::npos);
-}
+// bool	Client::fullMetaData() {
+// 	return (!this->m_request_str.empty()
+// 			&& this->m_request_str.find("\r\n\r\n") != std::string::npos);
+// }
 
 
 Client::Client(int socket) 
@@ -38,9 +38,9 @@ void	Server::removeClient(int client_socket) {
 		throw serverError("removeClient: ", "trying to remove unexisting client");
 }
 
-// bool	Client::fullMetaData()
-// {
-// 	if (m_request_str.find("\n\n") != std::string::npos)
-// 		return true;
-// 	return false;
-// }
+bool	Client::fullMetaData()
+{
+	if (m_request_str.find("\n\n") != std::string::npos)
+		return true;
+	return false;
+}

@@ -85,9 +85,6 @@ class RequestParser
 						return ERROR;
 					}
 					c.m_request_data.m_path = line.substr(first, last - first);
-					// size_t ret = line.copy(c.m_request_data.m_path, (line.find("HTTP") -1) -
-					// (line.find_first_of(BLANKS) + 1), line.find_first_of(BLANKS) + 1);
-					// c.m_request_data.m_path[ret] = 0;
 					if (line.find(protocol) != std::string::npos){
 						c.m_request_data.m_protocol = HTTP1;
 						return SUCCESS;
@@ -168,7 +165,6 @@ class RequestParser
 
 	static void				CheckHeaderData(Client& c)
 	{
-		// std::cout << "say hi \n"  << "hier: " << c.m_request_data.m_headers[TRANSFERENCODING] << std::endl;
 		c.m_request_data.m_content_length = ftAtoi(c.m_request_data.m_headers[CONTENTLENGTH].c_str());
 		if (c.m_request_data.m_headers[TRANSFERENCODING].find("chunked") != std::string::npos){
 			c.m_request_data.m_chunked = true;
@@ -183,12 +179,9 @@ class RequestParser
 		std::string line;
 		int ret = 1;
 
-		// std::cout << c.m_request_str << std::endl;
-			// std::cout << "hier:--------------- "<< line << std::endl;
 		if (ft_getline(c.m_request_str, line, 1, c.m_request_data.m_start))
 		{
 			size_t current_chunk_size = ftAtoi(line.c_str());
-			// std::cout << "hier!!!!!!!!!" << current_chunk_size << std::endl;
 			if (current_chunk_size == 0 && line == "0\r\n")
 			{
 				c.m_request_data.m_done = true;
@@ -204,17 +197,14 @@ class RequestParser
 					ret = ft_getline(c.m_request_str, line, 1, c.m_request_data.m_start);
 					if (line.find(CHUNK) != std::string::npos){
 						c.m_request_data.m_body.append(line.substr(0, line.size() - 2));
-						// std::cout << "size:" << c.m_request_data.m_body.size() << "   other:" << c.m_request_data.m_content_length << std::endl;
 						if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
 							return SUCCESS;
-						// std::cout << "hier\n";
 						return ERROR;
 					}
 					c.m_request_data.m_body.append(line);
 				}
 			}
 		}
-			// std::cout << "------------hallo\n";
 		return ERROR;
 	}
 
@@ -231,7 +221,6 @@ class RequestParser
 		std::string line;
 		int ret = 1;
 
-		// std::cout << "are we chunking?" << std::endl;
 		if (c.m_request_data.m_chunked == true)
 		{
 			if (ChunkedData(c)){
@@ -270,20 +259,27 @@ class RequestParser
 			case DELETE : std::cout << "method: " << "DELETE" << std::endl;
 				break ;
 		}
+		std::cout << "path: " << c.m_request_data.m_path << std::endl;
 		switch (c.m_request_data.m_protocol)
 		{
 			case HTTP1 : std::cout << "protocol: " << "HTTP/1.1" << std::endl;
 				break ;
 		}
-		std::cout << "path: " << c.m_request_data.m_path << std::endl;
 		for (int i = 0; i < 18; ++i)
-			std::cout << headers[i] << ":" << c.m_request_data.m_headers[i] << std::endl;
-		std::cout << std::endl << "BODY-length: " << c.m_request_data.m_content_length << std::endl;
+			std::cout << headers[i] << ":" << c.m_request_data.m_headers[i] << "---" << sizeof(c.m_request_data.m_headers[i]) << std::endl;
+		if (c.m_request_data.m_chunked)
+			std::cout << std::endl << "The body is chunked!" << std::endl;
+		std::cout << "BODY-length: " << c.m_request_data.m_content_length << std::endl;
 		std::cout << "BODY:" << c.m_request_data.m_body << std::endl << std::endl;
-		if (c.m_request_data.m_done)
-			std::cout << "PARSING IS DONE" << std::endl;
+		if (c.m_request_data.m_error)
+			std::cout << "While parsing found error NR: " << c.m_request_data.m_error << std::endl;
+		if (c.m_request_data.m_metadata_parsed && c.m_request_data.m_done)
+			std::cout << "METADATA IS PARSED AND BODY PARSING IS DONE" << std::endl;
+		else if (c.m_request_data.m_metadata_parsed)
+			std::cout << "METADATA NOT PARSED BUT BODY PARSING IS NOT FINISHED" << std::endl; 
 		else 
-			std::cout << "PARSING IS NOT FINISHED" << std::endl;
+			std::cout << "REQUEST DATA NOT PARSED" << std::endl;
+		
 	}
 	
 	static int		Parse(Client& c)
