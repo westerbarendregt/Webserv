@@ -1,4 +1,3 @@
-
 #ifndef WEBSERVER_HPP
 # define WEBSERVER_HPP
 
@@ -8,4 +7,41 @@ enum	e_status {
 	SUCCESS = 0,
 	ERROR = 1
 };
+
+enum e_methods
+{
+	GET,
+	HEAD,
+	POST,
+	PUT,
+	DELETE
+};
+
+enum e_headers
+{
+	ACCEPTCHARSETS,
+	ACCEPTLANGUAGE,
+	ALLOW,
+	AUTHENTIZATION,
+	CONTENTLANGUAGE,
+	CONTENTLENGTH,
+	CONTENTLOCATION,
+	CONTENTTYPE,
+	DATE,
+	HOST,
+	LASTMODIFIED,
+	LOCATION,
+	REFERER,
+	RETRYAFTER,
+	SERVER,
+	TRANSFERENCODING,
+	USERAGENT,
+	WWWAUTHENTICATE
+};
+
+enum e_protocol
+{
+	HTTP1 = 1
+};
+
 #endif

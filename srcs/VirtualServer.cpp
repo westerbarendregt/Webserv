@@ -9,8 +9,11 @@
 #include "utils.hpp"
 #include "Server.hpp"
 
-
-VirtualServer::VirtualServer(t_v_server_conf conf) : m_configs(conf) {
+VirtualServer::VirtualServer(t_v_server_conf conf)
+: m_socket(-1),
+m_configs(conf),
+m_sockaddr()
+{
 	memset(&this->m_sockaddr, 0, sizeof(this->m_sockaddr));//fill
 }
 
@@ -36,8 +39,10 @@ void	VirtualServer::init() {
 		throw(serverError("socket", strerror(errno)));
 	if (setsockopt(this->m_socket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) == -1)
 		throw(serverError("setsockopt", strerror(errno)));
+	if (setsockopt(this->m_socket, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(int)) == -1)
+		throw(serverError("setsockopt", strerror(errno)));
 }
 
-void	VirtualServer::close() {
-	::close(this->m_socket);
+VirtualServer::t_v_server_conf	VirtualServer::*getVServerConf(std::string &) {
+	return 0;
 }

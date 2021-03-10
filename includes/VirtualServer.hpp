@@ -5,7 +5,6 @@
 # include <sys/socket.h>
 # include <netinet/in.h>
 
-
 class	VirtualServer
 {
 	public:
@@ -13,7 +12,9 @@ class	VirtualServer
 		friend class Server;
 		friend class Client;
 		friend class ConfigParser;
+		friend class RequestHandler;
 		explicit VirtualServer(t_v_server_conf conf);
+		t_v_server_conf	*getVServerConf(std::string &host);
 		void	init();
 		void	close();
 	private:
@@ -22,6 +23,5 @@ class	VirtualServer
 		t_v_server_conf			m_configs;
 		struct	sockaddr_in		m_sockaddr;
 };
-
 
 #endif
