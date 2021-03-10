@@ -42,7 +42,3 @@ void	VirtualServer::init() {
 	if (setsockopt(this->m_socket, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(int)) == -1)
 		throw(serverError("setsockopt", strerror(errno)));
 }
-
-VirtualServer::t_v_server_conf	VirtualServer::*getVServerConf(std::string &) {
-	return 0;
-}

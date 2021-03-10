@@ -14,7 +14,6 @@ class	VirtualServer
 		friend class ConfigParser;
 		friend class RequestHandler;
 		explicit VirtualServer(t_v_server_conf conf);
-		t_v_server_conf	*getVServerConf(std::string &host);
 		void	init();
 		void	close();
 	private:
