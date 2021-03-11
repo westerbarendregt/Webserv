@@ -4,11 +4,15 @@
 # include <map>
 # include <string>
 # include "Client.hpp"
+# include "VirtualServer.hpp"
+
+class Client;
 
 class RequestHandler
 {
 	public:
-		typedef	Client		t_client;
+		typedef	Client			t_client;
+		typedef VirtualServer	t_v_server;
 		RequestHandler();
 		~RequestHandler();
 		void	handleMetadata(t_client &c);
@@ -19,17 +23,19 @@ class RequestHandler
 
 	private:
 
-		std::string handleGET();
-		std::string handleHEAD();
-		std::string handlePOST();
-		std::string handlePUT();
-		std::string handleDELETE();
+		std::string handleGET(t_client &c);
+		std::string handleHEAD(t_client &c);
+		std::string handlePOST(t_client &c);
+		std::string handlePUT(t_client &c);
+		std::string handleDELETE(t_client &c);
 
+		std::string Content_Length(std::string const & body);
 		std::string Content_Type();
+		std::string Server();
 
 		std::string statusLine();
 		std::string responseBody();
-		std::string responseHeaders();
+		std::string responseHeaders(std::string const & body);
 
 		std::string	generateErrorPage(int error);
 
