@@ -124,7 +124,7 @@ class RequestParser
 				if (line.find(headers[i]) != std::string::npos){
 					std::string header = line.substr(line.find(':') + 1, line.size() - (line.find(":") + 1));
 					size_t start = header.find_first_not_of(BLANKS);
-					size_t len = (header.find_last_not_of(BLANKS) + 1) - start;
+					size_t len = header.find_last_not_of(BLANKS) - start;
 					c.m_request_data.m_headers[i] = header.substr(start, len); //trimming start and end of whitespaces
 				}
 			}
@@ -266,7 +266,7 @@ class RequestParser
 				break ;
 		}
 		for (int i = 0; i < 18; ++i)
-			std::cout << headers[i] << ":" << c.m_request_data.m_headers[i] << "---" << sizeof(c.m_request_data.m_headers[i]) << std::endl;
+			std::cout << headers[i] << ":" << c.m_request_data.m_headers[i] << "---" << c.m_request_data.m_headers[i].size() << std::endl;
 		if (c.m_request_data.m_chunked)
 			std::cout << std::endl << "The body is chunked!" << std::endl;
 		std::cout << "BODY-length: " << c.m_request_data.m_content_length << std::endl;
