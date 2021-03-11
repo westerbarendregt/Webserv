@@ -28,6 +28,7 @@ SRCS=	$(SRC_DIR)/main.cpp \
 				$(SRC_DIR)/RequestHandler.cpp \
 				$(SRC_DIR)/RequestHandlerMimeTypes.cpp \
 				$(SRC_DIR)/RequestHandlerStatusCodes.cpp \
+				$(SRC_DIR)/RequestHandlerLocation.cpp \
 
 OBJ			= $(SRCS:.cpp=.o)
 

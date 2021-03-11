@@ -13,6 +13,7 @@ class RequestHandler
 	public:
 		typedef	Client			t_client;
 		typedef VirtualServer	t_v_server;
+		typedef Request::t_directives t_directives;
 		RequestHandler();
 		~RequestHandler();
 		void	handleMetadata(t_client &c);
@@ -23,11 +24,13 @@ class RequestHandler
 
 	private:
 
-		std::string handleGET(t_client &c);
-		std::string handleHEAD(t_client &c);
-		std::string handlePOST(t_client &c);
-		std::string handlePUT(t_client &c);
-		std::string handleDELETE(t_client &c);
+		t_directives*	getLocation();
+
+		std::string handleGET();
+		std::string handleHEAD();
+		std::string handlePOST();
+		std::string handlePUT();
+		std::string handleDELETE();
 
 		std::string Content_Length(std::string const & body);
 		std::string Content_Type();
@@ -46,6 +49,8 @@ class RequestHandler
 		void	initMimeTypes();
 
 		std::vector<std::string>	m_response_headers;
+
+		t_client	*m_client;
 };
 
 #endif
