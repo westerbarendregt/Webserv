@@ -1,24 +1,16 @@
-#include "Server.hpp"
 #include "ConfigParser.hpp"
+#include "Server.hpp"
 
 Server::Server(char const *path) {
-	ConfigParser::parse(path, this->m_v_server_map);
+	ConfigParser::parse(path, this->m_v_server_all);
 }
 
-Server::t_v_server	*Server::getVirtualServer(int v_server_socket) {
-	for (t_v_server_map::iterator it = this->m_v_server_map.begin(); it != this->m_v_server_map.end(); ++it) {
-		if (it->second[0].m_socket == v_server_socket)
-			return (&it->second[0]);
+std::vector<Server::t_v_server> *Server::getVirtualServer(int socket) {
+	for (t_v_server_all::iterator v_server = this->m_v_server_all.begin(); v_server != this->m_v_server_all.end(); ++v_server) {
+		if (v_server->second[0].m_socket == socket)
+			return &v_server->second;
 	}
-	return (0);
-}
-
-Server::t_v_server	*Server::getVirtualServer(unsigned short port) {
-	for (t_v_server_map::iterator it = this->m_v_server_map.begin(); it != this->m_v_server_map.end(); ++it) {
-		if (it->second[0].m_sockaddr.sin_port == port)
-			return (&it->second[0]);
-	}
-	return (0);
+	return 0;
 }
 
 Server::t_client	*Server::getClient(int client_socket) {

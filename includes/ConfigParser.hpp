@@ -10,14 +10,14 @@
 # include "Server.hpp"
 # include "Conf.hpp"
 # include "WebServer.hpp"
-
+# include "utils.hpp"
 
 #define BLANKS "\t\v "
 
 enum e_context{
-	MAIN,
-	SERVER,
-	ROUTE	
+	MAIN_CONTEXT,
+	SERVER_CONTEXT,
+	ROUTE_CONTEXT	
 }		;
 
 
@@ -38,9 +38,6 @@ enum	e_fields{
 	RIGHT
 };
 
-
-
-
 static size_t	const hash_len[] = {1, 4, 5};
 
 static const char *blocks[] = {"server", "location"};
@@ -57,36 +54,37 @@ class	ConfigParser
 	public:
 		typedef Server::t_v_server_conf		t_v_server_conf;
 		typedef Server::t_v_server			t_v_server;
-		typedef Server::t_v_server_map			t_v_server_map;
+		typedef Server::t_v_server_blocks			t_v_server_blocks;
+		typedef Server::t_v_server_all		t_v_server_all;
 		typedef Server::t_ip_port			t_ip_port;
 		typedef	std::queue<t_v_server_conf>	t_config_tokens;
 		typedef	std::vector<std::string>			t_fields;
 
 
-	static	t_ip_port convertAddr(std::string const &addr) {
-		size_t	end = addr.find_first_of(":", 0);
-		if (end != std::string::npos)
-			return addr;
-		t_ip_port	full_addr("0.0.0.0:");
-		full_addr.insert(full_addr.end(), addr.begin(), addr.end());
-		return full_addr;
+	static void	formatIp(std::string &listen) {
+		size_t	end = listen.find_first_of(":", 0);
+		if (end == std::string::npos) {
+			listen.insert(0, "0.0.0.0:");
+		}
 	}
-	static	void	convertTokens(t_config_tokens &tokens, t_v_server_map &v_server_map) {
+
+	static	void	convertTokens(t_config_tokens &tokens, t_v_server_all &v_server_all) {
 		t_v_server_conf	conf;
 		while (!tokens.empty()) {
 			conf = tokens.front();
-			std::string &addr = conf.m_directives["listen"];
-			addr = convertAddr(addr);
-			v_server_map[addr].push_back(t_v_server(conf));
+			std::string &listen = conf.m_directives["listen"];
+			formatIp(listen);
+			//add check for invalid ip:port
+			v_server_all[listen].push_back(t_v_server(conf));
 			tokens.pop();
 		}
 	}
 
-	static void	parse(char const *path, t_v_server_map &v_server_map) { 
+	static void	parse(char const *path, t_v_server_all &v_server_all) { 
 
 		t_fields fields(2);
 		t_config_tokens	tokens;
-		int	context = MAIN;
+		int	context = MAIN_CONTEXT;
 		size_t n= 0;
 		std::string	line;
 		std::ifstream	file(path);
@@ -105,8 +103,8 @@ class	ConfigParser
 		if (tokens.empty())
 			throw(parseError(path, "empty file"));
 		file.close();
-		convertTokens(tokens, v_server_map);
-		printVirtualServerConf(v_server_map);
+		convertTokens(tokens, v_server_all);
+		printBlocks(v_server_all);
 	}
 
 	class parseError : public std::exception {
@@ -125,30 +123,30 @@ class	ConfigParser
 			std::string _error;
 	};
 
-	//debug functions to print convertedTokens
-	static void	printVirtualServerConf(t_v_server_map &v_server_map) {
-		for (t_v_server_map::iterator ip_port = v_server_map.begin() ;
-				ip_port != v_server_map.end(); ++ip_port) {
-			std::cout <<"---"<<ip_port->first<<"----"<<std::endl;
-			for (size_t i = 0; i < ip_port->second.size(); ++i){
-				t_v_server_conf &t = ip_port->second[i].m_configs;
-				std::cout << "\tSERVER"<<std::endl;
-				for (t_v_server_conf::t_directives::iterator it = t.m_directives.begin(); 
-						it != t.m_directives.end(); ++it) {
-					std::cout<<"\t\t"<<it->first<<" "<<it->second<<std::endl;
+	static void	printBlocks(t_v_server_all &v_server_all) {
+			for (std::map<t_ip_port, t_v_server_blocks>::iterator ip_port = v_server_all.begin()
+					; ip_port != v_server_all.end(); ++ip_port){
+
+				std::cout << "\t\t---"<<ip_port->first<<"---"<<std::endl;
+				for (size_t	i = 0; i < ip_port->second.size(); ++i)
+				{
+					t_v_server_conf &c = ip_port->second[i].m_configs;
+					std::cout << "\t\tSERVER"<<std::endl;
+					for (t_v_server_conf::t_directives::iterator it = c.m_directives.begin();
+							it != c.m_directives.end(); ++it) {
+						std::cout<<"\t\t\t"<<it->first<<" "<<it->second<<std::endl;
+					}
+					for (t_v_server_conf::t_routes::iterator path = c.m_routes.begin();
+							path != c.m_routes.end(); path++) {
+						std::cout << "\t\t\tROUTE "<<path->first<<std::endl;
+						for (t_v_server_conf::t_directives::iterator path_directives = path->second.begin()
+								; path_directives != path->second.end();
+								++path_directives)
+							std::cout<<"\t\t\t\t"<<path_directives->first<<" "<<path_directives->second<<std::endl;
+					}
 				}
-				for (t_v_server_conf::t_routes::iterator path = t.m_routes.begin(); 
-						path != t.m_routes.end(); path++) {
-					std::cout << "\t\tROUTE "<<path->first<<std::endl;
-					for (t_v_server_conf::t_directives::iterator path_directives = path->second.begin()
-							; path_directives != path->second.end();
-							++path_directives)
-						std::cout<<"\t\t\t"<<path_directives->first<<" "<<path_directives->second<<std::endl;
-				}
-			}
 		}
 	}
-	//
 	//debug functions to print tokens after parsing
 	static void	printServerTokens(t_config_tokens tokens) {
 		while (!tokens.empty()) {
@@ -197,7 +195,7 @@ class	ConfigParser
 				return INVALID;
 			tokens.push(t_v_server_conf()); // new server block
 			fields[LEFT].assign(fields[RIGHT].begin() + 1, fields[RIGHT].end()); // offset parsing to rest of the line
-			return SERVER; //update context
+			return SERVER_CONTEXT; //update context
 		}
 
 		//  location /images {
@@ -222,14 +220,14 @@ class	ConfigParser
 			/*maybe add check to see if a route with the same path already exists*/
 			if (!fields[RIGHT].empty())
 				fields[LEFT].assign(fields[RIGHT].begin() + bracket + 1, fields[RIGHT].end());
-			return ROUTE;
+			return ROUTE_CONTEXT;
 		}
 
 		static int addBlock(t_fields &fields, t_config_tokens &tokens, int context) {
 			switch (context)
 			{
-				case MAIN : return addServer(fields, tokens);
-				case SERVER: return addRoute(fields, tokens);
+				case MAIN_CONTEXT : return addServer(fields, tokens);
+				case SERVER_CONTEXT: return addRoute(fields, tokens);
 			}
 			return INVALID;
 		}
@@ -238,8 +236,8 @@ class	ConfigParser
 		static int addDirective(t_fields &fields, t_config_tokens &tokens, int context) {
 			switch (context)
 			{
-				case SERVER : return addServerDirective(fields, tokens);
-				case ROUTE : return addRouteDirective(fields, tokens);
+				case SERVER_CONTEXT : return addServerDirective(fields, tokens);
+				case ROUTE_CONTEXT : return addRouteDirective(fields, tokens);
 			}
 			return INVALID;
 		}
@@ -276,7 +274,7 @@ class	ConfigParser
 
 			if (fields[LEFT].empty())
 				return context;
-			if (context < ROUTE && fields[LEFT] == blocks[context]) {
+			if (context < ROUTE_CONTEXT && fields[LEFT] == blocks[context]) {
 				updated_context = addBlock(fields, tokens, context);
 			} 
 			else if (fields[LEFT][0] == '}') // close block

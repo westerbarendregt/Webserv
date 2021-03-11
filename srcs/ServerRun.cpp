@@ -22,7 +22,6 @@
 void	Server::run(){
 	
 	struct timeval tv;
-	t_v_server	*v_server;
 	t_client 	*c;
 
 	for (;;) {//run
@@ -35,43 +34,45 @@ void	Server::run(){
 		std::cout<<"listening..."<<std::endl;
 		for (int i =0; i <= this->m_range_fd ; ++i){
 			if (FD_ISSET(i, &this->m_read_fd)) {
-				v_server = getVirtualServer(i); //find corresponding v_server
 				std::cout<<"found read connection fd: "<<i<<std::endl;
-				if (v_server)
-					c = this->accept(i);
-				else
-				{
-					if (this->receive(i) > 0) {
-								std::cout<<"need fixing here!!"<<std::endl;
-								std::cout << c->m_request_str << std::endl;
-
-					 		if (!c->m_request_data.m_metadata_parsed) {
-								std::cout<<"need fixing here!!2"<<std::endl;
-					 			if (!c->fullMetaData())
-					 				continue ;
-								std::cout<<"received full http request"<<std::endl;
-								// if (parse != error)
-								// 	this->handleMetadata(*c); 
-								// 	if error, flag the request as done, and as erroneous, so handle request can generate a error page.
-					 			RequestParser::Parse(*c);
-								RequestParser::Print(*c);
-					 			this->m_request_handler.handleMetadata(*c); 
-					 		}
-					 		if (c->m_request_data.m_done)
-							{
-					 			this->m_request_handler.handleRequest(*c);
-								FD_SET(c->m_socket, &this->m_write_all);
-							}
-					 		else
-					 			RequestParser::HandleBody(*c);
-					 }
-				}
+				if (this->accept(i) == SUCCESS)
+					continue ;
+				c = getClient(i);
+				if (this->receive(c) > 0) {
+				 	if (!c->m_request_data.m_metadata_parsed) {
+				 		if (!c->fullMetaData())
+				 			continue ;
+						std::cout<<"received full metadata"<<std::endl;
+						// if (parse != error)
+						// 	this->handleMetadata(*c); 
+						// 	if error, flag the request as done, and as erroneous, so handle request can generate a error page.
+						std::cout<<"======"<<std::endl;
+						std::cout<<c->m_request_str<<std::endl;
+						std::cout<<"======"<<std::endl;
+				 		RequestParser::Parse(*c);
+						RequestParser::Print(*c);
+				 		this->m_request_handler.handleMetadata(*c); 
+				 	}
+				 	if (c->m_request_data.m_done)
+					{
+				 		this->m_request_handler.handleRequest(*c);
+						FD_SET(c->m_socket, &this->m_write_all);
+						// reset client struct and request.str()
+						c->m_request_str.clear();
+						//maybe at this point we want to remove it from the read_all
+						//set, to not get a read from select while we haven't
+						//sent the full response
+					}
+				 	else
+				 		RequestParser::HandleBody(*c);
+				 }
 			}
 			else if (FD_ISSET(i, &this->m_write_fd)) {
 				std::cout<<"found write connection fd: "<<i<<std::endl;
 				this->respond(i);
 				//can close connection if the response is an error
+				//resetResponse
 			}
-		}
 	}
+}
 }

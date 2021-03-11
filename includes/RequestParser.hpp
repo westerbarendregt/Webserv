@@ -10,53 +10,12 @@
 
 # include "Client.hpp"
 # include "utils.hpp"
+# include "WebServer.hpp"
 
 #define BLANKS "\t\v\n "
 #define CHUNK  "\r\n"
 
 class Client;
-
-enum e_methods
-{
-	GET,
-	HEAD,
-	POST,
-	PUT,
-	DELETE
-};
-
-enum e_headers
-{
-	ACCEPTCHARSETS,
-	ACCEPTLANGUAGE,
-	ALLOW,
-	AUTHENTIZATION,
-	CONTENTLANGUAGE,
-	CONTENTLENGTH,
-	CONTENTLOCATION,
-	CONTENTTYPE,
-	DATE,
-	HOST,
-	LASTMODIFIED,
-	LOCATION,
-	REFERER,
-	RETRYAFTER,
-	SERVER,
-	TRANSFERENCODING,
-	USERAGENT,
-	WWWAUTHENTICATE
-};
-
-enum e_protocol
-{
-	HTTP1 = 1
-};
-
-enum	e_status {
-	INVALID = -1,
-	SUCCESS = 0,
-	ERROR = 1
-};
 
 static const char *methods[] = {"GET", "HEAD", "POST", "PUT", "DELETE", NULL};
 
