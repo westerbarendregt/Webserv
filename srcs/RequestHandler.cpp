@@ -1,9 +1,25 @@
 #include "RequestHandler.hpp"
+#include "WebServer.hpp"
+#include "Server.hpp"
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 void	RequestHandler::handleMetadata(t_client &c) {
 	std::cout<<"handling metadata.."<<std::endl;
-	c.m_request_data.m_done = true;
+	// http 1.1 request without a host header should return error 400
+	if (c.m_request_data.m_headers[HOST].empty()) {
+		c.m_request_data.m_error = 400;
+		c.m_request_data.m_done = true;
+		return ;
+	}
+	//updating virtual server pointer based on client request's host header
+	c.updateServerConf();
+	std::cout<<"-------FETCHED BLOCK-------\n\tLISTEN "<<c.m_v_server->m_configs.m_directives["listen"]<<"\n\tSERVER_NAME "<<
+		c.m_v_server->m_configs.m_directives["server_name"]<<"\n--------------"<<std::endl;
 }
+
 
 void	RequestHandler::handleRequest(t_client &c) {
  // either get resource or execute cgi, both populating the response and adding client_socket to write_all
