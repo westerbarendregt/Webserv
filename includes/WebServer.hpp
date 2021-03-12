@@ -1,6 +1,7 @@
 #ifndef WEBSERVER_HPP
 # define WEBSERVER_HPP
 
+# define CRLF "\r\n"
 
 enum	e_status {
 	INVALID = -1,

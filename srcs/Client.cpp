@@ -84,7 +84,7 @@ void	Server::removeClient(int client_socket) {
 void	Client::updateServerConf()
 {
 	std::string host2 = this->m_request_data.m_headers[HOST];
-	host2.resize(host2.size() - 1); // remove when problem fixed in RequestParser
+	// host2.resize(host2.size() - 1); // remove when problem fixed in RequestParser
 	for (size_t i = 0; i < (*(this->m_v_server_blocks)).size(); ++i) {
 		if ((*(this->m_v_server_blocks))[i].m_configs.m_directives["server_name"] == host2) {
 			this->m_v_server = &(*(this->m_v_server_blocks))[i];//select server by server_name

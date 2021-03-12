@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include <iostream>
+#include "WebServer.hpp"
 
 static size_t		write_reverse(size_t n, char *buf)
 {
