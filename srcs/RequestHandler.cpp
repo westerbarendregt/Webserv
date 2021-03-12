@@ -136,17 +136,25 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			<<c.m_v_server->m_configs.m_directives["listen"]
 			<<"\n\tSERVER_NAME "<< m_client->m_v_server->m_configs.m_directives["server_name"]
 			<<"\n\tLOCATION/ROUTE "<< m_client->m_request_data.m_location->first<<"\n-----------"<<std::endl;
-		//c.m_request_data.m_real_path =  substr
 		//maybe Request could have m_real_path, m_path_info and m_query_string to be updated by the cgi part of this code,
 		//	and later fetched by Cgi to populate the map
 		// select the route 
 		// subsitute route + rest of URI and update m_real_path
+		c.m_request_data.m_real_path = c.m_request_data.m_path; // for now
 		// stat every /prefix/ until
 		// 						found file
 		// 						end of URI
 		// 						stat returns -1, so throw error not found
+		// 				while keeping an index to the last prefix
 		// if we stopped at file
+		c.m_request_data.m_file = c.m_request_data.m_path.substr(0, c.m_request_data.m_path.find('/', 0)); // for now, need to replace 0 by index of last prefix
+		size_t	extension = c.m_request_data.m_file.find_last_of('.', 0);
 		// 		extract extension
+		if (this->validCgi(c.m_request_data, extension))
+		{
+			std::cout<<"cgi detected"<<std::endl;
+			this->handleCgiMetadata(c.m_request_data);
+		}
 		// 		if CGI directives exist && extension == cgi directive && cgi_path is valid
 		// 			we can mark the request as CGI and update m_path_info, m_query_string
 		// 			different function
@@ -166,39 +174,6 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		std::cerr << e.what() << std::endl;
 		m_client->m_request_data.m_error = e.HTTPStatusCode();
 		m_client->m_request_data.m_done = true;
-	}
-}
-
-//Incomplete cgi parsing
-void	RequestHandler::handleCgiMetadata(t_client &c) {
-	t_routes	&routes = c.m_v_server->m_configs.m_routes;
-	t_routes::iterator root; //temporary
-	if ((root = routes.find("/")) == routes.end())
-	{
-		std::cout<<"no root found"<<std::endl;
-		return ;
-	}
-	t_directives::iterator	path_found = root->second.find("cgi_path");
-	t_directives::iterator	extension_found = root->second.find("cgi");
-	std::string	&uri = c.m_request_data.m_path;
-
-	if (extension_found != root->second.end()) {
-		//compare  with uri
-		if (uri.compare(uri.size() - extension_found->second.size(), extension_found->second.size(), extension_found->second))
-			return ; //uri is not to be treated as cgi (incomplete detection, see PATH_INFO)
-		if (path_found == root->second.end()) {
-			std::cout<<"handleCgiMetadata: no path to cgi exec provided"<<std::endl;
-			return ;
-		}
-		//check for existence of path here
-		if (stat(path_found->second.c_str(), &this->m_statbuf)) {
-			std::cout<<"handleCgiMetadata: invalid path to cgi executable"<<std::endl;
-		}
-		c.m_request_data.m_cgi = true;
-	}
-	else if (path_found != root->second.end()) {
-		std::cout<<"handleCgiMetadata: no cgi extension provided"<<std::endl;
-		return ;
 	}
 }
 

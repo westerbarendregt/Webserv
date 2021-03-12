@@ -54,9 +54,9 @@ void	Cgi::fillEnv(t_request_data &request) {
 	this->m_env["CONTENT_LENGTH"]=sputnbr(request.m_body.size());
 	this->m_env["CONTENT_TYPE"]=request.m_headers[CONTENTTYPE];
 	this->m_env["GATEWAY_INTERFACE"]="CGI/1.1";
-	this->m_env["PATH_INFO"]="/cgi-bin/test-cgi.php"; //
+	this->m_env["PATH_INFO"]=request.m_path_info; //
 	this->m_env["PATH_TRANSLATED"]= getcwd(buf, PATH_MAX) + this->m_env["PATH_INFO"];
-	this->m_env["QUERY_STRING"]="";
+	this->m_env["QUERY_STRING"]=request.m_query_string;
 	this->m_env["REMOTE_ADDR"]= "";
 	this->m_env["REMOTE_IDENT"]="";
 	this->m_env["REMOTE_USER"]="";
@@ -67,4 +67,44 @@ void	Cgi::fillEnv(t_request_data &request) {
 	this->m_env["SERVER_PORT"]= request.m_owner->m_v_server->m_port;
 	this->m_env["SERVER_PROTOCOL"]="HTTP /1.1";
 	this->m_env["SERVER_SOFTWARE"]="HTTP 1.1";
+}
+//Incomplete cgi parsing
+void	RequestHandler::handleCgiMetadata(t_request &request) {
+	if (request.m_path.size() == request.m_file.size()) {
+		return ;
+	}
+	std::string rhs = request.m_path.substr(request.m_file.size(), std::string::npos);
+	size_t	
+	//get query string
+	//get path_info
+	(void)request;
+}
+
+bool	RequestHandler::validCgi(t_request &request, size_t extension_index) {
+	if (extension_index == std::string::npos)
+		return false;
+	t_directives::iterator	path_found = request.m_location->second.find("cgi_path");
+	t_directives::iterator	extension_found = request.m_location->second.find("cgi");
+	std::string	&file = request.m_file;
+//
+	if (extension_found != request.m_location->second.end()) {
+		//compare  with uri
+		if (file.compare(extension_index, file.size() - extension_index, extension_found->second))
+			return false; //uri is not to be treated as cgi
+		if (path_found == request.m_location->second.end()) {
+			std::cout<<"handleCgiMetadata: no path to cgi exec provided"<<std::endl;
+			return false;
+		}
+		//check for existence of path here
+		if (stat(path_found->second.c_str(), &this->m_statbuf)) {
+			std::cout<<"handleCgiMetadata: invalid path to cgi executable"<<std::endl;
+			return false;
+		}
+		request.m_cgi = true;
+	}
+	else if (path_found != request.m_location->second.end()) {
+		std::cout<<"handleCgiMetadata: no cgi extension provided"<<std::endl;
+		return false;
+	}
+	return true;
 }

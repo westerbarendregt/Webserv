@@ -18,7 +18,9 @@ Request::Request()
 	m_cgi(0),
 	m_error(0),
 	m_start(0),
-	m_location(0)
+	m_location(0),
+	m_query_string(""),
+	m_path_info("")
 {
 	for (int i = 0; i < 18; ++i)
 		m_headers.push_back("");

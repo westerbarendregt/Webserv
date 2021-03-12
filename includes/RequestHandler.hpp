@@ -17,14 +17,16 @@ class RequestHandler
 {
 	public:
 		typedef	Client			t_client;
+		typedef	Request			t_request;
 		typedef	VirtualServer	t_v_server;
 		typedef	s_v_server_conf::t_directives t_directives;
 		typedef	s_v_server_conf::t_routes	t_routes;
 		RequestHandler();
 		~RequestHandler();
 		void	handleMetadata(t_client &c);
-		void	handleCgiMetadata(t_client &c);
+		void	handleCgiMetadata(t_request &request);
 		void	handleRequest(t_client &c);
+		bool	validCgi(t_request &request, size_t extension_index);
 
 		void printStatusCodes();
 		void printMimeTypes();

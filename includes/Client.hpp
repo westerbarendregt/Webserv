@@ -24,6 +24,10 @@ struct	Request
 		int									m_error;
 		size_t								m_start;
 		s_v_server_conf::t_routes::iterator m_location;
+		std::string							m_query_string;
+		std::string							m_path_info;
+		std::string							m_real_path;
+		std::string							m_file;
 };
 
 struct	Response
