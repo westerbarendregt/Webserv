@@ -144,3 +144,17 @@ bool	ft_compare(char c, char *str)
 			return true;
 	return false;
 }
+
+std::string intToString(int n) {
+	if (n == 0) {
+		return "0";
+	}
+
+	std::string s;
+
+	while (n) {
+		s = static_cast<char>((n % 10) + '0') + s;
+		n /= 10;
+	}
+	return s;
+}
