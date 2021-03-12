@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <limits.h>
 #include <iostream>
-#include <sstream>
 
 static size_t		write_reverse(size_t n, char *buf)
 {
@@ -147,7 +146,15 @@ bool	ft_compare(char c, char *str)
 }
 
 std::string intToString(int n) {
-	std::ostringstream ss;
-	ss << n;
-	return ss.str();
+	if (n == 0) {
+		return "0";
+	}
+
+	std::string s;
+
+	while (n) {
+		s = static_cast<char>((n % 10) + '0') + s;
+		n /= 10;
+	}
+	return s;
 }
