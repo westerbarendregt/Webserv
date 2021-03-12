@@ -1,31 +1,186 @@
+#include <iostream>
+#include "Error.hpp"
 #include "RequestHandler.hpp"
 #include "WebServer.hpp"
 #include "Server.hpp"
+#include "utils.hpp"
 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-void	RequestHandler::handleMetadata(t_client &c) {
-	std::cout<<"handling metadata.."<<std::endl;
-	// http 1.1 request without a host header should return error 400
-	if (c.m_request_data.m_headers[HOST].empty()) {
-		c.m_request_data.m_error = 400;
-		c.m_request_data.m_done = true;
-		return ;
-	}
-	//updating virtual server pointer based on client request's host header
-	c.updateServerConf();
-	std::cout<<"-------FETCHED BLOCK-------\n\tLISTEN "<<c.m_v_server->m_configs.m_directives["listen"]<<"\n\tSERVER_NAME "<<
-		c.m_v_server->m_configs.m_directives["server_name"]<<"\n--------------"<<std::endl;
+RequestHandler::RequestHandler() {
+	initStatusCodes();
+	initMimeTypes();
 }
 
+RequestHandler::~RequestHandler() {}
+
+std::string RequestHandler::Content_Length(std::string const & body) {
+	std::string content_length = "Content-Length: " + intToString(body.length());
+
+	return content_length + CRLF;
+}
+
+std::string RequestHandler::Content_Type() {
+	std::string content_type;
+
+	return content_type + CRLF;
+}
+
+std::string RequestHandler::Server() {
+	std::string server = "webserv/1.0.0";
+
+	return server + CRLF;
+}
+
+std::string RequestHandler::statusLine() {
+	int error_code = m_client->m_request_data.m_error;
+	std::string	status_line;
+
+	status_line.append("HTTP/1.1 ");
+	status_line.append(intToString(error_code));
+	status_line.append(" ");
+	status_line.append(m_status_codes[error_code]);
+
+	return status_line;
+}
+
+std::string RequestHandler::responseBody() {
+	return "";
+}
+
+std::string RequestHandler::responseHeaders(std::string const & body) {
+
+	m_response_headers.push_back(Server());
+	m_response_headers.push_back(Content_Length(body));
+	m_response_headers.push_back(Content_Type());
+
+
+	std::string	response_headers;
+
+	std::vector<std::string>::iterator it = m_response_headers.begin();
+	for (; it != m_response_headers.end(); ++it) {
+		response_headers.append(*it);
+	}
+	return response_headers;
+}
+
+std::string RequestHandler::handleGET() {
+	std::string status_line = statusLine();
+	std::string response_body = responseBody();
+	std::string	response_headers = responseHeaders(response_body);
+
+	return status_line + response_headers + CRLF + response_body;
+}
+
+std::string RequestHandler::handleHEAD() {
+	std::string status_line = statusLine();
+	std::string response_body = responseBody();
+	std::string	response_headers = responseHeaders(response_body);
+
+	return status_line + response_headers + CRLF;
+}
+
+std::string RequestHandler::handlePOST() {
+	std::string status_line = statusLine();
+	std::string response_body = responseBody();
+	std::string	response_headers = responseHeaders(response_body);
+
+	return status_line + response_headers + CRLF + response_body;
+}
+
+std::string RequestHandler::handlePUT() {
+	std::string status_line = statusLine();
+	std::string response_body = responseBody();
+	std::string	response_headers = responseHeaders(response_body);
+
+	return status_line + response_headers + CRLF + response_body;
+}
+
+std::string RequestHandler::handleDELETE() {
+	std::string status_line = statusLine();
+	std::string response_body = responseBody();
+	std::string	response_headers = responseHeaders(response_body);
+
+	return status_line + response_headers + CRLF + response_body;
+}
+
+std::string	RequestHandler::generateErrorPage(int error) {
+	std::string status_line = statusLine();
+
+	std::string	error_response =
+			"<html>" CRLF
+			"<head><title>" + intToString(error) + ' ' + m_status_codes[error] + "</title></head>" CRLF
+			"<body>" CRLF
+			"<center><h1>" + intToString(error) + ' ' + m_status_codes[error] + "</h1></center>" CRLF
+			;
+
+	std::string	response_headers = responseHeaders(error_response);
+
+	return status_line + response_headers + CRLF + error_response;
+}
+
+void	RequestHandler::handleMetadata(t_client &c) {
+	std::cout<<"handling metadata.."<<std::endl;
+
+	m_client = &c;
+
+	try {
+		//updating virtual server pointer based on client request's host header
+		m_client->updateServerConf();
+		std::cout<<"-------FETCHED BLOCK-------\n\tLISTEN "<<c.m_v_server->m_configs.m_directives["listen"]<<"\n\tSERVER_NAME "<<
+				 m_client->m_v_server->m_configs.m_directives["server_name"]<<"\n--------------"<<std::endl;
+		m_client->m_request_data.m_location = getLocation();
+		// getRealPath();
+		/*
+		 * format full path to file
+		 * check extension (locate first dot)
+		 *
+		 * if CGI directives exist && ext == cgi directive
+		 * 		mark as CGI
+		 * 		separate query string (if there is one)
+		 */
+		// if (cgi) {
+		// 		checkCGIPath(); // check for existence of CGI executable in cgi_path
+		// }
+		// checkRealPath(); // checks if real path is a file or a directory and flags if autoindex is enabled
+
+		// Authorization / WWW-Authenticate
+		// Allow
+		//
+	} catch (HTTPError & e) {
+		std::cerr << e.what() << std::endl;
+		m_client->m_request_data.m_error = e.HTTPStatusCode();
+		m_client->m_request_data.m_done = true;
+	}
+}
 
 void	RequestHandler::handleRequest(t_client &c) {
- // either get resource or execute cgi, both populating the response and adding client_socket to write_all
- //
-	std::cout<<"handling request.."<<std::endl;
-	std::cout<<"generating response.."<<std::endl;
-	c.m_response_str = "HTTP/1.1 200 OK\r\nDate: Mon, 27 Jul 2009 12:28:53 GMT\r\nServer: webserv\r\nLast-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\nContent-Length: 4\r\nVary: Accept-Encoding\r\nContent-Type: text/plain\r\n\r\nOi\r\n";
- 
+	m_client = &c;
+	Request	&request = m_client->m_request_data;
+
+	if (request.m_error != 0) {
+		m_client->m_response_str = generateErrorPage(request.m_error);
+	} else if (false) {
+		//
+	} else {
+		switch (request.m_method) {
+			case GET:
+				m_client->m_response_str = handleGET();
+				break;
+			case HEAD:
+				m_client->m_response_str = handleHEAD();
+				break;
+			case POST:
+				m_client->m_response_str = handlePOST();
+				break;
+			case PUT:
+				m_client->m_response_str = handlePUT();
+				break;
+			case DELETE:
+				m_client->m_response_str = handleDELETE();
+				break;
+		}
+	}
 }
