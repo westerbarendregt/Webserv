@@ -39,11 +39,24 @@ void	VirtualServer::init() {
 	if ((this->m_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 		throw(serverError("socket", strerror(errno)));
 	if (setsockopt(this->m_socket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) == -1)
-		throw(serverError("setsockopt", strerror(errno)));
+		throw(serverError("setsockopt(SOL_REUSEADDR)", strerror(errno)));
 	if (setsockopt(this->m_socket, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(int)) == -1)
-		throw(serverError("setsockopt", strerror(errno)));
+		throw(serverError("setsockopt(SO_REUSEPORT)", strerror(errno)));
 }
 
-VirtualServer::t_v_server_conf	VirtualServer::*getVServerConf(std::string &) {
-	return 0;
+VirtualServer::t_routes::iterator	VirtualServer::getLocation(t_request &request) {
+	//compare against all route directives and find the longest one
+	//since they are stored in map, they are already sorted by number of prefixes
+	t_routes::iterator	it = this->m_configs.m_routes.begin();
+	while (it != this->m_configs.m_routes.end()) {
+		if (!request.m_path.compare(0, it->first.size(), it->first))
+			break ;
+		++it;
+	}
+	if (it == this->m_configs.m_routes.end())
+		throw HTTPError("getLocation", "no location found", 404);
+	return it;
 }
+
+//HTML FORM
+//HTML ISINDEX

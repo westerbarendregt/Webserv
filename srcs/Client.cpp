@@ -17,7 +17,8 @@ Request::Request()
 	m_chunked(false),
 	m_cgi(0),
 	m_error(0),
-	m_start(0)
+	m_start(0),
+	m_location(0)
 {
 	for (int i = 0; i < 18; ++i)
 		m_headers.push_back("");
@@ -77,6 +78,9 @@ void	Server::removeClient(int client_socket) {
 void	Client::updateServerConf()
 {
 	std::string host2 = this->m_request_data.m_headers[HOST];
+	if (host2.empty()) {
+		throw HTTPError("updateServerConf", "empty host header." , 400);
+	}
 	host2.resize(host2.size() - 1); // remove when problem fixed in RequestParser
 	for (size_t i = 0; i < (*(this->m_v_server_blocks)).size(); ++i) {
 		if ((*(this->m_v_server_blocks))[i].m_configs.m_directives["server_name"] == host2) {

@@ -173,3 +173,17 @@ char	*ft_join(const char *s1, const char *s2, size_t len)
 	result[i] = '\0';
 	return (result);
 }
+
+std::string intToString(int n) {
+	if (n == 0) {
+		return "0";
+	}
+
+	std::string s;
+
+	while (n) {
+		s = static_cast<char>((n % 10) + '0') + s;
+		n /= 10;
+	}
+	return s;
+}

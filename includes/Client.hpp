@@ -3,6 +3,7 @@
 
 # include <iostream>
 # include "VirtualServer.hpp"
+# include "Conf.hpp"
 
 class	Client;
 struct	Request
@@ -22,6 +23,7 @@ struct	Request
 		bool								m_cgi;
 		int									m_error;
 		size_t								m_start;
+		s_v_server_conf::t_routes::iterator m_location;
 };
 
 struct	Response
