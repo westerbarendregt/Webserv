@@ -121,6 +121,7 @@ class RequestParser
 		c.m_request_data.m_metadata_parsed = false;
 		c.m_request_data.m_chunked = false;
 		c.m_request_data.m_error = 0;
+		c.m_request_data.m_cgi = 0;
 		c.m_request_data.m_start = 0;
 
 	}

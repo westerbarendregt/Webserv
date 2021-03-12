@@ -10,5 +10,6 @@ int		    ftAtoi(const char *str);
 std::string sputnbr(size_t n);
 int		    ft_getline(std::string& total, std::string& line, int line_break, size_t& start);
 bool	    ft_compare(char c, char *str);
+char 		*ft_join(const char *s1, const char *s2, size_t len) ;
 
 #endif

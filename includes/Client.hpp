@@ -4,9 +4,11 @@
 # include <iostream>
 # include "VirtualServer.hpp"
 
+class	Client;
 struct	Request
 {
 		Request();
+		Client								*m_owner;
 		int                     			m_method;
 		std::string							m_path;
 		int                  	    		m_protocol;
@@ -17,6 +19,7 @@ struct	Request
 		bool								m_metadata_parsed;
 		bool								m_done;
 		bool								m_chunked;
+		bool								m_cgi;
 		int									m_error;
 		size_t								m_start;
 };
@@ -45,6 +48,7 @@ class	Client
 		friend class Server;
 		friend class RequestParser;
 		friend class RequestHandler;
+		friend class Cgi;
 
 		Client();
 		Client(Client const & src);

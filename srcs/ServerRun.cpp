@@ -50,6 +50,7 @@ void	Server::run(){
 						std::cout<<c->m_request_str<<std::endl;
 						std::cout<<"======"<<std::endl;
 				 		RequestParser::Parse(*c);
+						c->m_request_data.m_metadata_parsed = true;
 						RequestParser::Print(*c);
 				 		this->m_request_handler.handleMetadata(*c); 
 				 	}

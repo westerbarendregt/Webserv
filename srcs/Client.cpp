@@ -4,7 +4,8 @@
 #include "WebServer.hpp"
 
 Request::Request()
-	: m_method(-1),
+	: m_owner(0),
+	m_method(-1),
 	m_path(""),
 	m_protocol(-1),
 	m_content_length(0),
@@ -14,6 +15,7 @@ Request::Request()
 	m_metadata_parsed(false),
 	m_done(false),
 	m_chunked(false),
+	m_cgi(0),
 	m_error(0),
 	m_start(0)
 {
@@ -45,6 +47,7 @@ Client::Client()
 	m_sockaddr(),
 	m_addrlen(sizeof(m_sockaddr))
 {
+	this->m_request_data.m_owner = this;
 }
 
 
