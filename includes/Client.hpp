@@ -3,11 +3,10 @@
 
 # include <iostream>
 # include "VirtualServer.hpp"
+# include "Conf.hpp"
 
 struct	Request
 {
-		typedef std::map<std::string, std::string> t_directives;
-
 		Request();
 		int                     			m_method;
 		std::string							m_path;
@@ -21,7 +20,7 @@ struct	Request
 		bool								m_chunked;
 		int									m_error;
 		size_t								m_start;
-		t_directives						*m_location;
+		s_v_server_conf::t_routes::iterator m_location;
 };
 
 struct	Response
