@@ -147,13 +147,14 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		// 		extract extension
 		// 		if CGI directives exist && extension == cgi directive && cgi_path is valid
 		// 			we can mark the request as CGI and update m_path_info, m_query_string
+		// 			different function
 		//		else 
 		//			check extension against mime types;
 		//			if there are additional entries after this file, we throw bad request
 		//else if directory
 		//		see if autoindex on then flag it so handleRequest can call the appropriate method
 		//		else return bad request?
-		//		//we dont need to check if remaining entries, because loop on 139 doesn't stop at a directory unless it's the last prefix in uri
+		//		//we dont need to check if remaining entries, because loop on 141 doesn't stop at a directory unless it's the last prefix in uri
 		//
 
 		// Authorization / WWW-Authenticate
