@@ -21,6 +21,7 @@ struct	Request
 		bool								m_done;
 		bool								m_chunked;
 		bool								m_cgi;
+		bool								m_autoindex;
 		int									m_error;
 		size_t								m_start;
 		s_v_server_conf::t_routes::iterator m_location;

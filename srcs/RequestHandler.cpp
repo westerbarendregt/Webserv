@@ -126,7 +126,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		return ; //don't need to do anything if an error has been detected in RequestParser
 	std::cout<<"handling metadata.."<<std::endl;
 
-	m_client = &c;
+	this->m_client = &c;
 
 	try {
 		//updating virtual server pointer based on client request's host header
@@ -138,34 +138,74 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			<<"\n\tLOCATION/ROUTE "<< m_client->m_request_data.m_location->first<<"\n-----------"<<std::endl;
 		//maybe Request could have m_real_path, m_path_info and m_query_string to be updated by the cgi part of this code,
 		//	and later fetched by Cgi to populate the map
-		// select the route 
 		// subsitute route + rest of URI and update m_real_path
-		c.m_request_data.m_real_path = c.m_request_data.m_path; // for now
+		std::string &real_path =  c.m_request_data.m_real_path;
+		std::string	file = c.m_request_data.m_file;
+		real_path = c.m_request_data.m_location->second["root"] + c.m_request_data.m_path; // for now
+		std::cout<<"real_path: "<<real_path<<std::endl;
+		size_t	prefix = 0;
+		size_t	next_prefix = 0;
 		// stat every /prefix/ until
 		// 						found file
 		// 						end of URI
 		// 						stat returns -1, so throw error not found
-		// 				while keeping an index to the last prefix
-		// if we stopped at file
-		c.m_request_data.m_file = c.m_request_data.m_path.substr(0, c.m_request_data.m_path.find('/', 0)); // for now, need to replace 0 by index of last prefix
-		size_t	extension = c.m_request_data.m_file.find_last_of('.', 0);
-		// 		extract extension
-		if (this->validCgi(c.m_request_data, extension))
-		{
-			std::cout<<"cgi detected"<<std::endl;
-			this->handleCgiMetadata(c.m_request_data);
+		while (prefix < real_path.size()) {
+			prefix = real_path.find('/', prefix);
+			next_prefix = prefix == std::string::npos ? std::string::npos : real_path.find('/', prefix + 1);
+			if (next_prefix == std::string::npos)
+				std::cout <<"npos"<<std::endl;
+			file = real_path.substr(0, next_prefix);
+			std::cout<<"\tstat "<<file<<std::endl;
+			if (stat(file.c_str(), &this->m_statbuf)) {
+				throw HTTPError("RequestHandler::handleMetadata", "invalid full path", 404);
+			}
+			if ((this->m_statbuf.st_mode & S_IFMT) == S_IFREG) // if file
+				break ;
+			if ((this->m_statbuf.st_mode & S_IFMT) != S_IFDIR
+					&& (this->m_statbuf.st_mode & S_IFMT) != S_IFLNK) { // if something else than a directory/smlink
+				throw HTTPError("RequestHandler::handleMetadata", "invalid full path, not a file/directory/symlink", 404);
+			}
+			if (next_prefix == std::string::npos)
+				break ;
+			prefix = next_prefix;
 		}
-		// 		if CGI directives exist && extension == cgi directive && cgi_path is valid
-		// 			we can mark the request as CGI and update m_path_info, m_query_string
-		// 			different function
-		//		else 
-		//			check extension against mime types;
-		//			if there are additional entries after this file, we throw bad request
-		//else if directory
+		if (next_prefix == std::string::npos)
+			c.m_request_data.m_file = real_path.substr(real_path.size() - file.size(), std::string::npos);
+		else
+			c.m_request_data.m_file = real_path.substr(prefix + 1, std::string::npos);
+		// if we stopped at file
+		if ((this->m_statbuf.st_mode & S_IFMT) == S_IFREG) {
+			std::cout<<"m_file: "<<c.m_request_data.m_file<<std::endl;
+			std::cout<<"file: "<<file<<std::endl;
+			// 	extract extension
+			size_t	extension = c.m_request_data.m_file.find_last_of('.', c.m_request_data.m_file.size());
+			std::cout<<"extension index: "<<extension<<std::endl;
+			// 	if CGI directives exist && extension == cgi directive && cgi_path is valid
+			if (this->validCgi(c.m_request_data, extension))
+			{
+				std::cout<<"cgi detected"<<std::endl;
+				this->handleCgiMetadata(c.m_request_data);
+			}
+			else
+			{
+				//	normal file;
+				//	check extension against mime types;
+				//	if there are additional entries after this file, we throw bad request
+				if (next_prefix != std::string::npos) {
+					throw HTTPError("RequestHandler::handleMetadata", "invalid full path", 404);
+				}
+			}
+		} 
 		//		see if autoindex on then flag it so handleRequest can call the appropriate method
 		//		else return bad request?
 		//		//we dont need to check if remaining entries, because loop on 141 doesn't stop at a directory unless it's the last prefix in uri
-		//
+		else if (c.m_request_data.m_location->second["autoindex"] == "on")
+		{
+			std::cout<<"dir listing"<<std::endl;
+			c.m_request_data.m_autoindex= true;
+		}
+		else
+			throw HTTPError("RequestHandler::handleMetadata", "directory listing not enabled", 404);
 
 		// Authorization / WWW-Authenticate
 		// Allow
@@ -183,8 +223,8 @@ void	RequestHandler::handleRequest(t_client &c) {
 
 	if (request.m_error != 0) {
 		m_client->m_response_str = generateErrorPage(request.m_error);
-	} else if (false) {
-		//
+	} else if (c.m_request_data.m_cgi) {
+		this->m_cgi.run(c);
 	} else {
 		switch (request.m_method) {
 			case GET:

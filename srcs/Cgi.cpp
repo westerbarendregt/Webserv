@@ -70,14 +70,17 @@ void	Cgi::fillEnv(t_request_data &request) {
 }
 //Incomplete cgi parsing
 void	RequestHandler::handleCgiMetadata(t_request &request) {
-	if (request.m_path.size() == request.m_file.size()) {
+	request.m_cgi = true;
+	if (request.m_path.size() == request.m_file.size())
 		return ;
-	}
-	std::string rhs = request.m_path.substr(request.m_file.size(), std::string::npos);
-	size_t	
-	//get query string
-	//get path_info
-	(void)request;
+	size_t	query_string_index = request.m_file.find('?', 0);
+	if (query_string_index != std::string::npos)
+		request.m_query_string = request.m_file.substr(query_string_index + 1, std::string::npos);
+	size_t	path_info_index = request.m_file.find('/', 0);
+	if (path_info_index != std::string::npos) 
+		request.m_path_info = request.m_file.substr(path_info_index, query_string_index - path_info_index);
+	std::cout<<"path_info: "<<request.m_path_info<<std::endl;
+	std::cout<<"query_string : "<<request.m_query_string<<std::endl;
 }
 
 bool	RequestHandler::validCgi(t_request &request, size_t extension_index) {
@@ -89,7 +92,7 @@ bool	RequestHandler::validCgi(t_request &request, size_t extension_index) {
 //
 	if (extension_found != request.m_location->second.end()) {
 		//compare  with uri
-		if (file.compare(extension_index, file.size() - extension_index, extension_found->second))
+		if (file.compare(extension_index, extension_found->second.size(), extension_found->second))
 			return false; //uri is not to be treated as cgi
 		if (path_found == request.m_location->second.end()) {
 			std::cout<<"handleCgiMetadata: no path to cgi exec provided"<<std::endl;
@@ -100,11 +103,10 @@ bool	RequestHandler::validCgi(t_request &request, size_t extension_index) {
 			std::cout<<"handleCgiMetadata: invalid path to cgi executable"<<std::endl;
 			return false;
 		}
-		request.m_cgi = true;
+		return true;
 	}
 	else if (path_found != request.m_location->second.end()) {
 		std::cout<<"handleCgiMetadata: no cgi extension provided"<<std::endl;
-		return false;
 	}
-	return true;
+	return false;
 }

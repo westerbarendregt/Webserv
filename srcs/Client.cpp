@@ -16,6 +16,7 @@ Request::Request()
 	m_done(false),
 	m_chunked(false),
 	m_cgi(0),
+	m_autoindex(0),
 	m_error(0),
 	m_start(0),
 	m_location(0),
