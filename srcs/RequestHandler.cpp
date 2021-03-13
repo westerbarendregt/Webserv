@@ -4,6 +4,7 @@
 #include "WebServer.hpp"
 #include "Server.hpp"
 #include "utils.hpp"
+#include "Authentication.hpp"
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -42,7 +43,7 @@ std::string RequestHandler::statusLine() {
 	status_line.append(intToString(error_code));
 	status_line.append(" ");
 	status_line.append(m_status_codes[error_code]);
-
+	// status_line.append(CRLF);
 	return status_line;
 }
 
@@ -71,7 +72,7 @@ std::string RequestHandler::handleGET() {
 	std::string response_body = responseBody();
 	std::string	response_headers = responseHeaders(response_body);
 
-	return status_line + response_headers + CRLF + response_body;
+	return status_line + CRLF + response_headers + CRLF + response_body;
 }
 
 std::string RequestHandler::handleHEAD() {
@@ -108,6 +109,17 @@ std::string RequestHandler::handleDELETE() {
 
 std::string	RequestHandler::generateErrorPage(int error) {
 	std::string status_line = statusLine();
+	std::string response;
+	if (error == 401)
+	{
+		// response += "401 Unauthorized\r\n";
+		response +=	"Server: Webserv/1.1\r\n"
+					  	"Content-Type: text/html\r\n"
+	   					"WWW-Authenticate: Basic realm=";
+		response += "\"Access to the production webserv\"";
+		response += ", charset=\"UTF-8\"\r\n";
+		return status_line + CRLF + response + CRLF;
+	}
 
 	std::string	error_response =
 			"<html>" CRLF
@@ -146,6 +158,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		// }
 		// checkRealPath(); // checks if real path is a file or a directory and flags if autoindex is enabled
 
+		Authenticated(c);
 		// Authorization / WWW-Authenticate
 		// Allow
 		//
@@ -160,6 +173,7 @@ void	RequestHandler::handleRequest(t_client &c) {
 	m_client = &c;
 	Request	&request = m_client->m_request_data;
 
+	std::cout << "HIER!!! " << request.m_error << std::endl;
 	if (request.m_error != 0) {
 		m_client->m_response_str = generateErrorPage(request.m_error);
 	} else if (false) {

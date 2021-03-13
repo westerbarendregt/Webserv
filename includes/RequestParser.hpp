@@ -19,7 +19,7 @@ class Client;
 
 static const char *methods[] = {"GET", "HEAD", "POST", "PUT", "DELETE", NULL};
 
-static const char *headers[] = {"ACCEPT-CHARSETS", "ACCEPT-LANGUAGE", "ALLOW", "AUTHENTIZATION",
+static const char *headers[] = {"ACCEPT-CHARSETS", "ACCEPT-LANGUAGE", "ALLOW", "AUTHORIZATION",
 	"CONTENT-LANGUAGE", "CONTENT-LENGTH", "CONTENT-LOCATION", "CONTENT-TYPE", "DATE", "HOST",
 	"LAST-MODIFIED", "LOCATION", "REFERER", "RETRY-AFTER", "SERVER", "TRANSFER-ENCODING", "USER-AGENT",
 	"WWW-AUTHENTICATE", NULL};
@@ -117,7 +117,7 @@ class RequestParser
 		c.m_request_data.m_done = false;
 		c.m_request_data.m_metadata_parsed = false;
 		c.m_request_data.m_chunked = false;
-		c.m_request_data.m_error = 0;
+		c.m_request_data.m_error = 200;
 		c.m_request_data.m_start = 0;
 
 	}

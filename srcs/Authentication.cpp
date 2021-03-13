@@ -1,5 +1,4 @@
-#include "something.hpp"
-
+#include "Authentication.hpp"
 
 std::string         EncodePassword(std::string& password)
 {
@@ -22,7 +21,16 @@ std::string         EncodePassword(std::string& password)
     return encoded;
 }
 
-bool                Authenticate(Client& c)
+bool                Authenticated(Client& c)
 {
-    if (c.)
+    // if (!c.getRequest().m_location->auth_needed)
+    //     return true;
+    if (c.getRequest().m_headers[AUTHORIZATION] == ""){
+        c.getRequest().m_error = 401;
+        std::cout << "--------401---------" << std::endl;
+        return false;
+    }
+    return true;
 }
+
+// void                Sethtpasswd

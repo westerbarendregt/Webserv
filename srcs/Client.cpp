@@ -14,7 +14,7 @@ Request::Request()
 	m_metadata_parsed(false),
 	m_done(false),
 	m_chunked(false),
-	m_error(0),
+	m_error(200),
 	m_start(0)
 {
 	for (int i = 0; i < 18; ++i)
@@ -29,7 +29,7 @@ Response::Response()
 	m_headers(0),
 	m_if_body(false),
 	m_body(""),
-	m_error(0)
+	m_error(200)
 {
 	for (int i = 0; i < 18; ++i)
 		m_headers.push_back("");
