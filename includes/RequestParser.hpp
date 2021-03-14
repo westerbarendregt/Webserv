@@ -169,6 +169,24 @@ class RequestParser
 
   public:
 
+	static std::string 		GetMethodString(Client &c)
+	{
+		switch (c.m_request_data.m_method)
+		{
+			case GET : return "GET"; 
+				break ;
+			case HEAD : return "HEAD"; 
+				break ;
+			case POST : return "POST"; 
+				break ;
+			case PUT : return "PUT"; 
+				break ;
+			case DELETE : return "DELETE";
+				break ;
+		}
+		return "No match";
+	}
+
 	static void				ResetClient(Client &c)
 	{
 		c.m_request_str.clear();

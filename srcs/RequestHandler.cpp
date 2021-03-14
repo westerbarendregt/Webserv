@@ -112,12 +112,20 @@ std::string	RequestHandler::generateErrorPage(int error) {
 	std::string response;
 	if (error == 401)
 	{
-		// response += "401 Unauthorized\r\n";
 		response +=	"Server: Webserv/1.1\r\n"
 					  	"Content-Type: text/html\r\n"
 	   					"WWW-Authenticate: Basic realm=";
 		response += "\"Access to the production webserv\"";
 		response += ", charset=\"UTF-8\"\r\n";
+		return status_line + CRLF + response + CRLF;
+	}
+	if (error == 405)
+	{
+    	std::string allowed = "GET, POST, HEAD\n"; // get this resource from allowed methods from the location
+		response +=	"Server: Webserv/1.1\r\n"
+					  	"Content-Type: text/html\r\n"
+	   					"Allow: ";
+		response += allowed;
 		return status_line + CRLF + response + CRLF;
 	}
 
@@ -157,7 +165,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		// 		checkCGIPath(); // check for existence of CGI executable in cgi_path
 		// }
 		// checkRealPath(); // checks if real path is a file or a directory and flags if autoindex is enabled
-
+		AllowedMethods(c);
 		Authenticated(c);
 		// Authorization / WWW-Authenticate
 		// Allow

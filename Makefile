@@ -30,6 +30,7 @@ SRCS=	$(SRC_DIR)/main.cpp \
 				$(SRC_DIR)/RequestHandlerStatusCodes.cpp \
 				$(SRC_DIR)/RequestHandlerLocation.cpp \
 				$(SRC_DIR)/Authentication.cpp \
+				$(SRC_DIR)/base64.cpp \
 
 OBJ			= $(SRCS:.cpp=.o)
 

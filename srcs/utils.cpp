@@ -134,7 +134,7 @@ int		ft_getline(std::string& total, std::string& line, int line_break, size_t& s
 		line = total.substr(start, total.size() - start);
 		start = 0;
 	}
-		std::cout << "found" << std::endl;
+		// std::cout << "found" << std::endl;
 	return 0;
 }
 
