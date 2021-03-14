@@ -8,7 +8,8 @@
 
 struct	s_prefix_comp {
 	//some opti required for subsequent // and location that ends with /
-	bool	operator()(std::string const &lhs, std::string const &rhs) {
+	s_prefix_comp() {};
+	bool	operator()(std::string const &lhs, std::string const &rhs) const {
 		size_t	lhs_prefixes = 0;
 		size_t	rhs_prefixes = 0;
 		size_t	index = 0;

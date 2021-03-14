@@ -19,7 +19,7 @@ Request::Request()
 	m_autoindex(0),
 	m_error(0),
 	m_start(0),
-	m_location(0),
+	m_location(),
 	m_query_string(""),
 	m_path_info("")
 {
