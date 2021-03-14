@@ -13,7 +13,6 @@ class RequestHandler
 	public:
 		typedef	Client			t_client;
 		typedef VirtualServer	t_v_server;
-		typedef Request::t_directives t_directives;
 		RequestHandler();
 		~RequestHandler();
 		void	handleMetadata(t_client &c);
@@ -23,9 +22,6 @@ class RequestHandler
 		void printMimeTypes();
 
 	private:
-
-		t_directives*	getLocation();
-
 		std::string handleGET();
 		std::string handleHEAD();
 		std::string handlePOST();

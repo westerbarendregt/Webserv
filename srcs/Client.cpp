@@ -15,7 +15,8 @@ Request::Request()
 	m_done(false),
 	m_chunked(false),
 	m_error(0),
-	m_start(0)
+	m_start(0),
+	m_location()
 {
 	for (int i = 0; i < 18; ++i)
 		m_headers.push_back("");
