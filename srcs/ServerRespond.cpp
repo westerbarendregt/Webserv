@@ -9,8 +9,7 @@ void	Server::respond(int client_socket) {
 	if ((c = this->getClient(client_socket)) == NULL) {
 		throw serverError("removeClient: ", "trying to remove unexisting client");
 	}
-	// std::cout << "RESPONSE:\n" << c->m_response_str.c_str() << std::endl; 
-	// std::cout << "TOT HIER!!" << std::endl;
+	std::cout << "RESPONSE:\n" << c->m_response_str.c_str() << std::endl << std::endl;
 	 if (send(c->m_socket, c->m_response_str.c_str(), c->m_response_str.size() + 1, 0) == -1)
 		 std::cout<<"send: "<<strerror(errno)<<std::endl;
 	 //check return value of send and see if we sent everything

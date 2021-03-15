@@ -35,7 +35,7 @@ void                Authenticated(Client& c)
     if (path_ht[0] == 0) // checks if location needs authentication. 
         return ;
     std::string auth = c.getRequest().m_headers[AUTHORIZATION];
-    std::cout << "AUTH: " << auth << std::endl;
+    // std::cout << "AUTH: " << auth << std::endl;
     if (auth == "") // checking if there is authentication. 
         throw HTTPError("Authentication", "Asking for Credentials", 401); // if none, sending an 401 which means asking for authentication.
     if (auth.find("Basic") == std::string::npos)
@@ -43,7 +43,7 @@ void                Authenticated(Client& c)
     std::string encoded, decoded;
     encoded = auth.substr(auth.find(' ') + 1);
     decoded = base64_decode(encoded); // decode the incoming username and password
-    std::cout << "encoded: " << encoded << std::endl;
-    std::cout << "decoded: " << base64_decode(encoded) << std::endl;
+    // std::cout << "encoded: " << encoded << std::endl;
+    // std::cout << "decoded: " << base64_decode(encoded) << std::endl;
     CheckCorrectCredentials(decoded, path_ht);
 }
