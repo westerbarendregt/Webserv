@@ -243,7 +243,7 @@ class RequestParser
 				break ;
 		}
 		for (int i = 0; i < 18; ++i)
-			std::cout << headers[i] << ":" << c.m_request_data.m_headers[i] << "---" << c.m_request_data.m_headers[i].size() << std::endl;
+			std::cout << headers[i] << ":" << c.m_request_data.m_headers[i] << std::endl;//"---" << c.m_request_data.m_headers[i].size() << std::endl;
 		if (c.m_request_data.m_chunked)
 			std::cout << std::endl << "The body is chunked!" << std::endl;
 		std::cout << "BODY-length: " << c.m_request_data.m_content_length << std::endl;

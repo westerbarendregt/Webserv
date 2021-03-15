@@ -2,7 +2,7 @@
 
 void                AllowedMethods(Client& c)
 {
-    std::string allowed = "GET, POST, HEAD"; // get this resource from allowed methods from the location
+    std::string allowed = c.getRequest().m_location->second["allow_method"]; // get this resource from allowed methods from the location
     if (allowed[0] == 0) // checking if location has an limited methods that are allowed
         return ;
     std::string method = RequestParser::GetMethodString(c);
@@ -31,7 +31,7 @@ void                CheckCorrectCredentials(std::string decoded, std::string pat
 
 void                Authenticated(Client& c)
 {
-    std::string path_ht = "test_conf/.htpasswd"; // replace this with path to .htpasswd found in location! 
+    std::string path_ht = c.getRequest().m_location->second["auth_basic_user_file"]; // replace this with path to .htpasswd found in location! 
     if (path_ht[0] == 0) // checks if location needs authentication. 
         return ;
     std::string auth = c.getRequest().m_headers[AUTHORIZATION];

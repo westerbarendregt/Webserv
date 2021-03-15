@@ -52,7 +52,7 @@ std::string RequestHandler::responseBody() {
 }
 
 std::string RequestHandler::responseHeaders(std::string const & body) {
-
+	m_response_headers.clear();
 	m_response_headers.push_back(Server());
 	m_response_headers.push_back(Content_Length(body));
 	m_response_headers.push_back(Content_Type());
@@ -107,21 +107,24 @@ std::string RequestHandler::handleDELETE() {
 	return status_line + response_headers + CRLF + response_body;
 }
 
-std::string	RequestHandler::generateErrorPage(int error) {
+std::string	RequestHandler::generateErrorPage(Client& c, int error) {
 	std::string status_line = statusLine();
 	std::string response;
+	// std::cout << "hier: " << status_line << std::endl;
+	// status_line.clear();
+	// response.clear();
 	if (error == 401)
 	{
 		response +=	"Server: Webserv/1.1\r\n"
 					  	"Content-Type: text/html\r\n"
 	   					"WWW-Authenticate: Basic realm=";
-		response += "\"Access to the production webserv\"";
+		response += c.m_request_data.m_location->second["auth_basic"]; // get from location
 		response += ", charset=\"UTF-8\"\r\n";
 		return status_line + CRLF + response + CRLF;
 	}
 	if (error == 405)
 	{
-    	std::string allowed = "GET, POST, HEAD\n"; // get this resource from allowed methods from the location
+    	std::string allowed = c.getRequest().m_location->second["allow_method"]; // get this resource from allowed methods from the location
 		response +=	"Server: Webserv/1.1\r\n"
 					  	"Content-Type: text/html\r\n"
 	   					"Allow: ";
@@ -137,8 +140,9 @@ std::string	RequestHandler::generateErrorPage(int error) {
 			;
 
 	std::string	response_headers = responseHeaders(error_response);
+	// std::cout << "head: " << response_headers << std::endl;
 
-	return status_line + response_headers + CRLF + error_response;
+	return status_line + CRLF + response_headers + CRLF + error_response;
 }
 
 void	RequestHandler::handleMetadata(t_client &c) {
@@ -154,6 +158,8 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			<<c.m_v_server->m_configs.m_directives["listen"]
 			<<"\n\tSERVER_NAME "<< m_client->m_v_server->m_configs.m_directives["server_name"]
 			<<"\n\tLOCATION/ROUTE "<< m_client->m_request_data.m_location->first<<"\n-----------"<<std::endl;
+
+		std::cout << "methods!!!!!--- "<< c.m_request_data.m_location->second["allow_method"] << std::endl;
 		//c.m_request_data.m_real_path =  substr
 		//maybe Request could have m_real_path, m_path_info and m_query_string to be updated by the cgi part of this code,
 		//	and later fetched by Cgi to populate the map
@@ -189,10 +195,14 @@ void	RequestHandler::handleMetadata(t_client &c) {
 void	RequestHandler::handleRequest(t_client &c) {
 	m_client = &c;
 	Request	&request = m_client->m_request_data;
-
+	// m_client->m_response_str.clear();
 	std::cout << "HIER!!! " << request.m_error << std::endl;
+	std::cout << "RESPONSE:\n" << c.m_response_str.c_str() << std::endl; 
+	std::cout << "TOT HIER!!" << std::endl;
 	if (request.m_error != 0) {
-		m_client->m_response_str = generateErrorPage(request.m_error);
+		m_client->m_response_str = generateErrorPage(c, request.m_error);
+	std::cout << "RESPONSE:\n" << c.m_response_str.c_str() << std::endl; 
+	std::cout << "TOT HIER!!" << std::endl;
 	} else if (false) {
 		//
 	} else {
