@@ -1,4 +1,5 @@
 #include <iostream>
+#include "Conf.hpp"
 #include "Error.hpp"
 #include "RequestHandler.hpp"
 #include "WebServer.hpp"
