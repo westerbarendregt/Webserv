@@ -42,13 +42,13 @@ void	Server::run(){
 				 	if (!c->m_request_data.m_metadata_parsed) {
 				 		if (!c->fullMetaData())
 				 			continue ;
-						std::cout<<"received full metadata"<<std::endl;
+						// std::cout<<"received full metadata"<<std::endl;
 						// if (parse != error)
 						// 	this->handleMetadata(*c); 
 						// 	if error, flag the request as done, and as erroneous, so handle request can generate a error page.
-						std::cout<<"======"<<std::endl;
-						std::cout<<c->m_request_str<<std::endl;
-						std::cout<<"======"<<std::endl;
+						// std::cout<<"======"<<std::endl;
+						// std::cout<<c->m_request_str<<std::endl;
+						// std::cout<<"======"<<std::endl;
 				 		RequestParser::Parse(*c);
 						RequestParser::Print(*c);
 				 		this->m_request_handler.handleMetadata(*c); 

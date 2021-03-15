@@ -13,13 +13,12 @@
 # include "WebServer.hpp"
 
 #define BLANKS "\t\v\n "
-#define CHUNK  "\r\n"
 
 class Client;
 
 static const char *methods[] = {"GET", "HEAD", "POST", "PUT", "DELETE", NULL};
 
-static const char *headers[] = {"ACCEPT-CHARSETS", "ACCEPT-LANGUAGE", "ALLOW", "AUTHENTIZATION",
+static const char *headers[] = {"ACCEPT-CHARSETS", "ACCEPT-LANGUAGE", "ALLOW", "AUTHORIZATION",
 	"CONTENT-LANGUAGE", "CONTENT-LENGTH", "CONTENT-LOCATION", "CONTENT-TYPE", "DATE", "HOST",
 	"LAST-MODIFIED", "LOCATION", "REFERER", "RETRY-AFTER", "SERVER", "TRANSFER-ENCODING", "USER-AGENT",
 	"WWW-AUTHENTICATE", NULL};
@@ -32,7 +31,7 @@ class RequestParser
 	{
 		std::string line;
 		
-		if (ft_getline(c.m_request_str, line, 0, c.m_request_data.m_start))
+		if (ft_getline_crlf(c.m_request_str, line, 0, c.m_request_data.m_start))
 		{
 			for (int i = 0; methods[i]; ++i){
 				if (!line.compare(0, line.find_first_of(BLANKS), methods[i])){
@@ -44,9 +43,6 @@ class RequestParser
 						return ERROR;
 					}
 					c.m_request_data.m_path = line.substr(first, last - first);
-					// size_t ret = line.copy(c.m_request_data.m_path, (line.find("HTTP") -1) -
-					// (line.find_first_of(BLANKS) + 1), line.find_first_of(BLANKS) + 1);
-					// c.m_request_data.m_path[ret] = 0;
 					if (line.find(protocol) != std::string::npos){
 						c.m_request_data.m_protocol = HTTP1;
 						return SUCCESS;
@@ -66,7 +62,7 @@ class RequestParser
 		std::string line;
 		bool first = true;
 
-		while (ft_getline(c.m_request_str, line, 0, c.m_request_data.m_start))
+		while (ft_getline_crlf(c.m_request_str, line, 0, c.m_request_data.m_start))
 		{
 			if (ft_compare(line[0], (char*)BLANKS)){
 				c.m_request_data.m_error = 400; // Bad request (blanks between start line and first header)
@@ -86,7 +82,7 @@ class RequestParser
 				if (line.find(headers[i]) != std::string::npos){
 					std::string header = line.substr(line.find(':') + 1, line.size() - (line.find(":") + 1));
 					size_t start = header.find_first_not_of(BLANKS);
-					size_t len = (header.find_last_not_of(BLANKS) + 1) - start;
+					size_t len = header.find_last_not_of(BLANKS) - start + 1;
 					c.m_request_data.m_headers[i] = header.substr(start, len); //trimming start and end of whitespaces
 				}
 			}
@@ -127,7 +123,6 @@ class RequestParser
 
 	static void				CheckHeaderData(Client& c)
 	{
-		// std::cout << "say hi \n"  << "hier: " << c.m_request_data.m_headers[TRANSFERENCODING] << std::endl;
 		c.m_request_data.m_content_length = ftAtoi(c.m_request_data.m_headers[CONTENTLENGTH].c_str());
 		if (c.m_request_data.m_headers[TRANSFERENCODING].find("chunked") != std::string::npos){
 			c.m_request_data.m_chunked = true;
@@ -142,12 +137,11 @@ class RequestParser
 		std::string line;
 		int ret = 1;
 
-		// std::cout << c.m_request_str << std::endl;
-			// std::cout << "hier:--------------- "<< line << std::endl;
-		if (ft_getline(c.m_request_str, line, 1, c.m_request_data.m_start))
+			std::cout << "line: " << c.m_request_str << std::endl;
+			std::cout << "index: " << c.m_request_data.m_start << std::endl;
+		if (ft_getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start))
 		{
 			size_t current_chunk_size = ftAtoi(line.c_str());
-			// std::cout << "hier!!!!!!!!!" << current_chunk_size << std::endl;
 			if (current_chunk_size == 0 && line == "0\r\n")
 			{
 				c.m_request_data.m_done = true;
@@ -155,29 +149,39 @@ class RequestParser
 					return SUCCESS;
 				return ERROR;
 			}
-			if (line.find(CHUNK) != std::string::npos)
+			if (line.find(CRLF) != std::string::npos)
 			{
 				c.m_request_data.m_content_length += current_chunk_size;
 				while (ret)
 				{
-					ret = ft_getline(c.m_request_str, line, 1, c.m_request_data.m_start);
-					if (line.find(CHUNK) != std::string::npos){
+					ret = ft_getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start);
+					if (line.find(CRLF) != std::string::npos){
 						c.m_request_data.m_body.append(line.substr(0, line.size() - 2));
-						// std::cout << "size:" << c.m_request_data.m_body.size() << "   other:" << c.m_request_data.m_content_length << std::endl;
 						if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
 							return SUCCESS;
-						// std::cout << "hier\n";
 						return ERROR;
 					}
 					c.m_request_data.m_body.append(line);
 				}
 			}
 		}
-			// std::cout << "------------hallo\n";
 		return ERROR;
 	}
 
   public:
+
+	static std::string 		GetMethodString(Client &c)
+	{
+		switch (c.m_request_data.m_method)
+		{
+			case GET : return "GET"; 
+			case HEAD : return "HEAD"; 
+			case POST : return "POST"; 
+			case PUT : return "PUT"; 
+			case DELETE : return "DELETE";
+		}
+		return "No match";
+	}
 
 	static void				ResetClient(Client &c)
 	{
@@ -190,9 +194,9 @@ class RequestParser
 		std::string line;
 		int ret = 1;
 
-		// std::cout << "are we chunking?" << std::endl;
 		if (c.m_request_data.m_chunked == true)
 		{
+			std::cout << "TRUE"<< std::endl;
 			if (ChunkedData(c)){
 				c.m_request_data.m_start = 0;
 				return ERROR;
@@ -202,7 +206,7 @@ class RequestParser
 		}
 		else if (c.m_request_data.m_chunked == false){
 			while (ret){
-				ret = ft_getline(c.m_request_str, line, 1, c.m_request_data.m_start);
+				ret = ft_getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start);
 				c.m_request_data.m_body.append(line);
 			}
 		}
@@ -229,20 +233,27 @@ class RequestParser
 			case DELETE : std::cout << "method: " << "DELETE" << std::endl;
 				break ;
 		}
+		std::cout << "path: " << c.m_request_data.m_path << std::endl;
 		switch (c.m_request_data.m_protocol)
 		{
 			case HTTP1 : std::cout << "protocol: " << "HTTP/1.1" << std::endl;
 				break ;
 		}
-		std::cout << "path: " << c.m_request_data.m_path << std::endl;
 		for (int i = 0; i < 18; ++i)
-			std::cout << headers[i] << ":" << c.m_request_data.m_headers[i] << std::endl;
-		std::cout << std::endl << "BODY-length: " << c.m_request_data.m_content_length << std::endl;
+			std::cout << headers[i] << ":" << c.m_request_data.m_headers[i] << std::endl;//"---" << c.m_request_data.m_headers[i].size() << std::endl;
+		if (c.m_request_data.m_chunked)
+			std::cout << std::endl << "The body is chunked!" << std::endl;
+		std::cout << "BODY-length: " << c.m_request_data.m_content_length << std::endl;
 		std::cout << "BODY:" << c.m_request_data.m_body << std::endl << std::endl;
-		if (c.m_request_data.m_done)
-			std::cout << "PARSING IS DONE" << std::endl;
+		if (c.m_request_data.m_error)
+			std::cout << "While parsing found error NR: " << c.m_request_data.m_error << std::endl;
+		if (c.m_request_data.m_metadata_parsed && c.m_request_data.m_done)
+			std::cout << "METADATA IS PARSED AND BODY PARSING IS DONE" << std::endl;
+		else if (c.m_request_data.m_metadata_parsed)
+			std::cout << "METADATA NOT PARSED BUT BODY PARSING IS NOT FINISHED" << std::endl; 
 		else 
-			std::cout << "PARSING IS NOT FINISHED" << std::endl;
+			std::cout << "REQUEST DATA NOT PARSED" << std::endl;
+		
 	}
 	
 	static int		Parse(Client& c)
@@ -261,6 +272,7 @@ class RequestParser
 		}
 		else 
 			c.m_request_data.m_done = true;
+		c.m_request_data.m_start = 0;
 		return SUCCESS;
 	}
 

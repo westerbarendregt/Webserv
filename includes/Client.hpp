@@ -59,7 +59,7 @@ class	Client
 		int									testGetError(){
 			return m_request_data.m_error;
 		}
-		Request&							getRequest(){
+		Request&				 			getRequest(){
 			return m_request_data;						
 		}
 	private:

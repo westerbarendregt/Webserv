@@ -4,6 +4,7 @@
 # include "Conf.hpp"
 # include <sys/socket.h>
 # include <netinet/in.h>
+# include "WebServer.hpp"
 
 struct	Request;
 class	VirtualServer

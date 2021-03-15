@@ -48,6 +48,10 @@ Client::Client()
 {
 }
 
+bool	Client::fullMetaData() {
+	return (!this->m_request_str.empty()
+			&& this->m_request_str.find("\r\n\r\n") != std::string::npos);
+}
 
 Client::Client(Client const & src)
 	: m_request_str(src.m_request_str),
@@ -58,13 +62,6 @@ Client::Client(Client const & src)
 	m_sockaddr(src.m_sockaddr),
 	m_addrlen(src.m_addrlen)
 {
-
-}
-
-
-bool	Client::fullMetaData() {
-	return (!this->m_request_str.empty()
-			&& this->m_request_str.find("\r\n\r\n") != std::string::npos);
 }
 
 void	Server::removeClient(int client_socket) {
