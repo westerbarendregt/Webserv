@@ -32,8 +32,8 @@ class RequestHandler
 		void printMimeTypes();
 
 	private:
-			Cgi				m_cgi;
-			struct	stat	m_statbuf;
+		Cgi				m_cgi;
+		struct	stat	m_statbuf;
 		std::string handleGET();
 		std::string handleHEAD();
 		std::string handlePOST();

@@ -131,31 +131,34 @@ void	RequestHandler::handleMetadata(t_client &c) {
 	try {
 		//updating virtual server pointer based on client request's host header
 		m_client->updateServerConf();
+		//updating location block
 		c.m_request_data.m_location = c.m_v_server->getLocation(c.m_request_data);
 		c.m_request_data.m_owner = &c;
 		std::cout<<"-------FETCHED BLOCK-------\n\tLISTEN "
 			<<c.m_v_server->m_configs.m_directives["listen"]
 			<<"\n\tSERVER_NAME "<< m_client->m_v_server->m_configs.m_directives["server_name"]
 			<<"\n\tLOCATION/ROUTE "<< m_client->m_request_data.m_location->first<<"\n-----------"<<std::endl;
-		//maybe Request could have m_real_path, m_path_info and m_query_string to be updated by the cgi part of this code,
-		//	and later fetched by Cgi to populate the map
-		// subsitute route + rest of URI and update m_real_path
+		//updating location block
 		std::string &real_path =  c.m_request_data.m_real_path;
-		std::string	file = c.m_request_data.m_file;
-		real_path = c.m_request_data.m_location->second["root"] + c.m_request_data.m_path; // for now
+		std::string	stat_file;
+		real_path = c.m_request_data.m_path;
+		std::string const & location = c.m_request_data.m_location->first;
+		std::string const & alias = c.m_request_data.m_location->second["alias"];
+		/*replacing location path by alias path (what if alias empty?)*/
+		real_path.replace(real_path.find(location), location.length(), alias);
 		std::cout<<"real_path: "<<real_path<<std::endl;
 		size_t	prefix = 0;
 		size_t	next_prefix = 0;
-		// stat every /prefix/ until
+		//stat every /prefix/ until
 		// 						found file
 		// 						end of URI
 		// 						stat returns -1, so throw error not found
 		while (prefix < real_path.size()) {
-			prefix = real_path.find('/', prefix);
-			next_prefix = prefix == std::string::npos ? std::string::npos : real_path.find('/', prefix + 1);
-			file = real_path.substr(0, next_prefix);
-			std::cout<<"\tstat "<<file<<std::endl;
-			if (stat(file.c_str(), &this->m_statbuf)) {
+			prefix = real_path.find_first_of("/?", prefix);
+			next_prefix = prefix == std::string::npos ? std::string::npos : real_path.find_first_of("?/", prefix + 1);
+			stat_file = real_path.substr(0, next_prefix);
+			std::cout<<"\tstat "<<stat_file<<std::endl;
+			if (stat(stat_file.c_str(), &this->m_statbuf)) {
 				throw HTTPError("RequestHandler::handleMetadata", "invalid full path", 404);
 			}
 			//also check permission
@@ -169,14 +172,13 @@ void	RequestHandler::handleMetadata(t_client &c) {
 				break ;
 			prefix = next_prefix;
 		}
-		if (next_prefix == std::string::npos)
-			c.m_request_data.m_file = real_path.substr(real_path.size() - file.size(), std::string::npos);
-		else
 			c.m_request_data.m_file = real_path.substr(prefix + 1, std::string::npos);
+
 		// if we stopped at file
 		if ((this->m_statbuf.st_mode & S_IFMT) == S_IFREG) {
+			std::cout<<"m_real_path: "<<c.m_request_data.m_real_path<<std::endl;
 			std::cout<<"m_file: "<<c.m_request_data.m_file<<std::endl;
-			std::cout<<"file: "<<file<<std::endl;
+			std::cout<<"stat file: "<<stat_file<<std::endl;
 			// 	extract extension
 			size_t	extension = c.m_request_data.m_file.find_last_of('.', c.m_request_data.m_file.size());
 			std::cout<<"extension index: "<<extension<<std::endl;
@@ -184,7 +186,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			if (this->validCgi(c.m_request_data, extension))
 			{
 				std::cout<<"cgi detected"<<std::endl;
-				this->handleCgiMetadata(c.m_request_data, file);
+				this->handleCgiMetadata(c.m_request_data, stat_file);
 			}
 			else
 			{

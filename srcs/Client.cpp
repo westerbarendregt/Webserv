@@ -116,7 +116,10 @@ Client::Client(Client const & src)
 	m_v_server_blocks(src.m_v_server_blocks),
 	m_socket(src.m_socket),
 	m_sockaddr(src.m_sockaddr),
-	m_addrlen(src.m_addrlen)
+	m_addrlen(src.m_addrlen),
+	m_cgi_pid(src.m_cgi_pid),
+	m_cgi_running(src.m_cgi_running),
+	m_cgi_write(src.m_cgi_write)
 {
 	this->m_request_data.m_owner = this;
 }
@@ -132,6 +135,9 @@ Client &Client::operator=(Client const & rhs) {
 	this->m_socket = rhs.m_socket;
 	this->m_sockaddr = rhs.m_sockaddr;
 	this->m_addrlen = rhs.m_addrlen;
+	this->m_cgi_pid = rhs.m_cgi_pid;
+	this->m_cgi_running = rhs.m_cgi_running;
+	this->m_cgi_write= rhs.m_cgi_write;
 	this->m_request_data.m_owner = this;
 	std::cout<<"client operator ="<<std::endl;
 	return *this;

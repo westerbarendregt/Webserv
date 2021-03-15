@@ -24,7 +24,7 @@ enum e_context{
 enum e_directives{
 	LISTEN,
 	SERVER_NAME,
-	ROOT,
+	ALIAS,
 	ERROR_PAGE,
 	LIMIT_EXCEPT,
 	AUTOINDEX,
@@ -43,7 +43,7 @@ static size_t	const hash_len[] = {1, 4, 5};
 static const char *blocks[] = {"server", "location"};
 static const char *main_directives[] = {0};
 static const char *server_directives[] = {"listen", "server_name", "error_pages", "client_max_body_size", 0};
-static const char *route_directives[] = {"index", "limit_except", "root", "autoindex", "upload_store",  0}; //add cgi later
+static const char *route_directives[] = {"index", "limit_except", "alias", "autoindex", "upload_store",  0}; //add cgi later
 static const char **directives_string[] = {main_directives, server_directives, route_directives};
 
 std::string sputnbr(size_t n);

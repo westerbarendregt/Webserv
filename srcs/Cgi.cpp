@@ -116,15 +116,14 @@ void	Cgi::fillEnv(t_request_data &request) {
 	this->m_env_map["QUERY_STRING"] = request.m_query_string;
 	struct	sockaddr_in	*tmp = reinterpret_cast<struct sockaddr_in*>(&request.m_owner->m_sockaddr);
 	this->m_env_map["REMOTE_ADDR"] = inet_ntoa(tmp->sin_addr);//replace
-	this->m_env_map["REMOTE_IDENT"] ="";
-	this->m_env_map["REMOTE_USER"] ="";
+	this->m_env_map["REMOTE_IDENT"] =""; //?
+	this->m_env_map["REMOTE_USER"] =""; //?
 	this->m_env_map["REQUEST_METHOD"] = methods[request.m_method]; //maybe simpler way?
 	this->m_env_map["REQUEST_URI"] = request.m_path;
-	this->m_env_map["SCRIPT_NAME"] = request.m_file; //if cgi-bin/test.php script_name is cgi-bin/test-cgi.php
+	this->m_env_map["SCRIPT_FILENAME"] = request.m_file; //if cgi-bin/test.php script_name is cgi-bin/test-cgi.php
 	this->m_env_map["SERVER_NAME"] ="webserv";
-	this->m_env_map["SERVER_PORT"] = request.m_owner->m_v_server->m_port; //??
+	this->m_env_map["SERVER_PORT"] = request.m_owner->m_v_server->m_port;
 	this->m_env_map["SERVER_PROTOCOL"]="HTTP/1.1";
-	this->m_env_map["SERVER_SOFTWARE"]="HTTP 1.1";
 	this->m_env_map["SERVER_SOFTWARE"]="HTTP 1.1";
 	this->m_env_map["REDIRECT_STATUS"]="true"; // see if need to be disabled
 }
@@ -160,7 +159,7 @@ void	Cgi::clear() {
 
 void	RequestHandler::handleCgiMetadata(t_request &request, std::string &file) {
 	request.m_cgi = true;
-	if (request.m_path.size() == request.m_file.size())
+	if (request.m_real_path.size() - file.size() == 0)
 		return ;
 	size_t	query_string_index = request.m_file.find('?', 0);
 	if (query_string_index != std::string::npos)
