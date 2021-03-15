@@ -145,17 +145,6 @@ std::string	RequestHandler::generateErrorPage(int error) {
 	return status_line + response_headers + CRLF + error_response;
 }
 
-std::string&	RequestHandler::getRealPath() {
-	std::string const &	location = m_client->m_request_data.m_location->first;
-	std::string &	path = m_client->m_request_data.m_path;
-	std::string &	alias = m_client->m_request_data.m_location->second["alias"];
-
-	if (!alias.empty()) {
-		path.replace(path.find(location), location.length(), alias);
-	}
-	return path;
-}
-
 void	RequestHandler::handleMetadata(t_client &c) {
 	if (c.m_request_data.m_error)
 		return ; //don't need to do anything if an error has been detected in RequestParser

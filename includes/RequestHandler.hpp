@@ -50,8 +50,6 @@ class RequestHandler
 
 		std::string	generateErrorPage(int error);
 
-		std::string&	getRealPath();
-
 		std::map<int, std::string>	m_status_codes;
 		void	initStatusCodes();
 
