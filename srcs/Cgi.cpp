@@ -107,7 +107,7 @@ void	Cgi::run(t_client &c) {
 void	Cgi::fillEnv(t_request_data &request) {
 	char	buf[PATH_MAX];
 	(void)buf;
-	this->m_env_map["AUTH_TYPE"]=std::string(request.m_headers[AUTHENTIZATION]);
+	this->m_env_map["AUTH_TYPE"]=std::string(request.m_headers[AUTHORIZATION]);
 	this->m_env_map["CONTENT_LENGTH"]=intToString(request.m_body.size());
 	this->m_env_map["CONTENT_TYPE"]=std::string(request.m_headers[CONTENTTYPE]);
 	this->m_env_map["GATEWAY_INTERFACE"]="CGI/1.1";

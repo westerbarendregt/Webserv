@@ -106,6 +106,10 @@ Client::Client()
 	this->m_request_data.m_owner = this;
 }
 
+bool	Client::fullMetaData() {
+	return (!this->m_request_str.empty()
+			&& this->m_request_str.find("\r\n\r\n") != std::string::npos);
+}
 
 Client::Client(Client const & src)
 	: m_request_str(src.m_request_str),
@@ -124,8 +128,6 @@ Client::Client(Client const & src)
 	this->m_request_data.m_owner = this;
 }
 
-//operator=
-//
 Client &Client::operator=(Client const & rhs) {
 	this->m_request_str = rhs.m_request_str;
 	this->m_response_str = rhs.m_response_str;
@@ -141,12 +143,6 @@ Client &Client::operator=(Client const & rhs) {
 	this->m_request_data.m_owner = this;
 	std::cout<<"client operator ="<<std::endl;
 	return *this;
-}
-
-
-bool	Client::fullMetaData() {
-	return (!this->m_request_str.empty()
-			&& this->m_request_str.find("\r\n\r\n") != std::string::npos);
 }
 
 void	Server::removeClient(int client_socket) {

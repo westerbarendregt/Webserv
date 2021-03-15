@@ -4,6 +4,7 @@
 #include "WebServer.hpp"
 #include "Server.hpp"
 #include "utils.hpp"
+#include "Authentication.hpp"
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -42,7 +43,7 @@ std::string RequestHandler::statusLine() {
 	status_line.append(intToString(error_code));
 	status_line.append(" ");
 	status_line.append(m_status_codes[error_code]);
-
+	status_line.append(CRLF);
 	return status_line;
 }
 
@@ -51,7 +52,7 @@ std::string RequestHandler::responseBody() {
 }
 
 std::string RequestHandler::responseHeaders(std::string const & body) {
-
+	m_response_headers.clear();
 	m_response_headers.push_back(Server());
 	m_response_headers.push_back(Content_Length(body));
 	m_response_headers.push_back(Content_Type());
@@ -63,6 +64,8 @@ std::string RequestHandler::responseHeaders(std::string const & body) {
 	for (; it != m_response_headers.end(); ++it) {
 		response_headers.append(*it);
 	}
+
+	// response_headers.append(CRLF);
 	return response_headers;
 }
 
@@ -108,6 +111,26 @@ std::string RequestHandler::handleDELETE() {
 
 std::string	RequestHandler::generateErrorPage(int error) {
 	std::string status_line = statusLine();
+	std::string response;
+	if (error == 401)
+	{
+		response +=	"Server: Webserv/1.1\r\n"
+					  	"Content-Type: text/html\r\n"
+	   					"WWW-Authenticate: Basic realm=";
+		response += this->m_client->m_request_data.m_location->second["auth_basic"]; // get from location
+		response += ", charset=\"UTF-8\"\r\n";
+		return status_line + response + CRLF;
+	}
+	if (error == 405)
+	{
+    	std::string allowed = this->m_client->getRequest().m_location->second["allow_method"]; // get this resource from allowed methods from the location
+		response +=	"Server: Webserv/1.1\r\n"
+					  	"Content-Type: text/html\r\n"
+	   					"Allow: ";
+		response += allowed;
+		response += CRLF;
+		return status_line + response + CRLF;
+	}
 
 	std::string	error_response =
 			"<html>" CRLF
@@ -138,7 +161,6 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			<<c.m_v_server->m_configs.m_directives["listen"]
 			<<"\n\tSERVER_NAME "<< m_client->m_v_server->m_configs.m_directives["server_name"]
 			<<"\n\tLOCATION/ROUTE "<< m_client->m_request_data.m_location->first<<"\n-----------"<<std::endl;
-		//updating location block
 		std::string &real_path =  c.m_request_data.m_real_path;
 		std::string	stat_file;
 		real_path = c.m_request_data.m_path;
@@ -209,9 +231,8 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		else
 			throw HTTPError("RequestHandler::handleMetadata", "directory listing not enabled", 404);
 
-		// Authorization / WWW-Authenticate
-		// Allow
-		//
+		AllowedMethods(c);
+		Authenticated(c);
 	} catch (HTTPError & e) {
 		std::cerr << e.what() << std::endl;
 		m_client->m_request_data.m_error = e.HTTPStatusCode();
@@ -220,9 +241,8 @@ void	RequestHandler::handleMetadata(t_client &c) {
 }
 
 void	RequestHandler::handleRequest(t_client &c) {
-	m_client = &c;
+	this->m_client = &c;
 	Request	&request = m_client->m_request_data;
-
 	if (request.m_error != 0) {
 		m_client->m_response_str = generateErrorPage(request.m_error);
 	} else if (c.m_request_data.m_cgi) {
