@@ -9,7 +9,7 @@ Request::Request()
 	m_path(""),
 	m_protocol(-1),
 	m_content_length(0),
-	m_headers(),
+	m_headers(18, ""),
 	m_if_body(false),
 	m_body(""),
 	m_metadata_parsed(false),
@@ -25,7 +25,6 @@ Request::Request()
 	m_real_path(""),
 	m_file("")
 {
-	m_headers.assign(18, "");
 }
 
 Request::Request(Request const & src) 
@@ -57,7 +56,6 @@ Request &Request::operator=(Request const & rhs) {
 	 this->m_path           = rhs.m_path;
 	 this->m_protocol       = rhs.m_protocol;
 	 this->m_content_length = rhs.m_content_length;
-	 this->m_headers.clear();
 	 this->m_headers.assign(rhs.m_headers.begin(), rhs.m_headers.end());
 	 this->m_if_body        = rhs.m_if_body;
 	 this->m_body           = rhs.m_body;
@@ -82,12 +80,11 @@ Response::Response()
 	m_path(""),
 	m_protocol(-1),
 	m_content_length(0),
-	m_headers(),
+	m_headers(18, ""),
 	m_if_body(false),
 	m_body(""),
 	m_error(0)
 {
-	m_headers.assign(18, "");
 }
 
 Client::Client() 
