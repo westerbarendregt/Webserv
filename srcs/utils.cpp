@@ -1,9 +1,11 @@
 #include <string>//std::string
 #include <string.h>//memset
 #include <unistd.h>//size_t
+#include <stdlib.h>//malloc
 #include <stdint.h>
 #include <limits.h>
 #include <iostream>
+#include "WebServer.hpp"
 
 static size_t		write_reverse(size_t n, char *buf)
 {
@@ -118,24 +120,43 @@ uint16_t hostToNetworkShort(uint16_t hostshort) {
 	return (hostshort & 0x00FF) << 8 | (hostshort & 0xFF00) >> 8;
 }
 
-int		ft_getline(std::string& total, std::string& line, int line_break, size_t& start) // make line_break 1 if you want it in, zero if you don't
+int		ft_getline_crlf(std::string& total, std::string& line, int line_break, size_t& start) // make line_break 1 if you want it in, zero if you don't
 {
 	size_t len;
 
-	if (total.find('\n', start) != std::string::npos)
+	if (total.find(CRLF, start) != std::string::npos)
 	{
-		len = total.find_first_of('\n', start) - start;
-		line = total.substr(start, len + line_break);
-		start = total.find_first_of('\n', start) + 1;
+		len = total.find(CRLF, start) - start;
+		line = total.substr(start, len + (line_break * 2));
+		start = total.find(CRLF, start) + 2;
 		return 1;
 	}
 	else {
 		line = total.substr(start, total.size() - start);
 		start = 0;
 	}
-		std::cout << "found" << std::endl;
 	return 0;
 }
+
+int		ft_getline(std::string& total, std::string& line, int line_break, size_t& start) // make line_break 1 if you want it in, zero if you don't
+{
+	size_t len;
+
+	if (total.find('\n', start) != std::string::npos)
+	{
+		len = total.find('\n', start) - start;
+		line = total.substr(start, len + line_break);
+		start = total.find('\n', start) + 1;
+		return 1;
+	}
+	else {
+		line = total.substr(start, total.size() - start);
+		start = 0;
+	}
+	return 0;
+}
+
+
 
 bool	ft_compare(char c, char *str)
 {
@@ -143,6 +164,14 @@ bool	ft_compare(char c, char *str)
 		if (str[i] == c)
 			return true;
 	return false;
+}
+
+char	*ft_strdup(std::string &src) {
+	char *result = reinterpret_cast<char *>(malloc(src.size() + 1));
+
+	src.copy(result, src.size(), 0);
+	result[src.size()] = '\0';
+	return result;
 }
 
 std::string intToString(int n) {

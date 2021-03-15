@@ -5,9 +5,13 @@
 # include "VirtualServer.hpp"
 # include "Conf.hpp"
 
+class	Client;
 struct	Request
 {
 		Request();
+		Request(Request const & src);
+		Request &operator=(Request const & rhs);
+		Client								*m_owner;
 		int                     			m_method;
 		std::string							m_path;
 		int                  	    		m_protocol;
@@ -18,9 +22,16 @@ struct	Request
 		bool								m_metadata_parsed;
 		bool								m_done;
 		bool								m_chunked;
+		bool								m_cgi;
+		bool								m_autoindex;
 		int									m_error;
 		size_t								m_start;
 		s_v_server_conf::t_routes::iterator m_location;
+		std::string							m_query_string;
+		std::string							m_path_info;
+		std::string							m_real_path;
+		std::string							m_file;
+		size_t								m_cgi_write;
 };
 
 struct	Response
@@ -47,9 +58,11 @@ class	Client
 		friend class Server;
 		friend class RequestParser;
 		friend class RequestHandler;
+		friend class Cgi;
 
 		Client();
 		Client(Client const & src);
+		Client 	&operator=(Client const & rhs);
 		bool	fullMetaData();
 		void	updateServerConf();
 
@@ -59,7 +72,7 @@ class	Client
 		int									testGetError(){
 			return m_request_data.m_error;
 		}
-		Request&							getRequest(){
+		Request&				 			getRequest(){
 			return m_request_data;						
 		}
 	private:
@@ -72,6 +85,10 @@ class	Client
 		int									m_socket;
 		struct	sockaddr_storage 			m_sockaddr;
 		socklen_t							m_addrlen;
+		pid_t								m_cgi_pid;
+		bool								m_cgi_running;
+		size_t								m_cgi_write;
+		int									m_cgi_io[2];
 };
 
 #endif

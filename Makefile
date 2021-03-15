@@ -29,7 +29,8 @@ OBJ +=	Client
 OBJ +=	RequestHandler
 OBJ +=	RequestHandlerMimeTypes
 OBJ +=	RequestHandlerStatusCodes
-OBJ +=	RequestHandlerLocation
+OBJ +=	Authentication
+OBJ +=	base64
 
 OBJ			:= $(addsuffix .o, $(addprefix $(OBJ_DIR)/, $(OBJ)))
 
