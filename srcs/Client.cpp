@@ -14,7 +14,7 @@ Request::Request()
 	m_metadata_parsed(false),
 	m_done(false),
 	m_chunked(false),
-	m_error(200),
+	m_error(0),
 	m_start(0),
 	m_location()
 {
@@ -30,7 +30,7 @@ Response::Response()
 	m_headers(0),
 	m_if_body(false),
 	m_body(""),
-	m_error(200)
+	m_error(0)
 {
 	for (int i = 0; i < 18; ++i)
 		m_headers.push_back("");
@@ -62,26 +62,13 @@ Client::Client(Client const & src)
 	m_sockaddr(src.m_sockaddr),
 	m_addrlen(src.m_addrlen)
 {
-
 }
-
-
-// bool	Client::fullMetaData() {
-// 	return (!this->m_request_str.empty()
-// 			&& this->m_request_str.find("\r\n\r\n") != std::string::npos);
-// }
 
 void	Server::removeClient(int client_socket) {
 	if (this->m_client_map.erase(client_socket) != 1)
 		throw serverError("removeClient: ", "trying to remove unexisting client");
 }
 
-// <<<<<<< HEAD
-// bool	Client::fullMetaData()
-// {
-// 	if (m_request_str.find("\n\n") != std::string::npos)
-// 		return true;
-// 	return false;
 void	Client::updateServerConf()
 {
 	std::string host2 = this->m_request_data.m_headers[HOST];

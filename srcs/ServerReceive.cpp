@@ -23,7 +23,6 @@ int	Server::receive(t_client *c) {
 	int	nbytes = recv(c->m_socket, buf, sizeof(buf), 0);
 	const char *to_append = buf;
 	c->m_request_str.append(to_append);
-	// std::cout << c->m_request_str << std::endl;
 	if (nbytes <= 0){ // should we handle closing a connection in the ServerRun loop
 		if (nbytes == 0)
 			std::cout<<"closing connection "<<c->m_socket<<std::endl; //log

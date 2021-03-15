@@ -13,7 +13,6 @@
 # include "WebServer.hpp"
 
 #define BLANKS "\t\v\n "
-#define CHUNK  "\r\n"
 
 class Client;
 
@@ -32,7 +31,7 @@ class RequestParser
 	{
 		std::string line;
 		
-		if (ft_getline(c.m_request_str, line, 0, c.m_request_data.m_start))
+		if (ft_getline_crlf(c.m_request_str, line, 0, c.m_request_data.m_start))
 		{
 			for (int i = 0; methods[i]; ++i){
 				if (!line.compare(0, line.find_first_of(BLANKS), methods[i])){
@@ -63,7 +62,7 @@ class RequestParser
 		std::string line;
 		bool first = true;
 
-		while (ft_getline(c.m_request_str, line, 0, c.m_request_data.m_start))
+		while (ft_getline_crlf(c.m_request_str, line, 0, c.m_request_data.m_start))
 		{
 			if (ft_compare(line[0], (char*)BLANKS)){
 				c.m_request_data.m_error = 400; // Bad request (blanks between start line and first header)
@@ -83,7 +82,7 @@ class RequestParser
 				if (line.find(headers[i]) != std::string::npos){
 					std::string header = line.substr(line.find(':') + 1, line.size() - (line.find(":") + 1));
 					size_t start = header.find_first_not_of(BLANKS);
-					size_t len = header.find_last_not_of(BLANKS) - start;
+					size_t len = header.find_last_not_of(BLANKS) - start + 1;
 					c.m_request_data.m_headers[i] = header.substr(start, len); //trimming start and end of whitespaces
 				}
 			}
@@ -117,7 +116,7 @@ class RequestParser
 		c.m_request_data.m_done = false;
 		c.m_request_data.m_metadata_parsed = false;
 		c.m_request_data.m_chunked = false;
-		c.m_request_data.m_error = 200;
+		c.m_request_data.m_error = 0;
 		c.m_request_data.m_start = 0;
 
 	}
@@ -138,7 +137,9 @@ class RequestParser
 		std::string line;
 		int ret = 1;
 
-		if (ft_getline(c.m_request_str, line, 1, c.m_request_data.m_start))
+			std::cout << "line: " << c.m_request_str << std::endl;
+			std::cout << "index: " << c.m_request_data.m_start << std::endl;
+		if (ft_getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start))
 		{
 			size_t current_chunk_size = ftAtoi(line.c_str());
 			if (current_chunk_size == 0 && line == "0\r\n")
@@ -148,13 +149,13 @@ class RequestParser
 					return SUCCESS;
 				return ERROR;
 			}
-			if (line.find(CHUNK) != std::string::npos)
+			if (line.find(CRLF) != std::string::npos)
 			{
 				c.m_request_data.m_content_length += current_chunk_size;
 				while (ret)
 				{
-					ret = ft_getline(c.m_request_str, line, 1, c.m_request_data.m_start);
-					if (line.find(CHUNK) != std::string::npos){
+					ret = ft_getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start);
+					if (line.find(CRLF) != std::string::npos){
 						c.m_request_data.m_body.append(line.substr(0, line.size() - 2));
 						if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
 							return SUCCESS;
@@ -174,15 +175,10 @@ class RequestParser
 		switch (c.m_request_data.m_method)
 		{
 			case GET : return "GET"; 
-				break ;
 			case HEAD : return "HEAD"; 
-				break ;
 			case POST : return "POST"; 
-				break ;
 			case PUT : return "PUT"; 
-				break ;
 			case DELETE : return "DELETE";
-				break ;
 		}
 		return "No match";
 	}
@@ -200,6 +196,7 @@ class RequestParser
 
 		if (c.m_request_data.m_chunked == true)
 		{
+			std::cout << "TRUE"<< std::endl;
 			if (ChunkedData(c)){
 				c.m_request_data.m_start = 0;
 				return ERROR;
@@ -209,7 +206,7 @@ class RequestParser
 		}
 		else if (c.m_request_data.m_chunked == false){
 			while (ret){
-				ret = ft_getline(c.m_request_str, line, 1, c.m_request_data.m_start);
+				ret = ft_getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start);
 				c.m_request_data.m_body.append(line);
 			}
 		}
@@ -275,6 +272,7 @@ class RequestParser
 		}
 		else 
 			c.m_request_data.m_done = true;
+		c.m_request_data.m_start = 0;
 		return SUCCESS;
 	}
 

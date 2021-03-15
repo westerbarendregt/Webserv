@@ -21,11 +21,13 @@ void                CheckCorrectCredentials(std::string decoded, std::string pat
         throw HTTPError("Authentication", "couldn't read from .htpasswd", 403);
     std::string line, credentials;
     credentials = buf;
+    std::cout << credentials << std::endl;
     size_t start = 0;
     while (ft_getline(credentials, line, 0, start)){
         if (line.compare(decoded) == 0) // found match with credentials
             return ;
     }
+    std::cout << credentials << std::endl;
     throw HTTPError("Authentication", "No credential match was found...", 403); // credentials were located but were incorrect
 }
 

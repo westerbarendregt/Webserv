@@ -43,6 +43,7 @@ std::string RequestHandler::statusLine() {
 	status_line.append(intToString(error_code));
 	status_line.append(" ");
 	status_line.append(m_status_codes[error_code]);
+	status_line.append(CRLF);
 	return status_line;
 }
 
@@ -63,6 +64,8 @@ std::string RequestHandler::responseHeaders(std::string const & body) {
 	for (; it != m_response_headers.end(); ++it) {
 		response_headers.append(*it);
 	}
+
+	// response_headers.append(CRLF);
 	return response_headers;
 }
 
@@ -71,7 +74,7 @@ std::string RequestHandler::handleGET() {
 	std::string response_body = responseBody();
 	std::string	response_headers = responseHeaders(response_body);
 
-	return status_line + CRLF + response_headers + CRLF + response_body;
+	return status_line + response_headers + CRLF + response_body;
 }
 
 std::string RequestHandler::handleHEAD() {
@@ -116,7 +119,7 @@ std::string	RequestHandler::generateErrorPage(int error) {
 	   					"WWW-Authenticate: Basic realm=";
 		response += this->m_client->m_request_data.m_location->second["auth_basic"]; // get from location
 		response += ", charset=\"UTF-8\"\r\n";
-		return status_line + CRLF + response + CRLF;
+		return status_line + response + CRLF;
 	}
 	if (error == 405)
 	{
@@ -125,7 +128,8 @@ std::string	RequestHandler::generateErrorPage(int error) {
 					  	"Content-Type: text/html\r\n"
 	   					"Allow: ";
 		response += allowed;
-		return status_line + CRLF + response + CRLF;
+		response += CRLF;
+		return status_line + response + CRLF;
 	}
 
 	std::string	error_response =
@@ -137,7 +141,7 @@ std::string	RequestHandler::generateErrorPage(int error) {
 
 	std::string	response_headers = responseHeaders(error_response);
 
-	return status_line + CRLF + response_headers + CRLF + error_response;
+	return status_line + response_headers + CRLF + error_response;
 }
 
 void	RequestHandler::handleMetadata(t_client &c) {
