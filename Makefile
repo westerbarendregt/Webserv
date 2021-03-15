@@ -26,6 +26,7 @@ SRCS=	$(SRC_DIR)/main.cpp \
 				$(SRC_DIR)/ServerRespond.cpp \
 				$(SRC_DIR)/Client.cpp \
 				$(SRC_DIR)/RequestHandler.cpp \
+				$(SRC_DIR)/Cgi.cpp \
 				$(SRC_DIR)/RequestHandlerMimeTypes.cpp \
 				$(SRC_DIR)/RequestHandlerStatusCodes.cpp \
 				$(SRC_DIR)/RequestHandlerLocation.cpp \

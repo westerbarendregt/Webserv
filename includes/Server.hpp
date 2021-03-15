@@ -9,7 +9,7 @@
 #include "VirtualServer.hpp"
 #include "RequestHandler.hpp"
 #include "Client.hpp"
-
+#include "Cgi.hpp"
 
 class	Server
 {
@@ -23,7 +23,7 @@ class	Server
 		typedef	int									t_port;
 		typedef	std::vector<t_v_server>				t_v_server_blocks;
 		typedef std::map<t_ip_port, t_v_server_blocks> t_v_server_all;
-		typedef std::map<int, t_client> 	t_client_map;
+		typedef std::map<int, t_client> 			t_client_map;
 
 		friend class RequestHandler;
 

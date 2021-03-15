@@ -18,12 +18,15 @@ class	VirtualServer
 		friend class Client;
 		friend class ConfigParser;
 		friend class RequestHandler;
+		friend class Cgi;
 		explicit VirtualServer(t_v_server_conf conf);
 		void	init();
 		void	close();
 		t_routes::iterator	getLocation(t_request &r);
 	private:
 		void	setAddr();
+		std::string				&m_host;
+		std::string				m_port;
 		int						m_socket;
 		t_v_server_conf			m_configs;
 		struct	sockaddr_in		m_sockaddr;
