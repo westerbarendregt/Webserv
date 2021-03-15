@@ -1,4 +1,4 @@
-NAME		=	webserv
+NAME		:=	webserv
 FLAGS		=	-Wall -Wextra -Werror -std=c++98 -pedantic
 
 ifdef DEBUG
@@ -11,49 +11,58 @@ ifdef LOG
 LOG_FILE+=  2>&1 | tee webserv.log
 endif
 
-INCLUDES	=	-Iincludes
+INCLUDES	:=	-Iincludes
 
-SRC_DIR		= 	srcs
+SRC_DIR		:= 	srcs
+OBJ_DIR		:=	objs
 
-SRCS=	$(SRC_DIR)/main.cpp \
-				$(SRC_DIR)/utils.cpp \
-				$(SRC_DIR)/Server.cpp \
-				$(SRC_DIR)/VirtualServer.cpp \
-				$(SRC_DIR)/ServerRun.cpp \
-				$(SRC_DIR)/ServerReceive.cpp \
-				$(SRC_DIR)/ServerInit.cpp \
-				$(SRC_DIR)/ServerAccept.cpp \
-				$(SRC_DIR)/ServerRespond.cpp \
-				$(SRC_DIR)/Client.cpp \
-				$(SRC_DIR)/RequestHandler.cpp \
-				$(SRC_DIR)/RequestHandlerMimeTypes.cpp \
-				$(SRC_DIR)/RequestHandlerStatusCodes.cpp \
-				$(SRC_DIR)/RequestHandlerLocation.cpp \
+OBJ =	main
+OBJ +=	utils
+OBJ +=	Server
+OBJ +=	VirtualServer
+OBJ +=	ServerRun
+OBJ +=	ServerReceive
+OBJ +=	ServerInit
+OBJ +=	ServerAccept
+OBJ +=	ServerRespond
+OBJ +=	Client
+OBJ +=	RequestHandler
+OBJ +=	RequestHandlerMimeTypes
+OBJ +=	RequestHandlerStatusCodes
+OBJ +=	RequestHandlerLocation
 
-OBJ			= $(SRCS:.cpp=.o)
+OBJ			:= $(addsuffix .o, $(addprefix $(OBJ_DIR)/, $(OBJ)))
 
-CC 			= clang++
+CC 			:= clang++
+
+define NL
+
+
+endef
 
 all: $(NAME)
 
 $(NAME): $(OBJ)
+	@$(foreach obj, $?, echo Linking $(notdir $(obj))$(NL))
 	@$(CC) $(FLAGS) $(OBJ) -g -o $(NAME)
 
-
-%.o: %.cpp $(HEADER)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HEADER)
+	@mkdir -p $(OBJ_DIR)/$(dir $*)
+	@echo Compiling $(notdir $<)
 	@$(CC) $(FLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
-	@rm -f $(OBJ)
+	@$(RM) -r $(wildcard $(OBJ_DIR))
 
-fclean: clean
-	@rm -f $(NAME)
+fclean:
+	@$(MAKE) clean
+	$(RM) $(wildcard $(NAME))
 
-re: 
+re:
 	$(MAKE) fclean
 	$(MAKE) all
 
-run: re
+run: $(NAME)
 		./$(NAME) $(LOG_FILE)
 
 .PHONY: all clean fclean re
