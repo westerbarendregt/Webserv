@@ -1,4 +1,5 @@
 #include <iostream>
+#include "Conf.hpp"
 #include "Error.hpp"
 #include "RequestHandler.hpp"
 #include "WebServer.hpp"
@@ -121,6 +122,17 @@ std::string	RequestHandler::generateErrorPage(int error) {
 	return status_line + response_headers + CRLF + error_response;
 }
 
+std::string&	RequestHandler::getRealPath() {
+	std::string const &	location = m_client->m_request_data.m_location->first;
+	std::string &	path = m_client->m_request_data.m_path;
+	std::string &	alias = m_client->m_request_data.m_location->second["alias"];
+
+	if (!alias.empty()) {
+		path.replace(path.find(location), location.length(), alias);
+	}
+	return path;
+}
+
 void	RequestHandler::handleMetadata(t_client &c) {
 	std::cout<<"handling metadata.."<<std::endl;
 
@@ -130,10 +142,15 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		//updating virtual server pointer based on client request's host header
 		m_client->updateServerConf();
 		c.m_request_data.m_location = c.m_v_server->getLocation(c.m_request_data);
+
 		std::cout<<"-------FETCHED BLOCK-------\n\tLISTEN "
 			<<c.m_v_server->m_configs.m_directives["listen"]
 			<<"\n\tSERVER_NAME "<< m_client->m_v_server->m_configs.m_directives["server_name"]
-			<<"\n\tLOCATION/ROUTE "<< m_client->m_request_data.m_location->first<<"\n-----------"<<std::endl;
+			<<"\n\tLOCATION/ROUTE "<< m_client->m_request_data.m_location->first
+			<<"\n\tALIAS "<< m_client->m_request_data.m_location->second["alias"]
+			<<"\n\tURI "<< m_client->m_request_data.m_path
+			<<"\n\tREAL_PATH "<< getRealPath()
+			<<"\n-----------"<<std::endl;
 		//c.m_request_data.m_real_path =  substr
 		//maybe Request could have m_real_path, m_path_info and m_query_string to be updated by the cgi part of this code,
 		//	and later fetched by Cgi to populate the map
