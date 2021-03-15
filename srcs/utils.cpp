@@ -145,32 +145,12 @@ bool	ft_compare(char c, char *str)
 	return false;
 }
 
-char	*ft_join(const char *s1, const char *s2, size_t len)
-{
-	size_t					i;
-	size_t					j;
-	char					*result;
+char	*ft_strdup(std::string &src) {
+	char *result = reinterpret_cast<char *>(malloc(src.size() + 1));
 
-	i = 0;
-	j = 0;
-	if (!s1 && !s2)
-		return (NULL);
-	result = reinterpret_cast<char *>(malloc((len + 1) * sizeof(char)));
-	if (!result)
-		return (NULL);
-	while (s1 && s1[i] && i < len)
-	{
-		result[i] = s1[i];
-		i++;
-	}
-	while (s2 && s2[j] && i < len)
-	{
-		result[i] = s2[j];
-		i++;
-		j++;
-	}
-	result[i] = '\0';
-	return (result);
+	src.copy(result, src.size(), 0);
+	result[src.size()] = '\0';
+	return result;
 }
 
 std::string intToString(int n) {

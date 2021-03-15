@@ -13,4 +13,6 @@ bool	    ft_compare(char c, char *str);
 char 		*ft_join(const char *s1, const char *s2, size_t len) ;
 std::string intToString(int n);
 
+char	*ft_strdup(std::string &src);
+
 #endif

@@ -132,6 +132,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		//updating virtual server pointer based on client request's host header
 		m_client->updateServerConf();
 		c.m_request_data.m_location = c.m_v_server->getLocation(c.m_request_data);
+		c.m_request_data.m_owner = &c;
 		std::cout<<"-------FETCHED BLOCK-------\n\tLISTEN "
 			<<c.m_v_server->m_configs.m_directives["listen"]
 			<<"\n\tSERVER_NAME "<< m_client->m_v_server->m_configs.m_directives["server_name"]
@@ -152,13 +153,12 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		while (prefix < real_path.size()) {
 			prefix = real_path.find('/', prefix);
 			next_prefix = prefix == std::string::npos ? std::string::npos : real_path.find('/', prefix + 1);
-			if (next_prefix == std::string::npos)
-				std::cout <<"npos"<<std::endl;
 			file = real_path.substr(0, next_prefix);
 			std::cout<<"\tstat "<<file<<std::endl;
 			if (stat(file.c_str(), &this->m_statbuf)) {
 				throw HTTPError("RequestHandler::handleMetadata", "invalid full path", 404);
 			}
+			//also check permission
 			if ((this->m_statbuf.st_mode & S_IFMT) == S_IFREG) // if file
 				break ;
 			if ((this->m_statbuf.st_mode & S_IFMT) != S_IFDIR
@@ -184,7 +184,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			if (this->validCgi(c.m_request_data, extension))
 			{
 				std::cout<<"cgi detected"<<std::endl;
-				this->handleCgiMetadata(c.m_request_data);
+				this->handleCgiMetadata(c.m_request_data, file);
 			}
 			else
 			{

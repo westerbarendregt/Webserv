@@ -11,6 +11,7 @@
 
 VirtualServer::VirtualServer(t_v_server_conf conf) //reference?
 : m_host(conf.m_directives["listen"]),
+m_port(""),
 m_socket(-1),
 m_configs(conf),
 m_sockaddr()
@@ -57,6 +58,3 @@ VirtualServer::t_routes::iterator	VirtualServer::getLocation(t_request &request)
 		throw HTTPError("getLocation", "no location found", 404);
 	return it;
 }
-
-//HTML FORM
-//HTML ISINDEX
