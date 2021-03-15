@@ -36,7 +36,7 @@ class RequestHandler
 		std::string responseBody();
 		std::string responseHeaders(std::string const & body);
 
-		std::string	generateErrorPage(Client& c, int error);
+		std::string	generateErrorPage(int error);
 
 		std::map<int, std::string>	m_status_codes;
 		void	initStatusCodes();

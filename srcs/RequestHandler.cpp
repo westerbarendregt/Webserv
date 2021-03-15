@@ -106,7 +106,7 @@ std::string RequestHandler::handleDELETE() {
 	return status_line + response_headers + CRLF + response_body;
 }
 
-std::string	RequestHandler::generateErrorPage(Client& c, int error) {
+std::string	RequestHandler::generateErrorPage(int error) {
 	std::string status_line = statusLine();
 	std::string response;
 	if (error == 401)
@@ -114,13 +114,13 @@ std::string	RequestHandler::generateErrorPage(Client& c, int error) {
 		response +=	"Server: Webserv/1.1\r\n"
 					  	"Content-Type: text/html\r\n"
 	   					"WWW-Authenticate: Basic realm=";
-		response += c.m_request_data.m_location->second["auth_basic"]; // get from location
+		response += this->m_client->m_request_data.m_location->second["auth_basic"]; // get from location
 		response += ", charset=\"UTF-8\"\r\n";
 		return status_line + CRLF + response + CRLF;
 	}
 	if (error == 405)
 	{
-    	std::string allowed = c.getRequest().m_location->second["allow_method"]; // get this resource from allowed methods from the location
+    	std::string allowed = this->m_client->getRequest().m_location->second["allow_method"]; // get this resource from allowed methods from the location
 		response +=	"Server: Webserv/1.1\r\n"
 					  	"Content-Type: text/html\r\n"
 	   					"Allow: ";
@@ -143,7 +143,7 @@ std::string	RequestHandler::generateErrorPage(Client& c, int error) {
 void	RequestHandler::handleMetadata(t_client &c) {
 	std::cout<<"handling metadata.."<<std::endl;
 
-	m_client = &c;
+	this->m_client = &c;
 
 	try {
 		//updating virtual server pointer based on client request's host header
@@ -187,10 +187,10 @@ void	RequestHandler::handleMetadata(t_client &c) {
 }
 
 void	RequestHandler::handleRequest(t_client &c) {
-	m_client = &c;
+	this->m_client = &c;
 	Request	&request = m_client->m_request_data;
 	if (request.m_error != 0) {
-		m_client->m_response_str = generateErrorPage(c, request.m_error);
+		this->m_client->m_response_str = generateErrorPage(request.m_error);
 	} else if (false) {
 		//
 	} else {
