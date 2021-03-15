@@ -11,7 +11,6 @@ std::string sputnbr(size_t n);
 int		    ft_getline_crlf(std::string& total, std::string& line, int line_break, size_t& start);
 int		    ft_getline(std::string& total, std::string& line, int line_break, size_t& start);
 bool	    ft_compare(char c, char *str);
-char 		*ft_join(const char *s1, const char *s2, size_t len) ;
 std::string intToString(int n);
 std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_len);
 std::string base64_decode(std::string const& encoded_string);
