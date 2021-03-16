@@ -17,20 +17,21 @@ SRC_DIR		:= 	srcs
 OBJ_DIR		:=	objs
 
 OBJ =	main
-OBJ +=	utils
-OBJ +=	Server
-OBJ +=	VirtualServer
-OBJ +=	ServerRun
-OBJ +=	ServerReceive
-OBJ +=	ServerInit
-OBJ +=	ServerAccept
-OBJ +=	ServerRespond
+OBJ +=	Authentication
+OBJ +=	base64
+OBJ +=	Cgi
 OBJ +=	Client
 OBJ +=	RequestHandler
 OBJ +=	RequestHandlerMimeTypes
 OBJ +=	RequestHandlerStatusCodes
-OBJ +=	Authentication
-OBJ +=	base64
+OBJ +=	Server
+OBJ +=	ServerAccept
+OBJ +=	ServerInit
+OBJ +=	ServerReceive
+OBJ +=	ServerRespond
+OBJ +=	ServerRun
+OBJ +=	utils
+OBJ +=	VirtualServer
 
 OBJ			:= $(addsuffix .o, $(addprefix $(OBJ_DIR)/, $(OBJ)))
 

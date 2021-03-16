@@ -37,14 +37,7 @@ struct	Request
 struct	Response
 {
 		Response();
-		int                     			m_method;
-		char                        		m_path[1024];
-		int                  	    		m_protocol;
-		size_t								m_content_length;
-		std::vector<std::string> 			m_headers;
-		bool								m_if_body;
-		std::string							m_body;
-		int									m_error;
+		std::string	m_content_type;
 };
 
 class	Client

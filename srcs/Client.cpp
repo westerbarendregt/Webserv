@@ -76,14 +76,7 @@ Request &Request::operator=(Request const & rhs) {
 }
 
 Response::Response()
-	: m_method(-1),
-	m_path(""),
-	m_protocol(-1),
-	m_content_length(0),
-	m_headers(18, ""),
-	m_if_body(false),
-	m_body(""),
-	m_error(0)
+	: m_content_type()
 {
 }
 
