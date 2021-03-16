@@ -24,6 +24,7 @@ void	Server::run(){
 	struct timeval tv;
 	t_client 	*c;
 
+	std::cout<<"listening..."<<std::endl;
 	for (;;) {//run
 		this->m_read_fd = this->m_read_all;
 		this->m_write_fd = this->m_write_all;
@@ -31,7 +32,6 @@ void	Server::run(){
 		tv.tv_usec = 500000;
 		if (select(this->m_range_fd + 1, &this->m_read_fd, &this->m_write_fd, NULL, &tv) == -1)
 			throw(serverError("select: ", strerror(errno)));
-		std::cout<<"listening..."<<std::endl;
 		for (int i =0; i <= this->m_range_fd ; ++i){
 			if (FD_ISSET(i, &this->m_read_fd)) {
 				std::cout<<"found read connection fd: "<<i<<std::endl;
@@ -67,10 +67,20 @@ void	Server::run(){
 				 	else
 				 		RequestParser::HandleBody(*c);
 				 }
+					std::cout<<"listening..."<<std::endl;
 			}
 			else if (FD_ISSET(i, &this->m_write_fd)) {
-				std::cout<<"found write connection fd: "<<i<<std::endl;
+				//std::cout<<"found write connection fd: "<<i<<std::endl;
+				c = getClient(i);
+				if (c->m_cgi_running) {
+					if (this->m_request_handler.m_cgi.read(*c) > 0) {
+						continue ; // cgi is still running
+					}
+					//possibly append output of cgi to already generated
+					//response status line and header
+				}
 				this->respond(i);
+				std::cout<<"listening..."<<std::endl;
 				//can close connection if the response is an error
 				//resetResponse
 			}

@@ -6,7 +6,9 @@
 enum	e_status {
 	INVALID = -1,
 	SUCCESS = 0,
-	ERROR = 1
+	IN = 0,
+	ERROR = 1,
+	OUT = 1
 };
 
 enum e_methods

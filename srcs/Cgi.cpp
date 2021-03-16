@@ -50,9 +50,33 @@ void	Cgi::convertEnv(t_client &c) {
 	this->m_argv[2] = 0;
 }
 
-void	Cgi::read(t_client &c) {
-	std::cout<<"cgi read"<<std::endl;
-	(void)c;
+ssize_t	Cgi::read(t_client &c) {
+	char buf[10000];
+
+	int	wstatus = 0;
+	pid_t wpid = waitpid(c.m_cgi_pid, &wstatus, WNOHANG);
+	ssize_t	nbytes = 0;
+	if (wpid > 0 && WIFEXITED(wstatus)) {
+		while ((nbytes = ::read(c.m_cgi_io[IN], buf, 1000)) > 0)
+		{
+			c.m_response_str.append(buf); //probably body
+			std::fill(buf, buf + 1000, 0);
+
+		}
+		c.m_cgi_running = false;
+		::close(c.m_cgi_io[IN]);
+		if (nbytes == -1) {
+			//error with read
+		}
+		return 1;
+	}
+	else if (wpid == -1) {
+		//for now we cannot throw an http error because we are out of the 
+		//request handling part of the ServerRun loop, so flag the error
+		//and call generateErrorPage here
+	}
+	//std::cout<<"didnt exit"<<std::endl;
+	return 1;
 }
 
 void	Cgi::write(t_client &c) {
@@ -68,16 +92,18 @@ void	Cgi::exec(t_client &c) {
 		throw HTTPError("Cgi::exec: fork", strerror(errno), 500); //do we stop server after we throw
 	}
 	if (!c.m_cgi_pid) {
+		if (dup2(c.m_cgi_io[OUT], STDOUT_FILENO) == -1) {
+			throw HTTPError("Cgi::run: dup2", strerror(errno), 500);
+		}
+		close(c.m_cgi_io[OUT]);
+		close(c.m_cgi_io[IN]);
 		if (execve(this->m_argv[0], this->m_argv, this->m_env_array) == -1) {
 			this->clear();
 			throw HTTPError("Cgi::exec: execve", strerror(errno), 500);
 		}
 	}
-	int	wstatus = 0;
-	if (waitpid(c.m_cgi_pid, &wstatus, WNOHANG) == -1) {
-			this->clear();
-			throw HTTPError("Cgi::exec: waitpid", strerror(errno), 500);
-	}
+	std::cout<<"pid = "<<c.m_cgi_pid<<std::endl;
+	close(c.m_cgi_io[OUT]);
 }
 
 void	Cgi::run(t_client &c) {
@@ -90,13 +116,14 @@ void	Cgi::run(t_client &c) {
 		if (c.m_request_data.m_method == POST) {
 			c.m_cgi_write = c.m_request_data.m_body.size();
 		}
+		if (pipe(c.m_cgi_io) == -1) {
+			throw HTTPError("Cgi::run: pipe", strerror(errno), 500);
+		}
 		this->exec(c);
-		c.m_cgi_running = false;
 	}
 	if (c.m_cgi_write > 0) {
 		this->write(c);
 	}
-	this->read(c);
 }
 
 /*TODO*/

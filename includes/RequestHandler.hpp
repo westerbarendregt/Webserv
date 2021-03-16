@@ -30,6 +30,7 @@ class RequestHandler
 
 		void printStatusCodes();
 		void printMimeTypes();
+		friend class Server;
 
 	private:
 		Cgi				m_cgi;
