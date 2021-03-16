@@ -26,6 +26,7 @@ OBJ +=	ServerInit
 OBJ +=	ServerAccept
 OBJ +=	ServerRespond
 OBJ +=	Client
+OBJ +=	Cgi
 OBJ +=	RequestHandler
 OBJ +=	RequestHandlerMimeTypes
 OBJ +=	RequestHandlerStatusCodes
