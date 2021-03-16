@@ -24,7 +24,6 @@ void	Server::init(){
 }
 
 void	Server::connectVirtualServer(t_v_server &v_server) {
-	std::cout<<v_server.m_configs.m_directives["listen"]<<" listens on socket "<< std::endl;// v_server.m_socket<<std::endl;
 	if (bind(v_server.m_socket,  reinterpret_cast<struct sockaddr *>(&v_server.m_sockaddr), sizeof(v_server.m_sockaddr)) == -1)
 		throw(serverError("bind", strerror(errno)));
 	else if (listen(v_server.m_socket, 128) == -1)

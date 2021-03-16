@@ -34,6 +34,7 @@ class	Server
 		void	close();
 		int		receive(t_client *c);
 		void	respond(int client_socket);
+		void	respond(t_client &c);
 		int		accept(int socket);
 		void	addClient();
 		void	connectVirtualServer(t_v_server &v_server);

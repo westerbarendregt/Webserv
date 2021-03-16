@@ -15,10 +15,10 @@ import time
 
 #r=requests.get('http://127.0.0.1:8080/path/to/test-cgi.php?query=string', headers={"Host": "no"})
 
-r=requests.get('http://127.0.0.1:8080/ok/index.html', headers={"Host": "no"})
-
-
-print(r.text)
+#r=requests.get('http://127.0.0.1:8080/ok/index.html', headers={"Host": "no"})
+#
+#
+#print(r.text)
 
 
 def test_async_cgi():
@@ -51,4 +51,4 @@ def test_async_cgi():
     status = os.waitpid(cgi_pid2, 0)
     print("received cgi2")
 
-#test_async_cgi()
+test_async_cgi()

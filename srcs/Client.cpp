@@ -131,7 +131,6 @@ Client &Client::operator=(Client const & rhs) {
 	this->m_cgi_running = rhs.m_cgi_running;
 	this->m_cgi_write= rhs.m_cgi_write;
 	this->m_request_data.m_owner = this;
-	std::cout<<"client operator ="<<std::endl;
 	return *this;
 }
 

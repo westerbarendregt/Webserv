@@ -50,43 +50,31 @@ void	Cgi::convertEnv(t_client &c) {
 	this->m_argv[2] = 0;
 }
 
-ssize_t	Cgi::read(t_client &c) {
+void	Cgi::read(t_client &c) {
 	char buf[10000];
 
-	int	wstatus = 0;
-	pid_t wpid = waitpid(c.m_cgi_pid, &wstatus, WNOHANG);
-	ssize_t	nbytes = 0;
-	if (wpid > 0 && WIFEXITED(wstatus)) {
-		while ((nbytes = ::read(c.m_cgi_io[IN], buf, 1000)) > 0)
-		{
-			c.m_response_str.append(buf); //probably body
-			std::fill(buf, buf + 1000, 0);
+	ssize_t	nbytes;
+	while ((nbytes = ::read(c.m_cgi_io[IN], buf, 1000)) > 0)
+	{
+		c.m_response_str.append(buf); //probably body
+		std::fill(buf, buf + 1000, 0);
 
-		}
-		c.m_cgi_running = false;
-		::close(c.m_cgi_io[IN]);
-		if (nbytes == -1) {
-			//error with read
-		}
-		return 1;
 	}
-	else if (wpid == -1) {
-		//for now we cannot throw an http error because we are out of the 
-		//request handling part of the ServerRun loop, so flag the error
-		//and call generateErrorPage here
-	}
-	//std::cout<<"didnt exit"<<std::endl;
-	return 1;
+	if (nbytes == -1)
+		throw HTTPError("Cgi::read", strerror(errno), 500);
+}
+
+void	Cgi::stop(t_client &c) {
+	c.m_cgi_running = false;
+	if (::close(c.m_cgi_io[IN]) == -1)
+			throw HTTPError("Cgi::stop : close", strerror(errno), 500);
 }
 
 void	Cgi::write(t_client &c) {
-	std::cout<<"cgi write"<<std::endl;
 	(void)c;
 }
 
 void	Cgi::exec(t_client &c) {
-	(void)c;
-	std::cout<<"exec with "<<this->m_argv[0] << " "<<this->m_argv[1]<<std::endl;
 	if ((c.m_cgi_pid = fork()) == -1) {
 		this->clear();
 		throw HTTPError("Cgi::exec: fork", strerror(errno), 500); //do we stop server after we throw
@@ -102,7 +90,6 @@ void	Cgi::exec(t_client &c) {
 			throw HTTPError("Cgi::exec: execve", strerror(errno), 500);
 		}
 	}
-	std::cout<<"pid = "<<c.m_cgi_pid<<std::endl;
 	close(c.m_cgi_io[OUT]);
 }
 
@@ -121,7 +108,7 @@ void	Cgi::run(t_client &c) {
 		}
 		this->exec(c);
 	}
-	if (c.m_cgi_write > 0) {
+	if (c.m_cgi_write > 0) { //if POST, wip
 		this->write(c);
 	}
 }

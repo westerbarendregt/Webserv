@@ -42,13 +42,6 @@ void	Server::run(){
 				 	if (!c->m_request_data.m_metadata_parsed) {
 				 		if (!c->fullMetaData())
 				 			continue ;
-						// std::cout<<"received full metadata"<<std::endl;
-						// if (parse != error)
-						// 	this->handleMetadata(*c); 
-						// 	if error, flag the request as done, and as erroneous, so handle request can generate a error page.
-						// std::cout<<"======"<<std::endl;
-						// std::cout<<c->m_request_str<<std::endl;
-						// std::cout<<"======"<<std::endl;
 				 		RequestParser::Parse(*c);
 						c->m_request_data.m_metadata_parsed = true;
 						RequestParser::Print(*c);
@@ -70,19 +63,12 @@ void	Server::run(){
 					std::cout<<"listening..."<<std::endl;
 			}
 			else if (FD_ISSET(i, &this->m_write_fd)) {
-				//std::cout<<"found write connection fd: "<<i<<std::endl;
 				c = getClient(i);
-				if (c->m_cgi_running) {
-					if (this->m_request_handler.m_cgi.read(*c) > 0) {
-						continue ; // cgi is still running
-					}
-					//possibly append output of cgi to already generated
-					//response status line and header
-				}
+				if (c->m_cgi_running && !this->m_request_handler.handleCgi(*c))
+						continue ;
 				this->respond(i);
 				std::cout<<"listening..."<<std::endl;
 				//can close connection if the response is an error
-				//resetResponse
 			}
 	}
 }
