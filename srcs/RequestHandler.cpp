@@ -1,4 +1,5 @@
 #include <iostream>
+#include "Conf.hpp"
 #include "Error.hpp"
 #include "RequestHandler.hpp"
 #include "WebServer.hpp"
@@ -216,6 +217,8 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			{
 				//	normal file;
 				//	check extension against mime types;
+				this->m_client->m_response_data.m_content_type = this->m_mime_types[stat_file.substr(stat_file.rfind('.') + 1)];
+				std::cout << "content-type: "<<this->m_client->m_response_data.m_content_type<<std::endl;
 				//	if there are additional entries after this file, we throw bad request
 				if (next_prefix != std::string::npos) {
 					throw HTTPError("RequestHandler::handleMetadata", "invalid full path", 404);
