@@ -159,8 +159,10 @@ void	Cgi::clear() {
 
 void	RequestHandler::handleCgiMetadata(t_request &request, std::string &file) {
 	request.m_cgi = true;
-	if (request.m_real_path.size() - file.size() == 0)
+	if (request.m_real_path.size() - file.size() == 0) {
+		request.m_file = file;
 		return ;
+	}
 	size_t	query_string_index = request.m_file.find('?', 0);
 	if (query_string_index != std::string::npos)
 		request.m_query_string = request.m_file.substr(query_string_index + 1, std::string::npos);
