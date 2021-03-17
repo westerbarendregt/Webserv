@@ -92,8 +92,13 @@ Client::Client()
 	m_addrlen(sizeof(m_sockaddr)),
 	m_cgi_pid(-1),
 	m_cgi_running(0),
-	m_cgi_write(0)
+	m_cgi_write(0),
+	m_cgi_out_buf()
 {
+	this->m_cgi_read_pipe[IN] = -1;
+	this->m_cgi_read_pipe[OUT] = -1;
+	this->m_cgi_write_pipe[IN] = -1;
+	this->m_cgi_write_pipe[OUT] = -1;
 	this->m_request_data.m_owner = this;
 }
 
@@ -114,8 +119,13 @@ Client::Client(Client const & src)
 	m_addrlen(src.m_addrlen),
 	m_cgi_pid(src.m_cgi_pid),
 	m_cgi_running(src.m_cgi_running),
-	m_cgi_write(src.m_cgi_write)
+	m_cgi_write(src.m_cgi_write),
+	m_cgi_out_buf(src.m_cgi_out_buf)
 {
+	this->m_cgi_read_pipe[IN] = src.m_cgi_read_pipe[IN];
+	this->m_cgi_read_pipe[OUT] = src.m_cgi_read_pipe[OUT];
+	this->m_cgi_write_pipe[IN] = src.m_cgi_write_pipe[IN];
+	this->m_cgi_write_pipe[OUT] = src.m_cgi_write_pipe[OUT];
 	this->m_request_data.m_owner = this;
 }
 
@@ -132,6 +142,10 @@ Client &Client::operator=(Client const & rhs) {
 	this->m_cgi_running = rhs.m_cgi_running;
 	this->m_cgi_write= rhs.m_cgi_write;
 	this->m_request_data.m_owner = this;
+	this->m_cgi_read_pipe[IN] = rhs.m_cgi_read_pipe[IN];
+	this->m_cgi_read_pipe[OUT] = rhs.m_cgi_read_pipe[OUT];
+	this->m_cgi_write_pipe[IN] = rhs.m_cgi_write_pipe[IN];
+	this->m_cgi_write_pipe[OUT] = rhs.m_cgi_write_pipe[OUT];
 	return *this;
 }
 

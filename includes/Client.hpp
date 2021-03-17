@@ -81,8 +81,9 @@ class	Client
 		pid_t								m_cgi_pid;
 		bool								m_cgi_running;
 		size_t								m_cgi_write;
-		int									m_cgi_file;
-		int									m_cgi_io[2];
+		int									m_cgi_read_pipe[2];
+		int									m_cgi_write_pipe[2];
+		std::string							m_cgi_out_buf;
 };
 
 #endif

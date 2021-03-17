@@ -42,9 +42,7 @@ void	Server::closeClientConnection(t_client &c) {
 			std::cout << "Server::closeClientConnection : kill: " << strerror(errno)<<std::endl;
 		}
 		//io
-		if (::close(c.m_cgi_io[IN]) == -1) {
-			std::cout << "Server::closeClientConnection : close(m_cgi_io[IN]): " << strerror(errno)<<std::endl;
-		}
+		this->m_request_handler.m_cgi.stop(c);
 
 	}
 	if (this->m_client_map.erase(c.m_socket) != 1)

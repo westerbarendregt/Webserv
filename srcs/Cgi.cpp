@@ -55,52 +55,77 @@ void	Cgi::convertEnv(t_client &c) {
 void	Cgi::read(t_client &c) {
 	char buf[4096];
 
-	ssize_t	nbytes = 0;
-	if (lseek(c.m_cgi_file, 0, SEEK_SET) == -1)
-		throw HTTPError("Cgi::read : lseek:", strerror(errno), 500);
-	while ((nbytes = ::read(c.m_cgi_file, buf, 1000)) > 0)
-	{
-		c.m_response_str.append(buf); //probably body
-		std::fill(buf, buf + sizeof(buf), 0);
-
-	}
+	std::fill(buf, buf + sizeof(buf), 0);
+	ssize_t	nbytes = ::read(c.m_cgi_read_pipe[IN], buf, 4096);
 	if (nbytes == -1)
 		throw HTTPError("Cgi::read", strerror(errno), 500);
+	if (nbytes)
+		c.m_cgi_out_buf.append(buf);
 }
 
+
 void	Cgi::stop(t_client &c) {
-	if (::close(c.m_cgi_io[IN]) == -1)
-			throw HTTPError("Cgi::stop : close", strerror(errno), 500);
-	if (::close(c.m_cgi_file) == -1)
-			throw HTTPError("Cgi::stop : close m_cgi_file", strerror(errno), 500);
+	if (c.m_cgi_read_pipe[IN] != -1 && ::close(c.m_cgi_read_pipe[IN]) == -1) {
+		std::cout << "Cgi::stop : close(m_cgi_read_pipe[IN]): " << strerror(errno)<<std::endl;
+	}
+	if (c.m_cgi_read_pipe[OUT] != -1 && ::close(c.m_cgi_read_pipe[OUT]) == -1) {
+		std::cout << "Cgi::stop : close(m_cgi_read_pipe[OUT]): " << strerror(errno)<<std::endl;
+	}
+	if (c.m_cgi_write_pipe[IN] != -1 && ::close(c.m_cgi_write_pipe[IN]) == -1) {
+		std::cout << "Cgi::stop : close(m_cgi_write_pipe[IN]): " << strerror(errno)<<std::endl;
+	}
+	if (c.m_cgi_write_pipe[OUT] != -1 && ::close(c.m_cgi_write_pipe[OUT]) == -1) {
+		std::cout << "Cgi::stop : close(m_cgi_write_pipe[OUT]): " << strerror(errno)<<std::endl;
+	}
+	c.m_cgi_read_pipe[IN] =-1;
+	c.m_cgi_read_pipe[OUT] =-1;
+	c.m_cgi_write_pipe[IN] =-1;
+	c.m_cgi_write_pipe[OUT] =-1;
 	c.m_cgi_running = false;
 }
 
 void	Cgi::write(t_client &c) {
-	(void)c;
+	ssize_t	nbytes = ::write(c.m_cgi_write_pipe[OUT], c.m_request_data.m_body.c_str(), c.m_request_data.m_body.size() + 1);
+
+	if (nbytes == -1) {
+		throw HTTPError("Cgi::write: ", strerror(errno), 500);
+	}
+	if (static_cast<size_t>(nbytes) == c.m_request_data.m_body.size() + 1) {
+		close(c.m_cgi_write_pipe[OUT]);
+		c.m_cgi_write_pipe[OUT] = -1;
+		c.m_cgi_write = 0;
+	}
+	else
+		c.m_cgi_write -= nbytes;
 }
 
 void	Cgi::exec(t_client &c) {
-	c.m_cgi_file = open("/tmp/pute", O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-	if (c.m_cgi_file == -1) {
-		throw HTTPError("Cgi::exec: open", strerror(errno), 500); //do we stop server after we throw
-	}
 	if ((c.m_cgi_pid = fork()) == -1) {
 		this->clear();
-		throw HTTPError("Cgi::exec: fork", strerror(errno), 500); //do we stop server after we throw
+		throw HTTPError("Cgi::exec: fork", strerror(errno), 500);
 	}
 	if (!c.m_cgi_pid) {
-		if (dup2(c.m_cgi_file, STDOUT_FILENO) == -1) {
-			throw HTTPError("Cgi::exec: dup2", strerror(errno), 500);
+		if (dup2(c.m_cgi_read_pipe[OUT], STDOUT_FILENO) == -1) {
+			throw HTTPError("Cgi::exec: dup2(cgi_read_pipe[OUT], STDOUT_FILENO)", strerror(errno), 500);
 		}
-		close(c.m_cgi_io[OUT]);
-		close(c.m_cgi_io[IN]);
+		close(c.m_cgi_read_pipe[OUT]);
+		close(c.m_cgi_read_pipe[IN]);
+		if (c.m_cgi_write > 0) {
+			if (dup2(c.m_cgi_write_pipe[IN], STDIN_FILENO) == -1) {
+				throw HTTPError("Cgi::exec: dup2(cgi_write_pipe[IN], STDIN_FILENO)", strerror(errno), 500);
+			}
+			close(c.m_cgi_write_pipe[OUT]);
+			close(c.m_cgi_write_pipe[IN]);
+		}
 		if (execve(this->m_argv[0], this->m_argv, this->m_env_array) == -1) {
 			this->clear();
 			throw HTTPError("Cgi::exec: execve", strerror(errno), 500);
 		}
 	}
-	close(c.m_cgi_io[OUT]);
+	close(c.m_cgi_read_pipe[OUT]); // check error 
+	close(c.m_cgi_write_pipe[IN]);
+	c.m_cgi_read_pipe[OUT] = -1;
+	c.m_cgi_write_pipe[IN] = -1;
 }
 
 void	Cgi::run(t_client &c) {
@@ -112,14 +137,14 @@ void	Cgi::run(t_client &c) {
 		this->convertEnv(c);
 		if (c.m_request_data.m_method == POST) {
 			c.m_cgi_write = c.m_request_data.m_body.size();
+			if (pipe(c.m_cgi_write_pipe) == -1) {
+				throw HTTPError("Cgi::run: pipe(cgi_write_pipe)", strerror(errno), 500);
+			}
 		}
-		if (pipe(c.m_cgi_io) == -1) {
-			throw HTTPError("Cgi::run: pipe", strerror(errno), 500);
+		if (pipe(c.m_cgi_read_pipe) == -1) {
+			throw HTTPError("Cgi::run: pipe(cgi_read_pipe)", strerror(errno), 500);
 		}
 		this->exec(c);
-	}
-	if (c.m_cgi_write > 0) { //if POST, wip
-		this->write(c);
 	}
 }
 
@@ -187,7 +212,7 @@ void	RequestHandler::handleCgiMetadata(t_request &request, std::string &file) {
 		request.m_file = file;
 		return ;
 	}
-	size_t	query_string_index = request.m_file.find('?', 0);
+	size_t query_string_index = request.m_file.find('?', 0);
 	if (query_string_index != std::string::npos)
 		request.m_query_string = request.m_file.substr(query_string_index + 1, std::string::npos);
 	size_t	path_info_index = request.m_file.find('/', 0);
@@ -201,8 +226,7 @@ void	RequestHandler::handleCgiMetadata(t_request &request, std::string &file) {
 }
 
 bool	RequestHandler::validCgi(t_request &request, size_t extension_index) {
-	if (request.m_method == PUT || request.m_method == DELETE
-			|| extension_index == std::string::npos)
+	if (!(request.m_method == GET || request.m_method == HEAD || request.m_method == POST))
 		return false;
 	t_directives::iterator	path_found = request.m_location->second.find("cgi_path");
 	t_directives::iterator	extension_found = request.m_location->second.find("cgi");
@@ -227,4 +251,27 @@ bool	RequestHandler::validCgi(t_request &request, size_t extension_index) {
 		std::cout<<"handleCgiMetadata: no cgi extension provided"<<std::endl;
 	}
 	return false;
+}
+
+int RequestHandler::handleCgi(t_client &c) {
+	try {
+		if (c.m_cgi_write > 0) {
+			this->m_cgi.write(c);
+		}
+		int	wstatus = 0;
+		pid_t wpid = waitpid(c.m_cgi_pid, &wstatus, WNOHANG);
+		if (wpid == -1)
+			throw HTTPError("RequestHandler::handleCgi : wait", strerror(errno), 500);
+		//add to the response metadata/body
+		this->m_cgi.read(c);
+		if (!wpid)
+			return 0; //hasn't exited yet
+		c.m_response_str.assign(c.m_cgi_out_buf.begin(), c.m_cgi_out_buf.end());
+		this->m_cgi.stop(c);
+	}
+	catch (HTTPError &e) {
+		std::cerr << e.what() << std::endl;
+		m_client->m_request_data.m_error = e.HTTPStatusCode();
+	}
+	return 1;
 }

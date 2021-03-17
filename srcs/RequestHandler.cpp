@@ -248,27 +248,6 @@ void	RequestHandler::handleMetadata(t_client &c) {
 	}
 }
 
-int RequestHandler::handleCgi(t_client &c) {
-	try {
-		int	wstatus = 0;
-		pid_t wpid = waitpid(c.m_cgi_pid, &wstatus, WNOHANG);
-		if (wpid == -1)
-			throw HTTPError("RequestHandler::handleCgi : wait", strerror(errno), 500);
-		if (!wpid)
-		{
-			//std::cout<<"not exited.."<<std::endl;
-			return 0; //hasn't exited yet
-		}
-		this->m_cgi.read(c);
-		this->m_cgi.stop(c);
-	}
-	catch (HTTPError & e) {
-		std::cerr << e.what() << std::endl;
-		m_client->m_request_data.m_error = e.HTTPStatusCode();
-	}
-	//generate status line + headers + response body
-	return 1;
-}
 
 void	RequestHandler::handleRequest(t_client &c) {
 	this->m_client = &c;
