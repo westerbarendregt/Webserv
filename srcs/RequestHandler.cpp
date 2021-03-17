@@ -255,7 +255,10 @@ int RequestHandler::handleCgi(t_client &c) {
 		if (wpid == -1)
 			throw HTTPError("RequestHandler::handleCgi : wait", strerror(errno), 500);
 		if (!wpid)
+		{
+			//std::cout<<"not exited.."<<std::endl;
 			return 0; //hasn't exited yet
+		}
 		this->m_cgi.read(c);
 		this->m_cgi.stop(c);
 	}

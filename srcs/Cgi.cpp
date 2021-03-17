@@ -6,7 +6,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 #include <errno.h>
 #include "Error.hpp"
 #include "utils.hpp"
@@ -51,13 +53,15 @@ void	Cgi::convertEnv(t_client &c) {
 }
 
 void	Cgi::read(t_client &c) {
-	char buf[10000];
+	char buf[4096];
 
-	ssize_t	nbytes;
-	while ((nbytes = ::read(c.m_cgi_io[IN], buf, 1000)) > 0)
+	ssize_t	nbytes = 0;
+	if (lseek(c.m_cgi_file, 0, SEEK_SET) == -1)
+		throw HTTPError("Cgi::read : lseek:", strerror(errno), 500);
+	while ((nbytes = ::read(c.m_cgi_file, buf, 1000)) > 0)
 	{
 		c.m_response_str.append(buf); //probably body
-		std::fill(buf, buf + 1000, 0);
+		std::fill(buf, buf + sizeof(buf), 0);
 
 	}
 	if (nbytes == -1)
@@ -65,9 +69,11 @@ void	Cgi::read(t_client &c) {
 }
 
 void	Cgi::stop(t_client &c) {
-	c.m_cgi_running = false;
 	if (::close(c.m_cgi_io[IN]) == -1)
 			throw HTTPError("Cgi::stop : close", strerror(errno), 500);
+	if (::close(c.m_cgi_file) == -1)
+			throw HTTPError("Cgi::stop : close m_cgi_file", strerror(errno), 500);
+	c.m_cgi_running = false;
 }
 
 void	Cgi::write(t_client &c) {
@@ -75,13 +81,17 @@ void	Cgi::write(t_client &c) {
 }
 
 void	Cgi::exec(t_client &c) {
+	c.m_cgi_file = open("/tmp/pute", O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+	if (c.m_cgi_file == -1) {
+		throw HTTPError("Cgi::exec: open", strerror(errno), 500); //do we stop server after we throw
+	}
 	if ((c.m_cgi_pid = fork()) == -1) {
 		this->clear();
 		throw HTTPError("Cgi::exec: fork", strerror(errno), 500); //do we stop server after we throw
 	}
 	if (!c.m_cgi_pid) {
-		if (dup2(c.m_cgi_io[OUT], STDOUT_FILENO) == -1) {
-			throw HTTPError("Cgi::run: dup2", strerror(errno), 500);
+		if (dup2(c.m_cgi_file, STDOUT_FILENO) == -1) {
+			throw HTTPError("Cgi::exec: dup2", strerror(errno), 500);
 		}
 		close(c.m_cgi_io[OUT]);
 		close(c.m_cgi_io[IN]);
@@ -191,7 +201,8 @@ void	RequestHandler::handleCgiMetadata(t_request &request, std::string &file) {
 }
 
 bool	RequestHandler::validCgi(t_request &request, size_t extension_index) {
-	if (extension_index == std::string::npos)
+	if (request.m_method == PUT || request.m_method == DELETE
+			|| extension_index == std::string::npos)
 		return false;
 	t_directives::iterator	path_found = request.m_location->second.find("cgi_path");
 	t_directives::iterator	extension_found = request.m_location->second.find("cgi");

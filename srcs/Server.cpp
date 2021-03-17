@@ -1,5 +1,11 @@
 #include "ConfigParser.hpp"
 #include "Server.hpp"
+#include "Error.hpp"
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include <string.h>
 
 Server::Server(char const *path) {
 	ConfigParser::parse(path, this->m_v_server_all);
@@ -18,6 +24,31 @@ Server::t_client	*Server::getClient(int client_socket) {
 	if (found != this->m_client_map.end())
 		return (&(found->second));
 	return (0);
+}
+
+void	Server::closeClientConnection(t_client &c) {
+	std::cout<<"closing connection "<<c.m_socket<<std::endl; //log
+	::close(c.m_socket);
+	if (FD_ISSET(c.m_socket, &this->m_read_all))
+		FD_CLR(c.m_socket, &this->m_read_all);
+	if (FD_ISSET(c.m_socket, &this->m_write_all))
+		FD_CLR(c.m_socket, &this->m_write_all);
+	if (c.m_cgi_running) {
+		//pid
+		if (waitpid(c.m_cgi_pid, NULL, WNOHANG) == -1) {
+			std::cout << "Server::closeClientConnection : wait: " << strerror(errno)<<std::endl;
+		}
+		if (kill(c.m_cgi_pid, SIGKILL) == -1) {
+			std::cout << "Server::closeClientConnection : kill: " << strerror(errno)<<std::endl;
+		}
+		//io
+		if (::close(c.m_cgi_io[IN]) == -1) {
+			std::cout << "Server::closeClientConnection : close(m_cgi_io[IN]): " << strerror(errno)<<std::endl;
+		}
+
+	}
+	if (this->m_client_map.erase(c.m_socket) != 1)
+		throw serverError("removeClient: ", "trying to remove unexisting client");
 }
 
 Server::~Server() {}

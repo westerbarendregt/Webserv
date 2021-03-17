@@ -2,6 +2,7 @@
 #include "Server.hpp"
 #include "Error.hpp"
 #include "WebServer.hpp"
+#include <unistd.h>
 
 Request::Request()
 	: m_owner(0),
@@ -134,10 +135,6 @@ Client &Client::operator=(Client const & rhs) {
 	return *this;
 }
 
-void	Server::removeClient(int client_socket) {
-	if (this->m_client_map.erase(client_socket) != 1)
-		throw serverError("removeClient: ", "trying to remove unexisting client");
-}
 
 void	Client::updateServerConf()
 {

@@ -57,10 +57,13 @@ void	Server::run(){
 						//set, to not get a read from select while we haven't
 						//sent the full response
 					}
-				 	else
+				 	else // c->m_request_data.m_done
 				 		RequestParser::HandleBody(*c);
-				 }
-					std::cout<<"listening..."<<std::endl;
+				} // receive
+				else {
+					this->closeClientConnection(*c);
+				}
+				std::cout<<"listening..."<<std::endl;
 			}
 			else if (FD_ISSET(i, &this->m_write_fd)) {
 				c = getClient(i);
