@@ -59,6 +59,7 @@ class RequestHandler
 		std::vector<std::string>	m_response_headers;
 
 		t_client	*m_client;
+		Request		*m_request_data;
 };
 
 #endif

@@ -112,25 +112,25 @@ std::string RequestHandler::handleDELETE() {
 
 std::string	RequestHandler::generateErrorPage(int error) {
 	std::string status_line = statusLine();
-	std::string response;
+	std::string response_headers;
 	if (error == 401)
 	{
-		response +=	"Server: Webserv/1.1\r\n"
+		response_headers +=	"Server: Webserv/1.1\r\n"
 					  	"Content-Type: text/html\r\n"
 	   					"WWW-Authenticate: Basic realm=";
-		response += this->m_client->m_request_data.m_location->second["auth_basic"]; // get from location
-		response += ", charset=\"UTF-8\"\r\n";
-		return status_line + response + CRLF;
+		response_headers += this->m_client->m_request_data.m_location->second["auth_basic"]; // get from location
+		response_headers += ", charset=\"UTF-8\"\r\n";
+		return status_line + response_headers + CRLF;
 	}
 	if (error == 405)
 	{
     	std::string allowed = this->m_client->getRequest().m_location->second["allow_method"]; // get this resource from allowed methods from the location
-		response +=	"Server: Webserv/1.1\r\n"
+		response_headers +=	"Server: Webserv/1.1\r\n"
 					  	"Content-Type: text/html\r\n"
 	   					"Allow: ";
-		response += allowed;
-		response += CRLF;
-		return status_line + response + CRLF;
+		response_headers += allowed;
+		response_headers += CRLF;
+		return status_line + response_headers + CRLF;
 	}
 
 	std::string	error_response =
@@ -140,7 +140,7 @@ std::string	RequestHandler::generateErrorPage(int error) {
 			"<center><h1>" + intToString(error) + ' ' + m_status_codes[error] + "</h1></center>" CRLF
 			;
 
-	std::string	response_headers = responseHeaders(error_response);
+	response_headers = responseHeaders(error_response);
 
 	return status_line + response_headers + CRLF + error_response;
 }
@@ -231,9 +231,8 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			std::cout<<"dir listing"<<std::endl;
 			c.m_request_data.m_autoindex= true;
 		}
-		else
+		else 
 			throw HTTPError("RequestHandler::handleMetadata", "directory listing not enabled", 404);
-
 		AllowedMethods(c);
 		Authenticated(c);
 	} catch (HTTPError & e) {
@@ -243,8 +242,19 @@ void	RequestHandler::handleMetadata(t_client &c) {
 	}
 }
 
+// std::string	handlePut()
+// {
+// 	std::string status_line;
+// 	std::string response_headers;
+
+// 	std::string path_to_file = m_request_data->
+
+// 	return status_line + response_headers + CRLF;
+// }
+
 void	RequestHandler::handleRequest(t_client &c) {
 	this->m_client = &c;
+	this->m_request_data = &c.m_request_data;
 	Request	&request = m_client->m_request_data;
 	if (request.m_error != 0) {
 		m_client->m_response_str = generateErrorPage(request.m_error);
