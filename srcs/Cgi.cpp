@@ -85,7 +85,9 @@ void	Cgi::stop(t_client &c) {
 }
 
 void	Cgi::write(t_client &c) {
-	ssize_t	nbytes = ::write(c.m_cgi_write_pipe[OUT], c.m_request_data.m_body.c_str(), c.m_request_data.m_body.size() + 1);
+	ssize_t	nbytes = ::write(c.m_cgi_write_pipe[OUT], 
+			c.m_request_data.m_body.c_str() + c.m_cgi_write_offset,
+			c.m_request_data.m_body.size() + 1 - c.m_cgi_write_offset);
 
 	if (nbytes == -1) {
 		throw HTTPError("Cgi::write: ", strerror(errno), 500);
@@ -93,10 +95,11 @@ void	Cgi::write(t_client &c) {
 	if (static_cast<size_t>(nbytes) == c.m_request_data.m_body.size() + 1) {
 		close(c.m_cgi_write_pipe[OUT]);
 		c.m_cgi_write_pipe[OUT] = -1;
-		c.m_cgi_write = 0;
+		c.m_cgi_write = false;
 	}
-	else
-		c.m_cgi_write -= nbytes;
+	else {
+		c.m_cgi_write_offset += nbytes;
+	}
 }
 
 void	Cgi::exec(t_client &c) {
@@ -110,7 +113,7 @@ void	Cgi::exec(t_client &c) {
 		}
 		close(c.m_cgi_read_pipe[OUT]);
 		close(c.m_cgi_read_pipe[IN]);
-		if (c.m_cgi_write > 0) {
+		if (c.m_cgi_write) {
 			if (dup2(c.m_cgi_write_pipe[IN], STDIN_FILENO) == -1) {
 				throw HTTPError("Cgi::exec: dup2(cgi_write_pipe[IN], STDIN_FILENO)", strerror(errno), 500);
 			}
@@ -136,7 +139,7 @@ void	Cgi::run(t_client &c) {
 		this->fillEnv(c.m_request_data);
 		this->convertEnv(c);
 		if (c.m_request_data.m_method == POST) {
-			c.m_cgi_write = c.m_request_data.m_body.size();
+			c.m_cgi_write = true;
 			if (pipe(c.m_cgi_write_pipe) == -1) {
 				throw HTTPError("Cgi::run: pipe(cgi_write_pipe)", strerror(errno), 500);
 			}
@@ -255,7 +258,7 @@ bool	RequestHandler::validCgi(t_request &request, size_t extension_index) {
 
 int RequestHandler::handleCgi(t_client &c) {
 	try {
-		if (c.m_cgi_write > 0) {
+		if (c.m_cgi_write) {
 			this->m_cgi.write(c);
 		}
 		int	wstatus = 0;
