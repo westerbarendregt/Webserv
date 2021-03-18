@@ -27,16 +27,18 @@ std::string RequestHandler::Content_Length(std::string const & body) {
 	return content_length + CRLF;
 }
 
-std::string RequestHandler::Content_Type() {
-	std::string content_type;
+void 	RequestHandler::Content_Type(std::string content_type) {
 
-	return content_type + CRLF;
+	if (content_type == "")
+		content_type = "default";
+	m_response_headers.push_back("Content-type:" + content_type);
 }
 
-std::string RequestHandler::Server() {
+void 	RequestHandler::Server() {
 	std::string server = "webserv/1.0.0";
 
-	return server + CRLF;
+	m_response_headers.push_back(server);
+	// return server + CRLF;
 }
 
 std::string RequestHandler::statusLine() {
@@ -56,10 +58,10 @@ std::string RequestHandler::responseBody() {
 }
 
 std::string RequestHandler::responseHeaders(std::string const & body) {
-	m_response_headers.clear();
-	m_response_headers.push_back(Server());
-	m_response_headers.push_back(Content_Length(body));
-	m_response_headers.push_back(Content_Type());
+	// m_response_headers.clear();
+	// m_response_headers.push_back(Server());
+	// m_response_headers.push_back(Content_Length(body));
+	// m_response_headers.push_back(Content_Type());
 
 
 	std::string	response_headers;
@@ -97,13 +99,13 @@ std::string RequestHandler::handlePOST() {
 	return status_line + response_headers + CRLF + response_body;
 }
 
-std::string RequestHandler::handlePUT() {
-	std::string status_line = statusLine();
-	std::string response_body = responseBody();
-	std::string	response_headers = responseHeaders(response_body);
+// std::string RequestHandler::handlePUT() {
+// 	std::string status_line = statusLine();
+// 	std::string response_body = responseBody();
+// 	std::string	response_headers = responseHeaders(response_body);
 
-	return status_line + response_headers + CRLF + response_body;
-}
+// 	return status_line + response_headers + CRLF + response_body;
+// }
 
 std::string RequestHandler::handleDELETE() {
 	std::string status_line = statusLine();
@@ -186,16 +188,16 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			next_prefix = prefix == std::string::npos ? std::string::npos : real_path.find_first_of("?/", prefix + 1);
 			stat_file = real_path.substr(0, next_prefix);
 			std::cout<<"\tstat "<<stat_file<<std::endl;
-			if (stat(stat_file.c_str(), &this->m_statbuf)) {
-				throw HTTPError("RequestHandler::handleMetadata", "invalid full path", 404);
-			}
-			//also check permission
-			if ((this->m_statbuf.st_mode & S_IFMT) == S_IFREG) // if file
-				break ;
-			if ((this->m_statbuf.st_mode & S_IFMT) != S_IFDIR
-					&& (this->m_statbuf.st_mode & S_IFMT) != S_IFLNK) { // if something else than a directory/smlink
-				throw HTTPError("RequestHandler::handleMetadata", "invalid full path, not a file/directory/symlink", 404);
-			}
+			// if (stat(stat_file.c_str(), &this->m_statbuf)) {
+			// 	throw HTTPError("RequestHandler::handleMetadata", "invalid full path", 404);
+			// }
+			// //also check permission
+			// if ((this->m_statbuf.st_mode & S_IFMT) == S_IFREG) // if file
+			// 	break ;
+			// if ((this->m_statbuf.st_mode & S_IFMT) != S_IFDIR
+			// 		&& (this->m_statbuf.st_mode & S_IFMT) != S_IFLNK) { // if something else than a directory/smlink
+			// 	throw HTTPError("RequestHandler::handleMetadata", "invalid full path, not a file/directory/symlink", 404);
+			// }
 			if (next_prefix == std::string::npos)
 				break ;
 			prefix = next_prefix;
@@ -236,10 +238,18 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			std::cout<<"dir listing"<<std::endl;
 			c.m_request_data.m_autoindex= true;
 		}
-		else 
-			throw HTTPError("RequestHandler::handleMetadata", "directory listing not enabled", 404);
+		std::cout<<"m_real_path: "<<c.m_request_data.m_real_path<<std::endl;
+
+		// else 
+		// 	throw HTTPError("RequestHandler::handleMetadata", "directory listing not enabled", 404);
 		AllowedMethods(c);
 		Authenticated(c);
+		// std::cout<<"stat file: "<<stat_file<<std::endl;
+		// std::cout<<"alias: "<<alias<<std::endl;
+		if (m_client->m_request_data.m_method == PUT)
+			if (real_path.back() == '/' || (stat(real_path.c_str(), &this->m_statbuf) && S_ISDIR(this->m_statbuf.st_mode)))
+				throw HTTPError("RequestHandler::handleMetadata::PUT", "file is a directory", 409);
+		// BodySize(c);
 	} catch (HTTPError & e) {
 		std::cerr << e.what() << std::endl;
 		m_client->m_request_data.m_error = e.HTTPStatusCode();
@@ -247,15 +257,49 @@ void	RequestHandler::handleMetadata(t_client &c) {
 	}
 }
 
-// std::string	handlePut()
-// {
-// 	std::string status_line;
-// 	std::string response_headers;
+std::string		RequestHandler::handlePUT()
+{
+	std::string status_line;
+	std::string response_headers;
 
-// 	std::string path_to_file = m_request_data->
+	const char *path_to_file = this->m_request_data->m_real_path.c_str();
+	const char *m_file = this->m_request_data->m_file.c_str();
+	const char *m_alias = this->m_request_data->m_location->second["alias"].c_str();
 
-// 	return status_line + response_headers + CRLF;
-// }
+	std::cout<<"path to file]: "<<path_to_file<<std::endl;
+	std::cout<<"m_file: "<< m_file <<std::endl;
+	std::cout << "alias: " << m_alias << std::endl;
+	if (stat(path_to_file, &this->m_statbuf) == 0)
+		this->m_request_data->m_status = 204;
+	else 
+		this->m_request_data->m_status = 201;
+	chdir(m_alias);
+	int fd  = open(m_file, O_TRUNC | O_CREAT | O_WRONLY, S_IRWXU); // s_irwxu = owner having all persmissions
+	if (fd == -1)
+		throw HTTPError("RequestHandler::PUT", "error creating file", 500);
+	size_t written = write(fd, this->m_request_data->m_body.c_str(), this->m_request_data->m_content_length);
+	if (close(fd) == -1)
+		throw HTTPError("RequestHandler::PUT", "error closing file", 500);
+	if (written != this->m_request_data->m_content_length)
+		throw HTTPError("RequestHandler::PUT", "Didn't write the compleet file", 500);
+	system("pwd");
+	system("ls");
+	
+	now write the handleheader functions!!
+
+	// handleLOCATION(filePath);
+	// handleCONTENT_LENGTH();
+	// handleDATE();
+	// handleCONTENT_TYPE(request);
+	// handleCONNECTION_HEADER(request);
+
+	// this->_response += "\r\n";
+	// if (!_body.empty())
+	// 	this->_response += _body + "\r\n";
+
+
+	return status_line + response_headers + CRLF;
+}
 
 void	RequestHandler::handleRequest(t_client &c) {
 	this->m_client = &c;

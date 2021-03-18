@@ -25,6 +25,7 @@ struct	Request
 		bool								m_cgi;
 		bool								m_autoindex;
 		int									m_error;
+		int									m_status;
 		size_t								m_start;
 		s_v_server_conf::t_routes::iterator m_location;
 		std::string							m_query_string;

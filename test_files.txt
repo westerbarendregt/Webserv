@@ -1,0 +1,4 @@
+curl -i -X PUT -H 'AUTHORIZATION: Basic d2Vic2VydjpjaGVlc2U=' localhost:8080
+
+testing_put:
+curl -i -X PUT -H 'AUTHORIZATION: Basic d2Vic2VydjpjaGVlc2U=' localhost:8080/webserv/text2.txt

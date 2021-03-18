@@ -19,6 +19,7 @@ Request::Request()
 	m_cgi(0),
 	m_autoindex(0),
 	m_error(0),
+	m_status(0),
 	m_start(0),
 	m_location(),
 	m_query_string(""),
@@ -42,6 +43,7 @@ Request::Request(Request const & src)
 	 m_cgi(src.m_cgi),
 	 m_autoindex(src.m_autoindex),
 	 m_error(src.m_error),
+	 m_status(src.m_status),
 	 m_start(src.m_start),
 	 m_location(src.m_location),
 	 m_query_string(src.m_query_string),
@@ -65,6 +67,7 @@ Request &Request::operator=(Request const & rhs) {
 	 this->m_cgi            = rhs.m_cgi;
 	 this->m_autoindex      = rhs.m_autoindex;
 	 this->m_error          = rhs.m_error;
+	 this->m_status         = rhs.m_status;
 	 this->m_start          = rhs.m_start;
 	 this->m_location       = rhs.m_location;
 	 this->m_query_string   = rhs.m_query_string;
