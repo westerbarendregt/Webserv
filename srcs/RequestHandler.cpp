@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <unistd.h>
 
 RequestHandler::RequestHandler() {
 	initStatusCodes();
@@ -21,34 +22,45 @@ RequestHandler::RequestHandler() {
 
 RequestHandler::~RequestHandler() {}
 
-std::string RequestHandler::Content_Length(std::string const & body) {
+void RequestHandler::Content_Length(std::string const & body)
+{
 	std::string content_length = "Content-Length: " + intToString(body.length());
-
-	return content_length + CRLF;
+	
+	m_response_headers.push_back(content_length + CRLF);
 }
 
-void 	RequestHandler::Content_Type(std::string content_type) {
+void 	RequestHandler::Content_Type(std::string const & content_type)
+{
 
-	if (content_type == "")
-		content_type = "default";
-	m_response_headers.push_back("Content-type:" + content_type);
+	// if (content_type == "")
+	// 	content_type = "default";
+	
+	m_response_headers.push_back("Content-type:" + content_type + CRLF);
 }
 
-void 	RequestHandler::Server() {
+void 	RequestHandler::Server()
+{
 	std::string server = "webserv/1.0.0";
 
-	m_response_headers.push_back(server);
-	// return server + CRLF;
+	m_response_headers.push_back(server + CRLF);
+}
+
+void	RequestHandler::Location(std::string const & location)
+{
+	m_response_headers.push_back(location + CRLF);
+
 }
 
 std::string RequestHandler::statusLine() {
-	int error_code = m_client->m_request_data.m_error;
+	int status_code = m_request_data->m_error;
+	if (!status_code)
+		status_code = m_request_data->m_status;
 	std::string	status_line;
 
 	status_line.append("HTTP/1.1 ");
-	status_line.append(intToString(error_code));
+	status_line.append(intToString(status_code));
 	status_line.append(" ");
-	status_line.append(m_status_codes[error_code]);
+	status_line.append(m_status_codes[status_code]);
 	status_line.append(CRLF);
 	return status_line;
 }
@@ -57,28 +69,20 @@ std::string RequestHandler::responseBody() {
 	return "";
 }
 
-std::string RequestHandler::responseHeaders(std::string const & body) {
-	// m_response_headers.clear();
-	// m_response_headers.push_back(Server());
-	// m_response_headers.push_back(Content_Length(body));
-	// m_response_headers.push_back(Content_Type());
-
-
+std::string RequestHandler::responseHeaders() {
 	std::string	response_headers;
 
 	std::vector<std::string>::iterator it = m_response_headers.begin();
 	for (; it != m_response_headers.end(); ++it) {
 		response_headers.append(*it);
 	}
-
-	// response_headers.append(CRLF);
 	return response_headers;
 }
 
 std::string RequestHandler::handleGET() {
 	std::string status_line = statusLine();
 	std::string response_body = responseBody();
-	std::string	response_headers = responseHeaders(response_body);
+	std::string	response_headers = responseHeaders();
 
 	return status_line + response_headers + CRLF + response_body;
 }
@@ -86,7 +90,7 @@ std::string RequestHandler::handleGET() {
 std::string RequestHandler::handleHEAD() {
 	std::string status_line = statusLine();
 	std::string response_body = responseBody();
-	std::string	response_headers = responseHeaders(response_body);
+	std::string	response_headers = responseHeaders();
 
 	return status_line + response_headers + CRLF;
 }
@@ -94,7 +98,7 @@ std::string RequestHandler::handleHEAD() {
 std::string RequestHandler::handlePOST() {
 	std::string status_line = statusLine();
 	std::string response_body = responseBody();
-	std::string	response_headers = responseHeaders(response_body);
+	std::string	response_headers = responseHeaders();
 
 	return status_line + response_headers + CRLF + response_body;
 }
@@ -110,7 +114,7 @@ std::string RequestHandler::handlePOST() {
 std::string RequestHandler::handleDELETE() {
 	std::string status_line = statusLine();
 	std::string response_body = responseBody();
-	std::string	response_headers = responseHeaders(response_body);
+	std::string	response_headers = responseHeaders();
 
 	return status_line + response_headers + CRLF + response_body;
 }
@@ -145,7 +149,7 @@ std::string	RequestHandler::generateErrorPage(int error) {
 			"<center><h1>" + intToString(error) + ' ' + m_status_codes[error] + "</h1></center>" CRLF
 			;
 
-	response_headers = responseHeaders(error_response);
+	response_headers = responseHeaders();
 
 	return status_line + response_headers + CRLF + error_response;
 }
@@ -245,11 +249,9 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		AllowedMethods(c);
 		Authenticated(c);
 		// std::cout<<"stat file: "<<stat_file<<std::endl;
-		// std::cout<<"alias: "<<alias<<std::endl;
 		if (m_client->m_request_data.m_method == PUT)
 			if (real_path.back() == '/' || (stat(real_path.c_str(), &this->m_statbuf) && S_ISDIR(this->m_statbuf.st_mode)))
 				throw HTTPError("RequestHandler::handleMetadata::PUT", "file is a directory", 409);
-		// BodySize(c);
 	} catch (HTTPError & e) {
 		std::cerr << e.what() << std::endl;
 		m_client->m_request_data.m_error = e.HTTPStatusCode();
@@ -259,9 +261,6 @@ void	RequestHandler::handleMetadata(t_client &c) {
 
 std::string		RequestHandler::handlePUT()
 {
-	std::string status_line;
-	std::string response_headers;
-
 	const char *path_to_file = this->m_request_data->m_real_path.c_str();
 	const char *m_file = this->m_request_data->m_file.c_str();
 	const char *m_alias = this->m_request_data->m_location->second["alias"].c_str();
@@ -269,10 +268,14 @@ std::string		RequestHandler::handlePUT()
 	std::cout<<"path to file]: "<<path_to_file<<std::endl;
 	std::cout<<"m_file: "<< m_file <<std::endl;
 	std::cout << "alias: " << m_alias << std::endl;
+
+	// BodySize(c);
+
 	if (stat(path_to_file, &this->m_statbuf) == 0)
 		this->m_request_data->m_status = 204;
 	else 
 		this->m_request_data->m_status = 201;
+	char * current_dir = getcwd(NULL, 0);
 	chdir(m_alias);
 	int fd  = open(m_file, O_TRUNC | O_CREAT | O_WRONLY, S_IRWXU); // s_irwxu = owner having all persmissions
 	if (fd == -1)
@@ -282,12 +285,13 @@ std::string		RequestHandler::handlePUT()
 		throw HTTPError("RequestHandler::PUT", "error closing file", 500);
 	if (written != this->m_request_data->m_content_length)
 		throw HTTPError("RequestHandler::PUT", "Didn't write the compleet file", 500);
-	system("pwd");
-	system("ls");
+	chdir(current_dir);	
+	// system("pwd");
+	// system("ls");
 	
-	now write the handleheader functions!!
-
-	// handleLOCATION(filePath);
+	// now write the handleheader functions!!
+	Server();
+	Location(m_file);
 	// handleCONTENT_LENGTH();
 	// handleDATE();
 	// handleCONTENT_TYPE(request);
@@ -297,35 +301,47 @@ std::string		RequestHandler::handlePUT()
 	// if (!_body.empty())
 	// 	this->_response += _body + "\r\n";
 
-
+	std::string status_line = statusLine();
+	std::string	response_headers = responseHeaders();
 	return status_line + response_headers + CRLF;
 }
 
 void	RequestHandler::handleRequest(t_client &c) {
+	m_response_headers.clear();
 	this->m_client = &c;
 	this->m_request_data = &c.m_request_data;
-	Request	&request = m_client->m_request_data;
-	if (request.m_error != 0) {
-		m_client->m_response_str = generateErrorPage(request.m_error);
+	// Request	&request = m_client->m_request_data;
+	if (m_request_data->m_error != 0) {
+		m_client->m_response_str = generateErrorPage(m_request_data->m_error);
 	} else if (c.m_request_data.m_cgi) {
 		this->m_cgi.run(c);
 	} else {
-		switch (request.m_method) {
-			case GET:
-				m_client->m_response_str = handleGET();
-				break;
-			case HEAD:
-				m_client->m_response_str = handleHEAD();
-				break;
-			case POST:
-				m_client->m_response_str = handlePOST();
-				break;
-			case PUT:
-				m_client->m_response_str = handlePUT();
-				break;
-			case DELETE:
-				m_client->m_response_str = handleDELETE();
-				break;
+		try {
+			
+			switch (m_request_data->m_method) {
+				case GET:
+					m_client->m_response_str = handleGET();
+					break;
+				case HEAD:
+					m_client->m_response_str = handleHEAD();
+					break;
+				case POST:
+					m_client->m_response_str = handlePOST();
+					break;
+				case PUT:
+					m_client->m_response_str = handlePUT();
+					break;
+				case DELETE:
+					m_client->m_response_str = handleDELETE();
+					break;
+			}
+		}
+		catch (HTTPError & e)
+		{
+			std::cerr << e.what() << std::endl;
+			m_request_data->m_error = e.HTTPStatusCode();
+			m_request_data->m_done = true;
+			generateErrorPage(m_request_data->m_error);
 		}
 	}
 }

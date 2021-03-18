@@ -193,7 +193,7 @@ int		ft_getline_crlf(std::string& total, std::string& line, int line_break, size
 	}
 	else {
 		line = total.substr(start, total.size() - start);
-		start = 0;
+		// start = 0;
 	}
 	return 0;
 }
@@ -211,7 +211,7 @@ int		ft_getline(std::string& total, std::string& line, int line_break, size_t& s
 	}
 	else {
 		line = total.substr(start, total.size() - start);
-		start = 0;
+		// start = 0;
 	}
 	return 0;
 }

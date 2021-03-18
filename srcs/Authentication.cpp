@@ -13,11 +13,12 @@ void                AllowedMethods(Client& c)
 void                CheckCorrectCredentials(std::string decoded, std::string path_ht)
 {
     int fd = open(path_ht.c_str(), O_RDONLY);
+    std::cout << "printing path: " << path_ht.c_str() << "--done" << std::endl;
     if (fd == -1)
         throw HTTPError("Authentication", "Incorrect path to .htpasswd or .htpasswd couldn't be opended", 403);
     char buf[1001];
     int ret = read(fd, buf, 1000);
-    if (ret == -1)
+    if (close(fd) == -1 || ret == -1)
         throw HTTPError("Authentication", "couldn't read from .htpasswd", 403);
     std::string line, credentials;
     credentials = buf;

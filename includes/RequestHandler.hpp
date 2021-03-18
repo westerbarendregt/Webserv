@@ -44,13 +44,14 @@ class RequestHandler
 		std::string handlePUT();
 		std::string handleDELETE();
 
-		std::string Content_Length(std::string const & body);
-		std::string Content_Type();
-		std::string Server();
+		void 		Content_Length(std::string const & body);
+		void		Content_Type(std::string const & content_type);
+		void		Server();
+		void		Location(std::string const & location);
 
 		std::string statusLine();
 		std::string responseBody();
-		std::string responseHeaders(std::string const & body);
+		std::string responseHeaders();
 
 		std::string	generateErrorPage(int error);
 
