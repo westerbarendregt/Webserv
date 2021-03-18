@@ -141,7 +141,7 @@ class RequestParser
 			std::cout << "index: " << c.m_request_data.m_start << std::endl;
 		if (ft_getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start))
 		{
-			size_t current_chunk_size = ftAtoi(line.c_str());
+			size_t current_chunk_size = ftAtoiHex(line.c_str());
 			if (current_chunk_size == 0 && line == "0\r\n")
 			{
 				c.m_request_data.m_done = true;

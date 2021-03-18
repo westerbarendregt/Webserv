@@ -56,6 +56,66 @@ static int	atoiIsBlank(char c)
 				|| c == '\r' || c == '\n' || c == ' ');
 }
 
+static bool		checkHex(char c1)
+{
+	char c = tolower(c1);
+	if (c == 'a' || c == 'b' || c == 'c')
+		return true;
+	if (c == 'd' || c == 'e' || c == 'f')
+		return true;
+	return false;
+}	
+
+static int		makeDecimal(char c1)
+{
+	int i = 0;
+	if (c1 >= 48 && c1 <= 57)
+		return c1 - '0';
+	char c = tolower(c1);
+	for (; c - i != 'a'; ++i);
+	return 10 + i;
+}
+
+static int		atoiConvertHex(const char *str, int sign)
+{
+	long int	result;
+	int			i;
+
+	result = 0;
+	i = 0;
+	while ((str[i] >= 48 && str[i] <= 57) || checkHex(str[i]))
+	{
+		if (result && LONG_MAX / result == 16)
+			return (((int)result * 16 + (str[i] - '0')) * sign);
+		if (result && LONG_MAX / result < 16 && sign == -1)
+			return (0);
+		if (result && LONG_MAX / result < 16 && sign == 1)
+			return (-1);
+		int dec = makeDecimal(str[i]);
+		result = result * 16 + dec;
+		i++;
+	}
+	return (((int)result) * sign);
+}
+
+size_t		ftAtoiHex(const char *str)
+{
+	int			i;
+	int			sign;
+
+	i = 0;
+	sign = 1;
+	while (atoiIsBlank(str[i]))
+		i++;
+	if (str[i] == '-' || str[i] == '+')
+	{
+		if (str[i] == '-')
+			sign = -1;
+		i++;
+	}
+	return (atoiConvertHex(str + i, sign));
+}
+
 static int	atoiConvert(const char *str, int sign)
 {
 	long int	result;
