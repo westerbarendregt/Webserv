@@ -24,7 +24,7 @@ enum e_context{
 enum e_directives{
 	LISTEN,
 	SERVER_NAME,
-	ROOT,
+	ALIAS,
 	ERROR_PAGE,
 	LIMIT_EXCEPT,
 	AUTOINDEX,

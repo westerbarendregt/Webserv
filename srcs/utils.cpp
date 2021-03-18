@@ -1,6 +1,7 @@
 #include <string>//std::string
 #include <string.h>//memset
 #include <unistd.h>//size_t
+#include <stdlib.h>//malloc
 #include <stdint.h>
 #include <limits.h>
 #include <iostream>
@@ -223,6 +224,14 @@ bool	ft_compare(char c, char *str)
 		if (str[i] == c)
 			return true;
 	return false;
+}
+
+char	*ft_strdup(std::string &src) {
+	char *result = reinterpret_cast<char *>(malloc(src.size() + 1));
+
+	src.copy(result, src.size(), 0);
+	result[src.size()] = '\0';
+	return result;
 }
 
 std::string intToString(int n) {

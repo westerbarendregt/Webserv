@@ -111,12 +111,14 @@ class RequestParser
 		c.m_request_data.m_protocol = -1;
 		c.m_request_data.m_content_length = 0;
 		c.m_request_data.m_headers.clear();
+		c.m_request_data.m_headers.assign(18, "");
 		c.m_request_data.m_if_body = false;
 		c.m_request_data.m_body.clear();
 		c.m_request_data.m_done = false;
 		c.m_request_data.m_metadata_parsed = false;
 		c.m_request_data.m_chunked = false;
 		c.m_request_data.m_error = 0;
+		c.m_request_data.m_cgi = 0;
 		c.m_request_data.m_start = 0;
 
 	}
