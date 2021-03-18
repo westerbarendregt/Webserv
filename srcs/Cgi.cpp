@@ -6,7 +6,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 #include <errno.h>
 #include "Error.hpp"
 #include "utils.hpp"
@@ -51,33 +53,82 @@ void	Cgi::convertEnv(t_client &c) {
 }
 
 void	Cgi::read(t_client &c) {
-	std::cout<<"cgi read"<<std::endl;
-	(void)c;
+	char buf[4096];
+
+	std::fill(buf, buf + sizeof(buf), 0);
+	ssize_t	nbytes = ::read(c.m_cgi_read_pipe[IN], buf, 4096);
+	if (nbytes == -1)
+		throw HTTPError("Cgi::read", strerror(errno), 500);
+	if (nbytes)
+		c.m_cgi_out_buf.append(buf);
+}
+
+
+void	Cgi::stop(t_client &c) {
+	if (c.m_cgi_read_pipe[IN] != -1 && ::close(c.m_cgi_read_pipe[IN]) == -1) {
+		std::cout << "Cgi::stop : close(m_cgi_read_pipe[IN]): " << strerror(errno)<<std::endl;
+	}
+	if (c.m_cgi_read_pipe[OUT] != -1 && ::close(c.m_cgi_read_pipe[OUT]) == -1) {
+		std::cout << "Cgi::stop : close(m_cgi_read_pipe[OUT]): " << strerror(errno)<<std::endl;
+	}
+	if (c.m_cgi_write_pipe[IN] != -1 && ::close(c.m_cgi_write_pipe[IN]) == -1) {
+		std::cout << "Cgi::stop : close(m_cgi_write_pipe[IN]): " << strerror(errno)<<std::endl;
+	}
+	if (c.m_cgi_write_pipe[OUT] != -1 && ::close(c.m_cgi_write_pipe[OUT]) == -1) {
+		std::cout << "Cgi::stop : close(m_cgi_write_pipe[OUT]): " << strerror(errno)<<std::endl;
+	}
+	c.m_cgi_read_pipe[IN] =-1;
+	c.m_cgi_read_pipe[OUT] =-1;
+	c.m_cgi_write_pipe[IN] =-1;
+	c.m_cgi_write_pipe[OUT] =-1;
+	c.m_cgi_running = false;
 }
 
 void	Cgi::write(t_client &c) {
-	std::cout<<"cgi write"<<std::endl;
-	(void)c;
+	ssize_t	nbytes = ::write(c.m_cgi_write_pipe[OUT], 
+			c.m_request_data.m_body.c_str() + c.m_cgi_write_offset,
+			c.m_request_data.m_body.size() + 1 - c.m_cgi_write_offset);
+
+	if (nbytes == -1) {
+		throw HTTPError("Cgi::write: ", strerror(errno), 500);
+	}
+	if (static_cast<size_t>(nbytes) == c.m_request_data.m_body.size() + 1) {
+		close(c.m_cgi_write_pipe[OUT]);
+		c.m_cgi_write_pipe[OUT] = -1;
+		c.m_cgi_write = false;
+	}
+	else {
+		c.m_cgi_write_offset += nbytes;
+	}
 }
 
 void	Cgi::exec(t_client &c) {
-	(void)c;
-	std::cout<<"exec with "<<this->m_argv[0] << " "<<this->m_argv[1]<<std::endl;
 	if ((c.m_cgi_pid = fork()) == -1) {
 		this->clear();
-		throw HTTPError("Cgi::exec: fork", strerror(errno), 500); //do we stop server after we throw
+		throw HTTPError("Cgi::exec: fork", strerror(errno), 500);
 	}
 	if (!c.m_cgi_pid) {
+		if (dup2(c.m_cgi_read_pipe[OUT], STDOUT_FILENO) == -1) {
+			throw HTTPError("Cgi::exec: dup2(cgi_read_pipe[OUT], STDOUT_FILENO)", strerror(errno), 500);
+		}
+		close(c.m_cgi_read_pipe[OUT]);
+		close(c.m_cgi_read_pipe[IN]);
+		if (c.m_cgi_write) {
+			if (dup2(c.m_cgi_write_pipe[IN], STDIN_FILENO) == -1) {
+				throw HTTPError("Cgi::exec: dup2(cgi_write_pipe[IN], STDIN_FILENO)", strerror(errno), 500);
+			}
+			close(c.m_cgi_write_pipe[OUT]);
+			close(c.m_cgi_write_pipe[IN]);
+		}
 		if (execve(this->m_argv[0], this->m_argv, this->m_env_array) == -1) {
 			this->clear();
 			throw HTTPError("Cgi::exec: execve", strerror(errno), 500);
 		}
 	}
-	int	wstatus = 0;
-	if (waitpid(c.m_cgi_pid, &wstatus, WNOHANG) == -1) {
-			this->clear();
-			throw HTTPError("Cgi::exec: waitpid", strerror(errno), 500);
-	}
+	close(c.m_cgi_read_pipe[OUT]); // check error 
+	close(c.m_cgi_write_pipe[IN]);
+	c.m_cgi_read_pipe[OUT] = -1;
+	c.m_cgi_write_pipe[IN] = -1;
 }
 
 void	Cgi::run(t_client &c) {
@@ -88,15 +139,16 @@ void	Cgi::run(t_client &c) {
 		this->fillEnv(c.m_request_data);
 		this->convertEnv(c);
 		if (c.m_request_data.m_method == POST) {
-			c.m_cgi_write = c.m_request_data.m_body.size();
+			c.m_cgi_write = true;
+			if (pipe(c.m_cgi_write_pipe) == -1) {
+				throw HTTPError("Cgi::run: pipe(cgi_write_pipe)", strerror(errno), 500);
+			}
+		}
+		if (pipe(c.m_cgi_read_pipe) == -1) {
+			throw HTTPError("Cgi::run: pipe(cgi_read_pipe)", strerror(errno), 500);
 		}
 		this->exec(c);
-		c.m_cgi_running = false;
 	}
-	if (c.m_cgi_write > 0) {
-		this->write(c);
-	}
-	this->read(c);
 }
 
 /*TODO*/
@@ -159,9 +211,11 @@ void	Cgi::clear() {
 
 void	RequestHandler::handleCgiMetadata(t_request &request, std::string &file) {
 	request.m_cgi = true;
-	if (request.m_real_path.size() - file.size() == 0)
+	if (request.m_real_path.size() - file.size() == 0) {
+		request.m_file = file;
 		return ;
-	size_t	query_string_index = request.m_file.find('?', 0);
+	}
+	size_t query_string_index = request.m_file.find('?', 0);
 	if (query_string_index != std::string::npos)
 		request.m_query_string = request.m_file.substr(query_string_index + 1, std::string::npos);
 	size_t	path_info_index = request.m_file.find('/', 0);
@@ -175,7 +229,7 @@ void	RequestHandler::handleCgiMetadata(t_request &request, std::string &file) {
 }
 
 bool	RequestHandler::validCgi(t_request &request, size_t extension_index) {
-	if (extension_index == std::string::npos)
+	if (!(request.m_method == GET || request.m_method == HEAD || request.m_method == POST))
 		return false;
 	t_directives::iterator	path_found = request.m_location->second.find("cgi_path");
 	t_directives::iterator	extension_found = request.m_location->second.find("cgi");
@@ -200,4 +254,27 @@ bool	RequestHandler::validCgi(t_request &request, size_t extension_index) {
 		std::cout<<"handleCgiMetadata: no cgi extension provided"<<std::endl;
 	}
 	return false;
+}
+
+int RequestHandler::handleCgi(t_client &c) {
+	try {
+		if (c.m_cgi_write) {
+			this->m_cgi.write(c);
+		}
+		int	wstatus = 0;
+		pid_t wpid = waitpid(c.m_cgi_pid, &wstatus, WNOHANG);
+		if (wpid == -1)
+			throw HTTPError("RequestHandler::handleCgi : wait", strerror(errno), 500);
+		//add to the response metadata/body
+		this->m_cgi.read(c);
+		if (!wpid)
+			return 0; //hasn't exited yet
+		c.m_response_str.assign(c.m_cgi_out_buf.begin(), c.m_cgi_out_buf.end());
+		this->m_cgi.stop(c);
+	}
+	catch (HTTPError &e) {
+		std::cerr << e.what() << std::endl;
+		m_client->m_request_data.m_error = e.HTTPStatusCode();
+	}
+	return 1;
 }

@@ -15,3 +15,12 @@ void	Server::respond(int client_socket) {
 	 //check return value of send and see if we sent everything
 	 FD_CLR(c->m_socket, &this->m_write_all);// only if full response sent
 }
+
+void	Server::respond(t_client &c) {
+	std::cout<<"sending response"<<std::endl;
+	std::cout << "RESPONSE:\n" << c.m_response_str.c_str() << std::endl << std::endl;
+	 if (send(c.m_socket, c.m_response_str.c_str(), c.m_response_str.size() + 1, 0) == -1)
+		 std::cout<<"send: "<<strerror(errno)<<std::endl;
+	 //check return value of send and see if we sent everything
+	 FD_CLR(c.m_socket, &this->m_write_all);// only if full response sent
+}

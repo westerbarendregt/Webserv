@@ -10,6 +10,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <errno.h>
 
 RequestHandler::RequestHandler() {
 	initStatusCodes();
@@ -166,8 +169,10 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		std::string	stat_file;
 		real_path = c.m_request_data.m_path;
 		std::string const & location = c.m_request_data.m_location->first;
-		std::string const & alias = c.m_request_data.m_location->second["alias"];
+		std::string & alias = c.m_request_data.m_location->second["alias"];
 		/*replacing location path by alias path (what if alias empty?)*/
+		if (alias[alias.size() - 1] != '/')
+			alias.append("/");
 		real_path.replace(real_path.find(location), location.length(), alias);
 		std::cout<<"real_path: "<<real_path<<std::endl;
 		size_t	prefix = 0;

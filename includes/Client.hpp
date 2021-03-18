@@ -31,7 +31,6 @@ struct	Request
 		std::string							m_path_info;
 		std::string							m_real_path;
 		std::string							m_file;
-		size_t								m_cgi_write;
 };
 
 struct	Response
@@ -80,8 +79,11 @@ class	Client
 		socklen_t							m_addrlen;
 		pid_t								m_cgi_pid;
 		bool								m_cgi_running;
-		size_t								m_cgi_write;
-		int									m_cgi_io[2];
+		bool								m_cgi_write;
+		int									m_cgi_read_pipe[2];
+		int									m_cgi_write_pipe[2];
+		size_t								m_cgi_write_offset;
+		std::string							m_cgi_out_buf;
 };
 
 #endif

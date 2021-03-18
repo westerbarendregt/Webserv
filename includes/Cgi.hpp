@@ -17,6 +17,7 @@ class	Cgi {
 		typedef	t_client::t_request_data					t_request_data;
 
 		friend	class	RequestHandler;
+		friend	class	Server;
 		Cgi();
 		void	run(t_client &c);
 		~Cgi();
@@ -24,6 +25,7 @@ class	Cgi {
 		void	init();
 		void	exec(t_client &c);
 		void	read(t_client &c);
+		void	stop(t_client &c);
 		void	write(t_client &c);
 		void	fillEnv(t_request_data &request);
 		void	convertEnv(t_client &c);

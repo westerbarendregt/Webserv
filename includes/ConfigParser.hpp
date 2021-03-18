@@ -215,6 +215,8 @@ class	ConfigParser
 				return INVALID;
 			path.assign(fields[RIGHT].begin(), fields[RIGHT].begin() + end); //extract path
 			t_v_server_conf	&current_server = tokens.back();
+			if (path[path.size() - 1] != '/')
+				path.append("/");
 			current_server.m_routes[path] = t_v_server_conf::t_directives();
 			current_server.m_route_indexes.push_back(path);
 			/*maybe add check to see if a route with the same path already exists*/
