@@ -52,6 +52,7 @@ class RequestHandler
 		std::string statusLine();
 		std::string responseBody();
 		std::string responseHeaders();
+		void		CheckBodyLimits();
 
 		std::string	generateErrorPage(int error);
 

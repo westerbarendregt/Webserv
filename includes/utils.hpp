@@ -6,7 +6,7 @@
 uint16_t    hostToNetworkShort(uint16_t hostshort);
 uint32_t    hostToNetworkLong(uint32_t hostlong);
 bool 	    isBigEndian();
-int		    ftAtoi(const char *str);
+size_t		ftAtoi(const char *str);
 std::string sputnbr(size_t n);
 int		    ft_getline_crlf(std::string& total, std::string& line, int line_break, size_t& start);
 int		    ft_getline(std::string& total, std::string& line, int line_break, size_t& start);

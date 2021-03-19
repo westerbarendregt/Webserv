@@ -306,10 +306,32 @@ std::string		RequestHandler::handlePUT()
 	return status_line + response_headers + CRLF;
 }
 
+void	RequestHandler::CheckBodyLimits()
+{
+	std::string server_body_limit = m_client->m_v_server->m_configs.m_directives["client_max_body_size"];
+	std::string location_body_limit = m_request_data->m_location->second["location_max_body_size"];
+
+	std::cout << "server_limit: " << server_body_limit << std::endl;
+	std::cout << "location_limit: " << location_body_limit << std::endl;
+
+	if (ftAtoi(server_body_limit.c_str()) < m_request_data->m_content_length)
+	{
+		m_request_data->m_error = 413;
+		std::cout << "body size exceeded limit of server" << std::endl;
+	}
+	else if (ftAtoi(location_body_limit.c_str()) < m_request_data->m_content_length)
+	{
+		m_request_data->m_error = 413;
+		std::cout << "body size exceeded limit of location" << std::endl;
+		return ;
+	}
+}
+
 void	RequestHandler::handleRequest(t_client &c) {
 	m_response_headers.clear();
 	this->m_client = &c;
 	this->m_request_data = &c.m_request_data;
+	CheckBodyLimits();
 	// Request	&request = m_client->m_request_data;
 	if (m_request_data->m_error != 0) {
 		m_client->m_response_str = generateErrorPage(m_request_data->m_error);

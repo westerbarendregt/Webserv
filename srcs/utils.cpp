@@ -138,7 +138,7 @@ static int	atoiConvert(const char *str, int sign)
 	return (((int)result) * sign);
 }
 
-int			ftAtoi(const char *str)
+size_t			ftAtoi(const char *str)
 {
 	int			i;
 	int			sign;
