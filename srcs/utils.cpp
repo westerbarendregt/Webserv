@@ -1,3 +1,4 @@
+#include <ctime>
 #include <string>//std::string
 #include <string.h>//memset
 #include <unistd.h>//size_t
@@ -185,5 +186,13 @@ std::string intToString(int n) {
 		s = static_cast<char>((n % 10) + '0') + s;
 		n /= 10;
 	}
+	return s;
+}
+
+std::string	getDate(const time_t * clock) {
+	char s[1025] = {};
+	struct tm*	timeptr = gmtime(clock);
+
+	strftime(s, 1024, "%a, %d %b %Y %T GMT", timeptr);
 	return s;
 }

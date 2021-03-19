@@ -3,6 +3,8 @@
 
 # define CRLF "\r\n"
 
+# define SERVER_VERSION "webserv/1.0"
+
 enum	e_status {
 	INVALID = -1,
 	SUCCESS = 0,

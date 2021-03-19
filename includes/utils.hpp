@@ -14,7 +14,9 @@ bool	    ft_compare(char c, char *str);
 std::string intToString(int n);
 std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_len);
 std::string base64_decode(std::string const& encoded_string);
+std::string	getDate(const time_t * clock);
 
 char	*ft_strdup(std::string &src);
+
 
 #endif
