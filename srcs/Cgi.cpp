@@ -85,14 +85,15 @@ void	Cgi::stop(t_client &c) {
 }
 
 void	Cgi::write(t_client &c) {
+	size_t	len = c.m_request_data.m_body.size() + 1 - c.m_cgi_write_offset;
 	ssize_t	nbytes = ::write(c.m_cgi_write_pipe[OUT], 
 			c.m_request_data.m_body.c_str() + c.m_cgi_write_offset,
-			c.m_request_data.m_body.size() + 1 - c.m_cgi_write_offset);
+			len);
 
 	if (nbytes == -1) {
 		throw HTTPError("Cgi::write: ", strerror(errno), 500);
 	}
-	if (static_cast<size_t>(nbytes) == c.m_request_data.m_body.size() + 1) {
+	if (static_cast<size_t>(nbytes) == len) {
 		close(c.m_cgi_write_pipe[OUT]);
 		c.m_cgi_write_pipe[OUT] = -1;
 		c.m_cgi_write = false;
@@ -147,6 +148,10 @@ void	Cgi::run(t_client &c) {
 		if (pipe(c.m_cgi_read_pipe) == -1) {
 			throw HTTPError("Cgi::run: pipe(cgi_read_pipe)", strerror(errno), 500);
 		}
+		if (fcntl(c.m_cgi_read_pipe[IN], F_SETFL, O_NONBLOCK) == -1)
+			std::cout << "Cgi::init : fcntl(m_cgi_read_pipe[IN]): " << strerror(errno)<<std::endl;
+		if (fcntl(c.m_cgi_read_pipe[OUT], F_SETFL, O_NONBLOCK) == -1)
+			std::cout << "Cgi::init : fcntl(m_cgi_read_pipe[OUT]): " << strerror(errno)<<std::endl;
 		this->exec(c);
 	}
 }
@@ -217,10 +222,10 @@ void	Cgi::populateResponse(t_client &c) {
 		size_t	metadata_index = fullMetaData(c.m_cgi_out_buf);
 		if (metadata_index == std::string::npos)
 			return ;
-		c.m_response_str.append(c.m_cgi_out_buf, 0, metadata_index + 2);
+		c.m_response_str.append(c.m_cgi_out_buf, 0, metadata_index + CRLF_LEN);
 		c.m_response_str.append(CRLF);
 		c.m_response_data.m_cgi_metadata_parsed = true;
-		c.m_cgi_out_buf.erase(0, metadata_index + 2);
+		c.m_cgi_out_buf.erase(0, metadata_index + CRLF_LEN);
 	}
 	if (c.m_response_data.m_cgi_metadata_sent) {
 		if (c.m_cgi_out_buf.size() == 0)

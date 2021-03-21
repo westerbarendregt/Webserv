@@ -197,7 +197,6 @@ std::string hexString(size_t n) {
 		s = HEX_STR[n % 16] + s;
 		n /= 16;
 	}
-	//s.insert(0, "0x");
 	return s;
 }
 

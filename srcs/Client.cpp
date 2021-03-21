@@ -206,6 +206,7 @@ void	Client::reset() {
 	this->m_cgi_pid = -1;
 	this->m_cgi_running = false;
 	this->m_cgi_write = 0;
+	this->m_cgi_write_offset = 0;
 	this->m_cgi_end_chunk = false;
 	this->m_cgi_out_buf.clear();
 }

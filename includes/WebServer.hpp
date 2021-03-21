@@ -2,6 +2,7 @@
 # define WEBSERVER_HPP
 
 # define CRLF "\r\n"
+# define CRLF_LEN 2
 # define HEX_STR "0123456789ABCDEF"
 
 enum	e_status {

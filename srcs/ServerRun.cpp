@@ -65,7 +65,7 @@ void	Server::run(){
 					this->closeClientConnection(*c);
 				}
 				std::cout<<"listening..."<<std::endl;
-			}
+			} // FD_ISSET(this->read_fd)
 			else if (FD_ISSET(i, &this->m_write_fd)) {
 				c = getClient(i);
 				if (c->m_request_data.m_cgi && !this->m_request_handler.handleCgi(*c))
@@ -74,6 +74,6 @@ void	Server::run(){
 				std::cout<<"listening..."<<std::endl;
 				//can close connection if the response is an error
 			}
-	}
-}
-}
+		} // for (i in range_fd)
+	} // for(;;)
+} //ServerRun
