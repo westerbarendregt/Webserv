@@ -47,8 +47,12 @@ class RequestHandler
 		std::string Content_Length(std::string const & body);
 		std::string Content_Type();
 		std::string Server();
+		std::string date();
+		//
+		std::string transferEncoding();
 
 		std::string statusLine();
+		std::string statusLine(int error);
 		std::string responseBody();
 		std::string responseHeaders(std::string const & body);
 

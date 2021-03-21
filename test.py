@@ -70,7 +70,7 @@ def test_cgi_post():
     r=requests.post('http://127.0.0.1:8080/path/to/simple_form.php', \
             data="query=string", headers={"Content-Type": "application/x-www-form-urlencoded"})
 
-#test_async_cgi()
+#test_async_cgi_get()
 #test_async_cgi_post()
 #test_cgi_post()
 

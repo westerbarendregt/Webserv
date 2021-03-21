@@ -53,7 +53,7 @@ void	Cgi::convertEnv(t_client &c) {
 }
 
 void	Cgi::read(t_client &c) {
-	char buf[4096];
+	char buf[5000];
 
 	std::fill(buf, buf + sizeof(buf), 0);
 	ssize_t	nbytes = ::read(c.m_cgi_read_pipe[IN], buf, 4096);
@@ -209,6 +209,27 @@ void	Cgi::clear() {
 	this->m_argv = 0;
 }
 
+void	Cgi::populateResponse(t_client &c) {
+	if (!c.m_response_data.m_cgi_metadata_parsed) {
+		//tranfer headers from output buf to response struct
+		//check for valid header
+		//transfer headers from response struct to response_str
+		size_t	metadata_index = fullMetaData(c.m_cgi_out_buf);
+		if (metadata_index == std::string::npos)
+			return ;
+		c.m_response_str.append(c.m_cgi_out_buf, 0, metadata_index + 2);
+		c.m_response_str.append(CRLF);
+		c.m_response_data.m_cgi_metadata_parsed = true;
+		c.m_cgi_out_buf.erase(0, metadata_index + 2);
+	}
+	if (c.m_response_data.m_cgi_metadata_sent) {
+		if (c.m_cgi_out_buf.size() == 0)
+			c.m_cgi_end_chunk = 1;
+		c.m_response_str.append(hexString(c.m_cgi_out_buf.size()) + CRLF + c.m_cgi_out_buf + CRLF);
+		c.m_cgi_out_buf.clear();
+	}
+}
+
 void	RequestHandler::handleCgiMetadata(t_request &request, std::string &file) {
 	request.m_cgi = true;
 	if (request.m_real_path.size() - file.size() == 0) {
@@ -257,20 +278,25 @@ bool	RequestHandler::validCgi(t_request &request, size_t extension_index) {
 }
 
 int RequestHandler::handleCgi(t_client &c) {
+	pid_t	wpid = 0;
 	try {
 		if (c.m_cgi_write) {
 			this->m_cgi.write(c);
 		}
 		int	wstatus = 0;
-		pid_t wpid = waitpid(c.m_cgi_pid, &wstatus, WNOHANG);
-		if (wpid == -1)
-			throw HTTPError("RequestHandler::handleCgi : wait", strerror(errno), 500);
-		//add to the response metadata/body
+		if (c.m_cgi_running) {
+			wpid = waitpid(c.m_cgi_pid, &wstatus, WNOHANG);
+			if (wpid == -1)
+				throw HTTPError("RequestHandler::handleCgi : wait", strerror(errno), 500);
+		}
 		this->m_cgi.read(c);
-		if (!wpid)
-			return 0; //hasn't exited yet
-		c.m_response_str.assign(c.m_cgi_out_buf.begin(), c.m_cgi_out_buf.end());
-		this->m_cgi.stop(c);
+		this->m_cgi.populateResponse(c);
+		if (!c.m_response_data.m_cgi_metadata_parsed)
+			return 0; //hasn't received fullmetadata
+		if (wpid)
+			c.m_cgi_running = false;
+		if (c.m_cgi_end_chunk)// has exited
+			this->m_cgi.stop(c);
 	}
 	catch (HTTPError &e) {
 		std::cerr << e.what() << std::endl;

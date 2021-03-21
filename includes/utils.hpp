@@ -16,5 +16,7 @@ std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_
 std::string base64_decode(std::string const& encoded_string);
 
 char	*ft_strdup(std::string &src);
+size_t	fullMetaData(std::string const & src);
+std::string hexString(size_t	n);
 
 #endif

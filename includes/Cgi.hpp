@@ -25,6 +25,7 @@ class	Cgi {
 		void	init();
 		void	exec(t_client &c);
 		void	read(t_client &c);
+		void	populateResponse(t_client &c);
 		void	stop(t_client &c);
 		void	write(t_client &c);
 		void	fillEnv(t_request_data &request);

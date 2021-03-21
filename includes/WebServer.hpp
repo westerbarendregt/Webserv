@@ -2,6 +2,7 @@
 # define WEBSERVER_HPP
 
 # define CRLF "\r\n"
+# define HEX_STR "0123456789ABCDEF"
 
 enum	e_status {
 	INVALID = -1,

@@ -34,7 +34,7 @@ std::string RequestHandler::Content_Type() {
 }
 
 std::string RequestHandler::Server() {
-	std::string server = "webserv/1.0.0";
+	std::string server = "Server: Webserv/1.1";
 
 	return server + CRLF;
 }
@@ -49,6 +49,23 @@ std::string RequestHandler::statusLine() {
 	status_line.append(m_status_codes[error_code]);
 	status_line.append(CRLF);
 	return status_line;
+}
+
+std::string RequestHandler::statusLine(int error_code) {
+	std::string	status_line;
+
+	status_line.append("HTTP/1.1 ");
+	status_line.append(intToString(error_code));
+	status_line.append(" ");
+	status_line.append(m_status_codes[error_code]);
+	status_line.append(CRLF);
+	return status_line;
+}
+
+std::string RequestHandler::transferEncoding() {
+	std::string header = "Transfer-Encoding: chunked";
+	header.append(CRLF);
+	return header;
 }
 
 std::string RequestHandler::responseBody() {
@@ -256,6 +273,9 @@ void	RequestHandler::handleRequest(t_client &c) {
 		m_client->m_response_str = generateErrorPage(request.m_error);
 	} else if (c.m_request_data.m_cgi) {
 		this->m_cgi.run(c);
+		this->m_client->m_response_str.append(this->statusLine(200));
+		this->m_client->m_response_str.append(this->Server());
+		this->m_client->m_response_str.append(this->transferEncoding());
 	} else {
 		switch (request.m_method) {
 			case GET:
