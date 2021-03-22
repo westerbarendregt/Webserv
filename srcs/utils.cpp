@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <limits.h>
 #include <iostream>
+#include <errno.h>
+#include "Error.hpp"
 #include "WebServer.hpp"
 
 static size_t		write_reverse(size_t n, char *buf)
@@ -156,7 +158,38 @@ int		ft_getline(std::string& total, std::string& line, int line_break, size_t& s
 	return 0;
 }
 
+int	get_next_line(int fd, std::string& line)  { // lol
+	static char read_buf[4096];
+	static std::string saved;
+	size_t	found = saved.find('\n', 0);
+	static ssize_t	bytes = -1;
 
+	if (found != std::string::npos || !bytes) {
+		line.clear();
+		line = saved.substr(0, found);
+		saved.erase(0, found + 1);
+		if (!bytes) {
+			bytes = -1;
+			return 0;
+		}
+		return 1;
+	}
+	std::fill(read_buf, read_buf + sizeof(read_buf), 0);
+	while ((bytes = read(fd, read_buf, 4096)) > 0) {
+		saved.append(read_buf);
+		std::fill(read_buf, read_buf + sizeof(read_buf), 0);
+		found = saved.find('\n', 0);
+		if (found != std::string::npos) {
+			line.clear();
+			line = saved.substr(0, found);
+			saved.erase(0, found + 1);
+			return 1;
+		}
+	}
+	if (bytes == -1)
+		throw serverError("get_next_line: read:", strerror(errno));
+	return get_next_line(fd, line);
+}
 
 bool	ft_compare(char c, char *str)
 {

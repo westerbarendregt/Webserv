@@ -18,5 +18,6 @@ std::string base64_decode(std::string const& encoded_string);
 char	*ft_strdup(std::string &src);
 size_t	fullMetaData(std::string const & src);
 std::string hexString(size_t	n);
+int	get_next_line(int fd, std::string &line);
 
 #endif

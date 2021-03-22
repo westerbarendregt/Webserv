@@ -7,10 +7,14 @@
 # include <algorithm>
 # include <queue>
 # include <map>
+# include <fcntl.h>
+# include <string.h>
+# include <unistd.h>
 # include "Server.hpp"
 # include "Conf.hpp"
 # include "WebServer.hpp"
 # include "utils.hpp"
+# include "Error.hpp"
 
 #define BLANKS "\t\v "
 
@@ -87,10 +91,10 @@ class	ConfigParser
 		int	context = MAIN_CONTEXT;
 		size_t n= 0;
 		std::string	line;
-		std::ifstream	file(path);
-		file.exceptions(std::ifstream::badbit);//will automatically throw exceptions
-		while (!(file.bad() || file.fail())
-				&& getline(file, line)) {
+		int	file = open(path, O_RDONLY);
+		if (file == -1)
+			throw serverError("ConfigParser::parse", strerror(errno));
+		while (get_next_line(file, line)) {
 			line.erase(0, line.find_first_not_of(BLANKS, 0)); // remove blanks before first field
 			line.erase(std::find(line.begin(), line.end(), '#'), line.end()); //remove comments
 			if (!line.empty()) {
@@ -100,9 +104,10 @@ class	ConfigParser
 			}
 			n++;
 		}
+		if (close(file) == -1)
+			throw serverError("ConfigParser::parse", strerror(errno));
 		if (tokens.empty())
 			throw(parseError(path, "empty file"));
-		file.close();
 		convertTokens(tokens, v_server_all);
 		printBlocks(v_server_all);
 	}

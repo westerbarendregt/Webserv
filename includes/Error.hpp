@@ -8,9 +8,6 @@ std::string sputnbr(size_t n);
 
 class serverError: public std::exception {
 	public:
-		serverError(const char *path, size_t n) //for parseError
-			: _error(std::string(path) + ": syntax error line " + sputnbr(n)) {
-		}
 		serverError(const char *context, const char *message) 
 			: _error(std::string(context) + " : " + message) {
 		}
