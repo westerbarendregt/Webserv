@@ -5,6 +5,8 @@
 # define CRLF_LEN 2
 # define HEX_STR "0123456789ABCDEF"
 
+# define SERVER_VERSION "webserv/1.0"
+
 enum	e_status {
 	INVALID = -1,
 	SUCCESS = 0,

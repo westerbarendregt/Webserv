@@ -44,15 +44,22 @@ class RequestHandler
 		std::string handlePUT();
 		std::string handleDELETE();
 
-		std::string Content_Length(std::string const & body);
-		std::string Content_Type();
-		std::string Server();
-		std::string date();
-		//
-		std::string transferEncoding();
+		std::string handleAutoIndex();
 
-		std::string statusLine();
-		std::string statusLine(int error);
+		std::string Allow();
+		std::string Content_Language();
+		std::string Content_Length(std::string const & body);
+		std::string Content_Location();
+		std::string Content_Type();
+		std::string Date();
+		std::string Last_Modified();
+		std::string Location();
+		std::string Retry_After();
+		std::string Server();
+		std::string Transfer_Encoding();
+		std::string WWW_Authenticate();
+
+		std::string statusLine(int status_code = 0);
 		std::string responseBody();
 		std::string responseHeaders(std::string const & body);
 

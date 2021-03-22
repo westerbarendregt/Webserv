@@ -25,7 +25,8 @@ struct	Request
 		bool								m_chunked;
 		bool								m_cgi;
 		bool								m_autoindex;
-		int									m_error;
+		int									m_status_code;
+		bool 								m_error;
 		size_t								m_start;
 		s_v_server_conf::t_routes::iterator m_location;
 		std::string							m_query_string;

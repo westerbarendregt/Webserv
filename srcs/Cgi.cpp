@@ -182,7 +182,7 @@ void	Cgi::fillEnv(t_request_data &request) {
 	this->m_env_map["REQUEST_METHOD"] = methods[request.m_method]; //maybe simpler way?
 	this->m_env_map["REQUEST_URI"] = request.m_path;
 	this->m_env_map["SCRIPT_FILENAME"] = request.m_file; //if cgi-bin/test.php script_name is cgi-bin/test-cgi.php
-	this->m_env_map["SERVER_NAME"] ="webserv";
+	this->m_env_map["SERVER_NAME"] =SERVER_VERSION;
 	this->m_env_map["SERVER_PORT"] = request.m_owner->m_v_server->m_port;
 	this->m_env_map["SERVER_PROTOCOL"]="HTTP/1.1";
 	this->m_env_map["SERVER_SOFTWARE"]="HTTP 1.1";
