@@ -47,7 +47,7 @@ void 	RequestHandler::Server()
 
 void	RequestHandler::Location(std::string const & location)
 {
-	m_response_headers.push_back(location + CRLF);
+	m_response_headers.push_back("location:" + location + CRLF);
 
 }
 
@@ -193,17 +193,15 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			stat_file = real_path.substr(0, next_prefix);
 			std::cout<<"\tstat "<<stat_file<<std::endl;
 			if (c.m_request_data.m_method != PUT)
-				if (stat(stat_file.c_str(), &this->m_statbuf)) {
+				if (stat(stat_file.c_str(), &this->m_statbuf))
 					throw HTTPError("RequestHandler::handleMetadata 1", "invalid full path", 404);
-				}
 			//also check permission
 			if ((this->m_statbuf.st_mode & S_IFMT) == S_IFREG) // if file
 				break ;
 			if (c.m_request_data.m_method != PUT)
 				if ((this->m_statbuf.st_mode & S_IFMT) != S_IFDIR 
-						&& (this->m_statbuf.st_mode & S_IFMT) != S_IFLNK) { // if something else than a directory/smlink
+						&& (this->m_statbuf.st_mode & S_IFMT) != S_IFLNK) // if something else than a directory/smlink
 					throw HTTPError("RequestHandler::handleMetadata 2", "invalid full path, not a file/directory/symlink", 404);
-				}
 			if (next_prefix == std::string::npos)
 				break ;
 			prefix = next_prefix;
@@ -263,22 +261,23 @@ void	RequestHandler::handleMetadata(t_client &c) {
 
 std::string		RequestHandler::handlePUT()
 {
-	const char *path_to_file = this->m_request_data->m_real_path.c_str();
-	const char *m_file = this->m_request_data->m_file.c_str();
-	const char *m_alias = this->m_request_data->m_location->second["alias"].c_str();
-
-	std::cout<<"path to file]: "<<path_to_file<<std::endl;
+	const char *m_file = this->m_request_data->m_real_path.substr(this->m_request_data->m_real_path.find_last_of('/') + 1).c_str();
 	std::cout<<"m_file: "<< m_file <<std::endl;
-	std::cout << "alias: " << m_alias << std::endl;
+	const char *upload_store = this->m_request_data->m_location->second["upload_store"].c_str();
+	std::cout << "upload_store: " << upload_store << std::endl;
+
+	std::string path_to_file = std::string(upload_store) + std::string(m_file);
+	std::cout<<"path to file]: "<<path_to_file<<std::endl;
 
 	// BodySize(c);
 
-	if (stat(path_to_file, &this->m_statbuf) == 0)
+	if (stat(path_to_file.c_str(), &this->m_statbuf) == 0)
 		this->m_request_data->m_status = 204;
 	else 
 		this->m_request_data->m_status = 201;
 	char * current_dir = getcwd(NULL, 0);
-	chdir(m_alias);
+	if (chdir(upload_store))
+		throw HTTPError("RequestHandler::PUT", "Upload store directory doesn't exist", 500);
 	int fd  = open(m_file, O_TRUNC | O_CREAT | O_WRONLY, S_IRWXU); // s_irwxu = owner having all persmissions
 	if (fd == -1)
 		throw HTTPError("RequestHandler::PUT", "error creating file", 500);
@@ -293,7 +292,7 @@ std::string		RequestHandler::handlePUT()
 	
 	// now write the handleheader functions!!
 	Server();
-	Location(m_file);
+	Location(std::string(upload_store) + std::string(m_file));
 	// handleCONTENT_LENGTH();
 	// handleDATE();
 	// handleCONTENT_TYPE(request);
@@ -310,23 +309,26 @@ std::string		RequestHandler::handlePUT()
 
 void	RequestHandler::CheckBodyLimits()
 {
-	std::string server_body_limit = m_client->m_v_server->m_configs.m_directives["client_max_body_size"];
-	std::string location_body_limit = m_request_data->m_location->second["location_max_body_size"];
+	// std::string server_body_limit = m_client->m_v_server->m_configs.m_directives["client_max_body_size"];
+	// std::string location_body_limit = m_request_data->m_location->second["location_max_body_size"];
 
+	size_t server_body_limit = ftAtoi(m_client->m_v_server->m_configs.m_directives["client_max_body_size"].c_str());
+	size_t location_body_limit = ftAtoi(m_request_data->m_location->second["location_max_body_size"].c_str());
 	std::cout << "server_limit: " << server_body_limit << std::endl;
 	std::cout << "location_limit: " << location_body_limit << std::endl;
 
-	if (ftAtoi(server_body_limit.c_str()) < m_request_data->m_content_length)
+	if (server_body_limit && server_body_limit < m_request_data->m_content_length)
 	{
 		m_request_data->m_error = 413;
 		std::cout << "body size exceeded limit of server" << std::endl;
 	}
-	else if (ftAtoi(location_body_limit.c_str()) < m_request_data->m_content_length)
+	else if (location_body_limit && location_body_limit < m_request_data->m_content_length)
 	{
 		m_request_data->m_error = 413;
 		std::cout << "body size exceeded limit of location" << std::endl;
 		return ;
 	}
+	std::cout << "[BODY SIZE = ALLOWED]"<< std::endl;
 }
 
 void	RequestHandler::handleRequest(t_client &c) {
@@ -335,11 +337,11 @@ void	RequestHandler::handleRequest(t_client &c) {
 	this->m_request_data = &c.m_request_data;
 	CheckBodyLimits();
 	// Request	&request = m_client->m_request_data;
-	if (m_request_data->m_error != 0) {
+	if (m_request_data->m_error != 0)
 		m_client->m_response_str = generateErrorPage(m_request_data->m_error);
-	} else if (c.m_request_data.m_cgi) {
+	else if (c.m_request_data.m_cgi)
 		this->m_cgi.run(c);
-	} else {
+	else {
 		try {
 			
 			switch (m_request_data->m_method) {

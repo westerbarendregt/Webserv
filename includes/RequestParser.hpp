@@ -140,8 +140,8 @@ class RequestParser
 		std::string line;
 		int ret = 1;
 
-			std::cout << "line: " << c.m_request_str << std::endl;
-			std::cout << "index: " << c.m_request_data.m_start << std::endl;
+			// std::cout << "line: " << c.m_request_str << std::endl;
+			// std::cout << "index: " << c.m_request_data.m_start << std::endl;
 		if (ft_getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start))
 		{
 			size_t current_chunk_size = ftAtoiHex(line.c_str());
@@ -197,7 +197,7 @@ class RequestParser
 		std::string line;
 		int ret = 1;
 
-		std::cout << "start_body:::::: " << c.m_request_data.m_start << std::endl;
+		// std::cout << "start_body:::::: " << c.m_request_data.m_start << std::endl;
 		if (c.m_request_data.m_chunked == true)
 		{
 			std::cout << "TRUE"<< std::endl;
@@ -216,7 +216,7 @@ class RequestParser
 		}
 		if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
 		{
-			std::cout << "[DONE]" << std::endl;
+			// std::cout << "[DONE]" << std::endl;
 			c.m_request_data.m_done = true;
 			c.m_request_data.m_start = 0;
 		}
@@ -255,11 +255,11 @@ class RequestParser
 		if (c.m_request_data.m_error)
 			std::cout << "While parsing found error NR: " << c.m_request_data.m_error << std::endl;
 		if (c.m_request_data.m_metadata_parsed && c.m_request_data.m_done)
-			std::cout << "METADATA IS PARSED AND BODY PARSING IS DONE" << std::endl;
+			std::cout << "METADATA IS PARSED AND BODY PARSING IS DONE" << std::endl << std::endl;
 		else if (c.m_request_data.m_metadata_parsed)
-			std::cout << "METADATA PARSED BUT BODY PARSING IS NOT FINISHED" << std::endl; 
+			std::cout << "METADATA PARSED BUT BODY PARSING IS NOT FINISHED" << std::endl << std::endl; 
 		else 
-			std::cout << "REQUEST DATA NOT PARSED" << std::endl;
+			std::cout << "REQUEST DATA NOT PARSED" << std::endl << std::endl;
 		
 	}
 	
@@ -282,7 +282,7 @@ class RequestParser
 			c.m_request_data.m_done = true;
 			c.m_request_data.m_start = 0;
 		}
-		std::cout << "start:parse:::: " << c.m_request_data.m_start << std::endl;
+		// std::cout << "start:parse:::: " << c.m_request_data.m_start << std::endl;
 		return SUCCESS;
 	}
 
