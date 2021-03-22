@@ -48,6 +48,9 @@ void	Server::run(){
 				 		this->m_request_handler.handleMetadata(*c); 
 				 	}
 					std::cout << "done?: " << c->m_request_data.m_done << std::endl;
+					if (!c->m_request_data.m_done)
+				 		RequestParser::GetBody(*c);
+					 // clean this up! with 
 				 	if (c->m_request_data.m_done)
 					{
 				 		this->m_request_handler.handleRequest(*c);
@@ -58,17 +61,17 @@ void	Server::run(){
 						//set, to not get a read from select while we haven't
 						//sent the full response
 					}
-				 	else // c->m_request_data.m_done
-					{
-				 		RequestParser::GetBody(*c);
-						RequestParser::Print(*c);
-						if (c->m_request_data.m_done)
-						{
-							this->m_request_handler.handleRequest(*c); // put this in function because it is repeated.
-							FD_SET(c->m_socket, &this->m_write_all);
-							c->m_request_str.clear();
-						}
-					}
+				 	// else // c->m_request_data.m_done
+					// {
+				 	// 	RequestParser::GetBody(*c);
+					// 	// RequestParser::Print(*c);
+					// 	if (c->m_request_data.m_done) // clean this up! with 
+					// 	{
+					// 		this->m_request_handler.handleRequest(*c); // put this in function because it is repeated.
+					// 		FD_SET(c->m_socket, &this->m_write_all);
+					// 		c->m_request_str.clear();
+					// 	}
+					// }
 				} // receive
 				else {
 					this->closeClientConnection(*c);

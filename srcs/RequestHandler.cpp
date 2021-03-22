@@ -192,16 +192,18 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			next_prefix = prefix == std::string::npos ? std::string::npos : real_path.find_first_of("?/", prefix + 1);
 			stat_file = real_path.substr(0, next_prefix);
 			std::cout<<"\tstat "<<stat_file<<std::endl;
-			// if (stat(stat_file.c_str(), &this->m_statbuf)) {
-			// 	throw HTTPError("RequestHandler::handleMetadata", "invalid full path", 404);
-			// }
-			// //also check permission
-			// if ((this->m_statbuf.st_mode & S_IFMT) == S_IFREG) // if file
-			// 	break ;
-			// if ((this->m_statbuf.st_mode & S_IFMT) != S_IFDIR
-			// 		&& (this->m_statbuf.st_mode & S_IFMT) != S_IFLNK) { // if something else than a directory/smlink
-			// 	throw HTTPError("RequestHandler::handleMetadata", "invalid full path, not a file/directory/symlink", 404);
-			// }
+			if (c.m_request_data.m_method != PUT)
+				if (stat(stat_file.c_str(), &this->m_statbuf)) {
+					throw HTTPError("RequestHandler::handleMetadata 1", "invalid full path", 404);
+				}
+			//also check permission
+			if ((this->m_statbuf.st_mode & S_IFMT) == S_IFREG) // if file
+				break ;
+			if (c.m_request_data.m_method != PUT)
+				if ((this->m_statbuf.st_mode & S_IFMT) != S_IFDIR 
+						&& (this->m_statbuf.st_mode & S_IFMT) != S_IFLNK) { // if something else than a directory/smlink
+					throw HTTPError("RequestHandler::handleMetadata 2", "invalid full path, not a file/directory/symlink", 404);
+				}
 			if (next_prefix == std::string::npos)
 				break ;
 			prefix = next_prefix;
@@ -229,9 +231,9 @@ void	RequestHandler::handleMetadata(t_client &c) {
 				this->m_client->m_response_data.m_content_type = this->m_mime_types[stat_file.substr(stat_file.rfind('.') + 1)];
 				std::cout << "content-type: "<<this->m_client->m_response_data.m_content_type<<std::endl;
 				//	if there are additional entries after this file, we throw bad request
-				if (next_prefix != std::string::npos) {
-					throw HTTPError("RequestHandler::handleMetadata", "invalid full path", 404);
-				}
+				if (c.m_request_data.m_method != PUT)
+					if (next_prefix != std::string::npos)
+						throw HTTPError("RequestHandler::handleMetadata", "invalid full path 3", 404);
 			}
 		} 
 		//		see if autoindex on then flag it so handleRequest can call the appropriate method
