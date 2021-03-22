@@ -52,15 +52,19 @@ void	Cgi::convertEnv(t_client &c) {
 	this->m_argv[2] = 0;
 }
 
-void	Cgi::read(t_client &c) {
+int	Cgi::read(t_client &c) {
 	char buf[5000];
 
 	std::fill(buf, buf + sizeof(buf), 0);
 	ssize_t	nbytes = ::read(c.m_cgi_read_pipe[IN], buf, 4096);
-	if (nbytes == -1)
+	if (nbytes == -1) {
+		if (errno == EAGAIN || errno == EWOULDBLOCK) //or use select
+			return -1;
 		throw HTTPError("Cgi::read", strerror(errno), 500);
+	}
 	if (nbytes)
 		c.m_cgi_out_buf.append(buf);
+	return 1;
 }
 
 
@@ -294,7 +298,8 @@ int RequestHandler::handleCgi(t_client &c) {
 			if (wpid == -1)
 				throw HTTPError("RequestHandler::handleCgi : wait", strerror(errno), 500);
 		}
-		this->m_cgi.read(c);
+		if (this->m_cgi.read(c) == -1)
+			return 0; // read pipe temporarily not available
 		this->m_cgi.populateResponse(c);
 		if (!c.m_response_data.m_cgi_metadata_parsed)
 			return 0; //hasn't received fullmetadata
