@@ -18,8 +18,7 @@ Request::Request()
 	m_chunked(false),
 	m_cgi(0),
 	m_autoindex(0),
-	m_error(0),
-	m_status(0),
+	m_status_code(0),
 	m_start(0),
 	m_location(),
 	m_query_string(""),
@@ -42,8 +41,7 @@ Request::Request(Request const & src)
 	 m_chunked(src.m_chunked),
 	 m_cgi(src.m_cgi),
 	 m_autoindex(src.m_autoindex),
-	 m_error(src.m_error),
-	 m_status(src.m_status),
+	 m_status_code(src.m_status_code),
 	 m_start(src.m_start),
 	 m_location(src.m_location),
 	 m_query_string(src.m_query_string),
@@ -66,8 +64,7 @@ Request &Request::operator=(Request const & rhs) {
 	 this->m_chunked        = rhs.m_chunked;
 	 this->m_cgi            = rhs.m_cgi;
 	 this->m_autoindex      = rhs.m_autoindex;
-	 this->m_error          = rhs.m_error;
-	 this->m_status         = rhs.m_status;
+	 this->m_status_code    = rhs.m_status_code;
 	 this->m_start          = rhs.m_start;
 	 this->m_location       = rhs.m_location;
 	 this->m_query_string   = rhs.m_query_string;
@@ -77,9 +74,45 @@ Request &Request::operator=(Request const & rhs) {
 	return *this;
 }
 
+void	Request::reset() {
+	this->m_method = -1;
+	this->m_path.clear();
+	this->m_protocol = -1;
+	this->m_content_length = 0;
+	this->m_headers.assign(18, "");
+	this->m_if_body = false;
+	this->m_body.clear();
+	this->m_metadata_parsed = false;
+	this->m_done = false;
+	this->m_chunked = false;
+	this->m_cgi = 0;
+	this->m_autoindex = 0;
+	this->m_status_code = 0;
+	this->m_start = 0;
+	this->m_location  = s_v_server_conf::t_routes::iterator();
+	this->m_query_string.clear();
+	this->m_path_info.clear();
+	this->m_real_path.clear();
+	this->m_file.clear();
+}
+
 Response::Response()
-	: m_content_type()
+	:m_cgi_metadata_parsed(false),
+	 m_cgi_metadata_sent(false),
+	 m_content_type(""),
+	 m_body(""),
+	 m_location(""),
+	 m_response_headers()
 {
+}
+
+void	Response::reset() {
+	this->m_cgi_metadata_parsed = false;
+	this->m_cgi_metadata_sent = false;
+	this->m_content_type = "";
+	this->m_body = "";
+	this->m_location = "";
+	this->m_response_headers.clear();
 }
 
 Client::Client() 
@@ -94,8 +127,10 @@ Client::Client()
 	m_cgi_pid(-1),
 	m_cgi_running(0),
 	m_cgi_write(0),
+	m_cgi_end_chunk(0),
 	m_cgi_write_offset(0),
 	m_cgi_out_buf()
+	// m_request_handler();
 {
 	this->m_cgi_read_pipe[IN] = -1;
 	this->m_cgi_read_pipe[OUT] = -1;
@@ -104,10 +139,6 @@ Client::Client()
 	this->m_request_data.m_owner = this;
 }
 
-bool	Client::fullMetaData() {
-	return (!this->m_request_str.empty()
-			&& this->m_request_str.find("\r\n\r\n") != std::string::npos);
-}
 
 Client::Client(Client const & src)
 	: m_request_str(src.m_request_str),
@@ -122,6 +153,7 @@ Client::Client(Client const & src)
 	m_cgi_pid(src.m_cgi_pid),
 	m_cgi_running(src.m_cgi_running),
 	m_cgi_write(src.m_cgi_write),
+	m_cgi_end_chunk(src.m_cgi_end_chunk),
 	m_cgi_write_offset(src.m_cgi_write_offset),
 	m_cgi_out_buf(src.m_cgi_out_buf)
 {
@@ -144,6 +176,7 @@ Client &Client::operator=(Client const & rhs) {
 	this->m_cgi_pid = rhs.m_cgi_pid;
 	this->m_cgi_running = rhs.m_cgi_running;
 	this->m_cgi_write= rhs.m_cgi_write;
+	this->m_cgi_end_chunk= rhs.m_cgi_end_chunk;
 	this->m_request_data.m_owner = this;
 	this->m_cgi_read_pipe[IN] = rhs.m_cgi_read_pipe[IN];
 	this->m_cgi_read_pipe[OUT] = rhs.m_cgi_read_pipe[OUT];
@@ -169,3 +202,20 @@ void	Client::updateServerConf()
 	}
 	this->m_v_server = &((*(this->m_v_server_blocks))[0]);//if not found, return the first added,default one
 }
+
+void	Client::reset() {
+	this->m_request_str.clear();
+	this->m_response_str.clear();
+	this->m_request_data.reset();
+	this->m_response_data.reset();
+	//client always linked to a virtual context (blocks of virtual servers on the same ip:port), not to a particular block, so only reset v_server
+	this->m_v_server = 0;
+	//cgi
+	this->m_cgi_pid = -1;
+	this->m_cgi_running = false;
+	this->m_cgi_write = 0;
+	this->m_cgi_write_offset = 0;
+	this->m_cgi_end_chunk = false;
+	this->m_cgi_out_buf.clear();
+}
+

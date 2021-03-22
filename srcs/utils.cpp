@@ -1,3 +1,4 @@
+#include <ctime>
 #include <string>//std::string
 #include <string.h>//memset
 #include <unistd.h>//size_t
@@ -7,6 +8,8 @@
 #include <iostream>
 #include "WebServer.hpp"
 
+
+namespace ft {
 static size_t		write_reverse(size_t n, char *buf)
 {
 	size_t	len;
@@ -99,7 +102,7 @@ static int		atoiConvertHex(const char *str, int sign)
 	return (((int)result) * sign);
 }
 
-size_t		ftAtoiHex(const char *str)
+size_t		AtoiHex(const char *str)
 {
 	int			i;
 	int			sign;
@@ -138,7 +141,7 @@ static int	atoiConvert(const char *str, int sign)
 	return (((int)result) * sign);
 }
 
-size_t			ftAtoi(const char *str)
+size_t			Atoi(const char *str)
 {
 	int			i;
 	int			sign;
@@ -180,7 +183,7 @@ uint16_t hostToNetworkShort(uint16_t hostshort) {
 	return (hostshort & 0x00FF) << 8 | (hostshort & 0xFF00) >> 8;
 }
 
-int		ft_getline_crlf(std::string& total, std::string& line, int line_break, size_t& start) // make line_break 1 if you want it in, zero if you don't
+int		getline_crlf(std::string& total, std::string& line, int line_break, size_t& start) // make line_break 1 if you want it in, zero if you don't
 {
 	size_t len;
 
@@ -198,7 +201,7 @@ int		ft_getline_crlf(std::string& total, std::string& line, int line_break, size
 	return 0;
 }
 
-int		ft_getline(std::string& total, std::string& line, int line_break, size_t& start) // make line_break 1 if you want it in, zero if you don't
+int		getline(std::string& total, std::string& line, int line_break, size_t& start) // make line_break 1 if you want it in, zero if you don't
 {
 	size_t len;
 
@@ -218,7 +221,7 @@ int		ft_getline(std::string& total, std::string& line, int line_break, size_t& s
 
 
 
-bool	ft_compare(char c, char *str)
+bool	compare(char c, char *str)
 {
 	for (int i = 0; str[i]; ++i)
 		if (str[i] == c)
@@ -226,7 +229,7 @@ bool	ft_compare(char c, char *str)
 	return false;
 }
 
-char	*ft_strdup(std::string &src) {
+char	*strdup(std::string &src) {
 	char *result = reinterpret_cast<char *>(malloc(src.size() + 1));
 
 	src.copy(result, src.size(), 0);
@@ -246,4 +249,29 @@ std::string intToString(int n) {
 		n /= 10;
 	}
 	return s;
+}
+
+std::string	convertDate(const time_t * clock) {
+	char s[1025] = {};
+	struct tm*	timeptr = gmtime(clock);
+
+	strftime(s, 1024, "%a, %d %b %Y %T GMT", timeptr);
+	return s;
+}
+
+std::string hexString(size_t n) {
+	std::string s;
+
+	if (n == 0)
+		return "0";
+	while (n) {
+		s = HEX_STR[n % 16] + s;
+		n /= 16;
+	}
+	return s;
+}
+
+size_t	fullMetaData(std::string const &src) {
+	return src.find("\r\n\r\n");
+}
 }

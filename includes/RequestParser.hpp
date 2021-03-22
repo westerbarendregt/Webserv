@@ -31,7 +31,7 @@ class RequestParser
 	{
 		std::string line;
 		
-		if (ft_getline_crlf(c.m_request_str, line, 0, c.m_request_data.m_start))
+		if (ft::getline_crlf(c.m_request_str, line, 0, c.m_request_data.m_start))
 		{
 			for (int i = 0; methods[i]; ++i){
 				if (!line.compare(0, line.find_first_of(BLANKS), methods[i])){
@@ -39,7 +39,7 @@ class RequestParser
 					int first = line.find_first_of(' ') + 1;
 					int last = line.find_last_of(' ');
 					if (line.find_last_of(' ') != line.find_first_of(' ', first)){
-						c.m_request_data.m_error = 400; // no whitespaces aloud in startline except two seperating single space // maybe a 404
+						c.m_request_data.m_status_code = 400; // no whitespaces aloud in startline except two seperating single space // maybe a 404
 						return ERROR;
 					}
 					c.m_request_data.m_path = line.substr(first, last - first);
@@ -47,13 +47,13 @@ class RequestParser
 						c.m_request_data.m_protocol = HTTP1;
 						return SUCCESS;
 					}
-					c.m_request_data.m_error = 400; // Bad Request (not HTTP/1.1)
+					c.m_request_data.m_status_code = 400; // Bad Request (not HTTP/1.1)
 				}
 			}
-			c.m_request_data.m_error = 501; // method not implemented (or no method found)
+			c.m_request_data.m_status_code = 501; // method not implemented (or no method found)
 			return ERROR;
 		}
-		c.m_request_data.m_error = 400; // Bad Request (not HTTP/1.1)
+		c.m_request_data.m_status_code = 400; // Bad Request (not HTTP/1.1)
 		return ERROR;
 	}
 	
@@ -62,10 +62,10 @@ class RequestParser
 		std::string line;
 		bool first = true;
 
-		while (ft_getline_crlf(c.m_request_str, line, 0, c.m_request_data.m_start))
+		while (ft::getline_crlf(c.m_request_str, line, 0, c.m_request_data.m_start))
 		{
-			if (ft_compare(line[0], (char*)BLANKS)){
-				c.m_request_data.m_error = 400; // Bad request (blanks between start line and first header)
+			if (ft::compare(line[0], (char*)BLANKS)){
+				c.m_request_data.m_status_code = 400; // Bad request (blanks between start line and first header)
 				return ERROR;
 			}
 			if (line[0] == 0)
@@ -73,8 +73,8 @@ class RequestParser
 			first = false;
 			for (int j = 0; line[j] != ':' && line[j]; ++j){
 				line[j] = std::toupper(line[j]);
-				if (ft_compare(line[j], (char*)BLANKS)){
-					c.m_request_data.m_error = 400; // Bad request (blanks before colon)
+				if (ft::compare(line[j], (char*)BLANKS)){
+					c.m_request_data.m_status_code = 400; // Bad request (blanks before colon)
 					return ERROR;
 				}
 			}
@@ -117,8 +117,7 @@ class RequestParser
 		c.m_request_data.m_done = false;
 		c.m_request_data.m_metadata_parsed = false;
 		c.m_request_data.m_chunked = false;
-		c.m_request_data.m_error = 0;
-		c.m_request_data.m_status = 0;
+		c.m_request_data.m_status_code = 0;
 		c.m_request_data.m_cgi = 0;
 		c.m_request_data.m_start = 0;
 
@@ -126,7 +125,7 @@ class RequestParser
 
 	static void				CheckHeaderData(Client& c)
 	{
-		c.m_request_data.m_content_length = ftAtoi(c.m_request_data.m_headers[CONTENTLENGTH].c_str());
+		c.m_request_data.m_content_length = ft::Atoi(c.m_request_data.m_headers[CONTENTLENGTH].c_str());
 		if (c.m_request_data.m_headers[TRANSFERENCODING].find("chunked") != std::string::npos){
 			c.m_request_data.m_chunked = true;
 			c.m_request_data.m_if_body = true;
@@ -142,9 +141,9 @@ class RequestParser
 
 			// std::cout << "line: " << c.m_request_str << std::endl;
 			// std::cout << "index: " << c.m_request_data.m_start << std::endl;
-		if (ft_getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start))
+		if (ft::getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start))
 		{
-			size_t current_chunk_size = ftAtoiHex(line.c_str());
+			size_t current_chunk_size = ft::AtoiHex(line.c_str());
 			if (current_chunk_size == 0 && line == "0\r\n")
 			{
 				c.m_request_data.m_done = true;
@@ -157,7 +156,7 @@ class RequestParser
 				c.m_request_data.m_content_length += current_chunk_size;
 				while (ret)
 				{
-					ret = ft_getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start);
+					ret = ft::getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start);
 					if (line.find(CRLF) != std::string::npos){
 						c.m_request_data.m_body.append(line.substr(0, line.size() - 2));
 						if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
@@ -210,7 +209,7 @@ class RequestParser
 		}
 		else if (c.m_request_data.m_chunked == false){
 			while (ret){
-				ret = ft_getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start);
+				ret = ft::getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start);
 				c.m_request_data.m_body.append(line);
 			}
 		}
@@ -252,8 +251,8 @@ class RequestParser
 			std::cout << std::endl << "The body is chunked!" << std::endl;
 		std::cout << "BODY-length: " << c.m_request_data.m_content_length << std::endl;
 		std::cout << "BODY:" << c.m_request_data.m_body << std::endl << std::endl;
-		if (c.m_request_data.m_error)
-			std::cout << "While parsing found error NR: " << c.m_request_data.m_error << std::endl;
+		if (c.m_request_data.m_status_code)
+			std::cout << "While parsing found error NR: " << c.m_request_data.m_status_code << std::endl;
 		if (c.m_request_data.m_metadata_parsed && c.m_request_data.m_done)
 			std::cout << "METADATA IS PARSED AND BODY PARSING IS DONE" << std::endl << std::endl;
 		else if (c.m_request_data.m_metadata_parsed)

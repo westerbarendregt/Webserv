@@ -40,7 +40,7 @@ void	Server::run(){
 				c = getClient(i);
 				if (this->receive(c) > 0) {
 				 	if (!c->m_request_data.m_metadata_parsed) {
-				 		if (!c->fullMetaData())
+				 		if (ft::fullMetaData(c->m_request_str) == std::string::npos)
 				 			continue ;
 				 		RequestParser::Parse(*c);
 						c->m_request_data.m_metadata_parsed = true;
@@ -54,6 +54,7 @@ void	Server::run(){
 				 	if (c->m_request_data.m_done)
 					{
 				 		this->m_request_handler.handleRequest(*c);
+						FD_CLR(c->m_socket, &this->m_read_all);
 						FD_SET(c->m_socket, &this->m_write_all);
 						c->m_request_str.clear();
 						//maybe at this point we want to remove it from the read_all
@@ -65,15 +66,15 @@ void	Server::run(){
 					this->closeClientConnection(*c);
 				}
 				std::cout<<"listening..."<<std::endl;
-			}
+			} // FD_ISSET(this->read_fd)
 			else if (FD_ISSET(i, &this->m_write_fd)) {
 				c = getClient(i);
-				if (c->m_cgi_running && !this->m_request_handler.handleCgi(*c))
-						continue ;
-				this->respond(i);
+				if (c->m_request_data.m_cgi && !this->m_request_handler.handleCgi(*c))
+					continue ;
+				this->respond(*c);
 				std::cout<<"listening..."<<std::endl;
 				//can close connection if the response is an error
 			}
-	}
-}
-}
+		} // for (i in range_fd)
+	} // for(;;)
+} //ServerRun

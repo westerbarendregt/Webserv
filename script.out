@@ -1,1 +1,0 @@
-sed -i 's/\#home/tmp/webserv/g' input.txt

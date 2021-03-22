@@ -29,7 +29,7 @@ void	VirtualServer::setAddr() {
 	//std::cout<<"inet_() "<<config_addr.substr(0, c)<<std::endl;
 	this->m_sockaddr.sin_addr.s_addr = inet_addr(config_addr.substr(0, c).c_str());
 	//std::cout<<"inet_ntoa()"<<inet_ntoa(this->m_sockaddr.sin_addr)<<std::endl;
-	this->m_sockaddr.sin_port = hostToNetworkShort(ftAtoi(this->m_port.c_str()));
+	this->m_sockaddr.sin_port = ft::hostToNetworkShort(ft::Atoi(this->m_port.c_str()));
 	memset(this->m_sockaddr.sin_zero, 0, sizeof(this->m_sockaddr.sin_zero));//fill
 }
 
