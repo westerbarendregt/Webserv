@@ -21,10 +21,14 @@ class RequestHandler
 		typedef	VirtualServer	t_v_server;
 		typedef	s_v_server_conf::t_directives t_directives;
 		typedef	s_v_server_conf::t_routes	t_routes;
+
+		friend class Server;
+
 		RequestHandler();
 		~RequestHandler();
 		void	handleMetadata(t_client &c);
 		void	handleCgiMetadata(t_request &request, std::string &file);
+		int		handleCgi(t_client &c);
 		void	handleRequest(t_client &c);
 		bool	validCgi(t_request &request, size_t extension_index);
 
@@ -43,8 +47,12 @@ class RequestHandler
 		std::string Content_Length(std::string const & body);
 		std::string Content_Type();
 		std::string Server();
+		std::string date();
+		//
+		std::string transferEncoding();
 
 		std::string statusLine();
+		std::string statusLine(int error);
 		std::string responseBody();
 		std::string responseHeaders(std::string const & body);
 

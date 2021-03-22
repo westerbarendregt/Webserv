@@ -187,3 +187,19 @@ std::string intToString(int n) {
 	}
 	return s;
 }
+
+std::string hexString(size_t n) {
+	std::string s;
+
+	if (n == 0)
+		return "0";
+	while (n) {
+		s = HEX_STR[n % 16] + s;
+		n /= 16;
+	}
+	return s;
+}
+
+size_t	fullMetaData(std::string const &src) {
+	return src.find("\r\n\r\n");
+}

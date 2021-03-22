@@ -32,12 +32,13 @@ class	Server
 		void	run();
 		void	init();
 		void	close();
-		int		receive(t_client *c);
+		ssize_t	receive(t_client *c);
 		void	respond(int client_socket);
+		void	respond(t_client &c);
 		int		accept(int socket);
 		void	addClient();
 		void	connectVirtualServer(t_v_server &v_server);
-		void	removeClient(int client_socket);
+		void	closeClientConnection(t_client &c);
 		t_v_server_blocks	*getVirtualServer(int socket);
 		t_client	*getClient(int client_socket);
 		fd_set		m_read_all;
