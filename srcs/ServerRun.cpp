@@ -24,6 +24,7 @@ void	Server::run(){
 	struct timeval tv;
 	t_client 	*c;
 
+	std::cout<<"listening..."<<std::endl;
 	for (;;) {//run
 		this->m_read_fd = this->m_read_all;
 		this->m_write_fd = this->m_write_all;
@@ -31,7 +32,6 @@ void	Server::run(){
 		tv.tv_usec = 500000;
 		if (select(this->m_range_fd + 1, &this->m_read_fd, &this->m_write_fd, NULL, &tv) == -1)
 			throw(serverError("select: ", strerror(errno)));
-		std::cout<<"listening..."<<std::endl;
 		for (int i =0; i <= this->m_range_fd ; ++i){
 			if (FD_ISSET(i, &this->m_read_fd)) {
 				std::cout<<"found read connection fd: "<<i<<std::endl;
@@ -40,15 +40,8 @@ void	Server::run(){
 				c = getClient(i);
 				if (this->receive(c) > 0) {
 				 	if (!c->m_request_data.m_metadata_parsed) {
-				 		if (!c->fullMetaData())
+				 		if (fullMetaData(c->m_request_str) == std::string::npos)
 				 			continue ;
-						// std::cout<<"received full metadata"<<std::endl;
-						// if (parse != error)
-						// 	this->handleMetadata(*c); 
-						// 	if error, flag the request as done, and as erroneous, so handle request can generate a error page.
-						// std::cout<<"======"<<std::endl;
-						// std::cout<<c->m_request_str<<std::endl;
-						// std::cout<<"======"<<std::endl;
 				 		RequestParser::Parse(*c);
 						c->m_request_data.m_metadata_parsed = true;
 						RequestParser::Print(*c);
@@ -57,6 +50,7 @@ void	Server::run(){
 				 	if (c->m_request_data.m_done)
 					{
 				 		this->m_request_handler.handleRequest(*c);
+						FD_CLR(c->m_socket, &this->m_read_all);
 						FD_SET(c->m_socket, &this->m_write_all);
 						// reset client struct and request.str()
 						c->m_request_str.clear();
@@ -64,16 +58,22 @@ void	Server::run(){
 						//set, to not get a read from select while we haven't
 						//sent the full response
 					}
-				 	else
+				 	else // c->m_request_data.m_done
 				 		RequestParser::HandleBody(*c);
-				 }
-			}
+				} // receive
+				else {
+					this->closeClientConnection(*c);
+				}
+				std::cout<<"listening..."<<std::endl;
+			} // FD_ISSET(this->read_fd)
 			else if (FD_ISSET(i, &this->m_write_fd)) {
-				std::cout<<"found write connection fd: "<<i<<std::endl;
-				this->respond(i);
+				c = getClient(i);
+				if (c->m_request_data.m_cgi && !this->m_request_handler.handleCgi(*c))
+					continue ;
+				this->respond(*c);
+				std::cout<<"listening..."<<std::endl;
 				//can close connection if the response is an error
-				//resetResponse
 			}
-	}
-}
-}
+		} // for (i in range_fd)
+	} // for(;;)
+} //ServerRun

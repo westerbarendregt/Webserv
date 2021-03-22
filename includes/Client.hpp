@@ -11,6 +11,7 @@ struct	Request
 		Request();
 		Request(Request const & src);
 		Request &operator=(Request const & rhs);
+		void	reset();
 		Client								*m_owner;
 		int                     			m_method;
 		std::string							m_path;
@@ -32,13 +33,15 @@ struct	Request
 		std::string							m_path_info;
 		std::string							m_real_path;
 		std::string							m_file;
-		size_t								m_cgi_write;
 };
 
-struct	Response
+struct	Response//for now only used for CGI
 {
 		Response();
+		void	reset();
 		std::string	m_content_type;
+		bool	m_cgi_metadata_parsed;
+		bool	m_cgi_metadata_sent;
 };
 
 class	Client
@@ -57,7 +60,6 @@ class	Client
 		Client();
 		Client(Client const & src);
 		Client 	&operator=(Client const & rhs);
-		bool	fullMetaData();
 		void	updateServerConf();
 
 		void		testingRequest(std::string str){
@@ -69,6 +71,7 @@ class	Client
 		Request&				 			getRequest(){
 			return m_request_data;						
 		}
+		void	reset();
 	private:
 		std::string							m_request_str;
 		std::string							m_response_str;
@@ -81,8 +84,12 @@ class	Client
 		socklen_t							m_addrlen;
 		pid_t								m_cgi_pid;
 		bool								m_cgi_running;
-		size_t								m_cgi_write;
-		int									m_cgi_io[2];
+		bool								m_cgi_write;
+		bool								m_cgi_end_chunk;
+		int									m_cgi_read_pipe[2];
+		int									m_cgi_write_pipe[2];
+		size_t								m_cgi_write_offset;
+		std::string							m_cgi_out_buf;
 };
 
 #endif

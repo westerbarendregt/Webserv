@@ -2,6 +2,7 @@
 #include "Server.hpp"
 #include "Error.hpp"
 #include "WebServer.hpp"
+#include <unistd.h>
 
 Request::Request()
 	: m_owner(0),
@@ -46,8 +47,7 @@ Request::Request(Request const & src)
 	 m_query_string(src.m_query_string),
 	 m_path_info(src.m_path_info),
 	 m_real_path(src.m_real_path),
-	 m_file(src.m_file),
-	 m_cgi_write(src.m_cgi_write)
+	 m_file(src.m_file)
 {
 }
 
@@ -71,13 +71,41 @@ Request &Request::operator=(Request const & rhs) {
 	 this->m_path_info      = rhs.m_path_info;
 	 this->m_real_path      = rhs.m_real_path;
 	 this->m_file           = rhs.m_file;
-	 this->m_cgi_write      = rhs.m_cgi_write;
 	return *this;
 }
 
+void	Request::reset() {
+	this->m_method = -1;
+	this->m_path.clear();
+	this->m_protocol = -1;
+	this->m_content_length = 0;
+	this->m_headers.assign(18, "");
+	this->m_if_body = false;
+	this->m_body.clear();
+	this->m_metadata_parsed = false;
+	this->m_done = false;
+	this->m_chunked = false;
+	this->m_cgi = 0;
+	this->m_autoindex= 0;
+	this->m_error = 0;
+	this->m_start = 0;
+	this->m_location  = s_v_server_conf::t_routes::iterator();
+	this->m_query_string.clear();
+	this->m_path_info.clear();
+	this->m_real_path.clear();
+	this->m_file.clear();
+}
+
 Response::Response()
-	: m_content_type()
+	: m_content_type(),
+	 m_cgi_metadata_parsed(false),
+	 m_cgi_metadata_sent(false)
 {
+}
+
+void	Response::reset() {
+	this->m_cgi_metadata_parsed = 0;
+	this->m_cgi_metadata_sent = 0;
 }
 
 Client::Client() 
@@ -91,15 +119,18 @@ Client::Client()
 	m_addrlen(sizeof(m_sockaddr)),
 	m_cgi_pid(-1),
 	m_cgi_running(0),
-	m_cgi_write(0)
+	m_cgi_write(0),
+	m_cgi_end_chunk(0),
+	m_cgi_write_offset(0),
+	m_cgi_out_buf()
 {
+	this->m_cgi_read_pipe[IN] = -1;
+	this->m_cgi_read_pipe[OUT] = -1;
+	this->m_cgi_write_pipe[IN] = -1;
+	this->m_cgi_write_pipe[OUT] = -1;
 	this->m_request_data.m_owner = this;
 }
 
-bool	Client::fullMetaData() {
-	return (!this->m_request_str.empty()
-			&& this->m_request_str.find("\r\n\r\n") != std::string::npos);
-}
 
 Client::Client(Client const & src)
 	: m_request_str(src.m_request_str),
@@ -113,8 +144,15 @@ Client::Client(Client const & src)
 	m_addrlen(src.m_addrlen),
 	m_cgi_pid(src.m_cgi_pid),
 	m_cgi_running(src.m_cgi_running),
-	m_cgi_write(src.m_cgi_write)
+	m_cgi_write(src.m_cgi_write),
+	m_cgi_end_chunk(src.m_cgi_end_chunk),
+	m_cgi_write_offset(src.m_cgi_write_offset),
+	m_cgi_out_buf(src.m_cgi_out_buf)
 {
+	this->m_cgi_read_pipe[IN] = src.m_cgi_read_pipe[IN];
+	this->m_cgi_read_pipe[OUT] = src.m_cgi_read_pipe[OUT];
+	this->m_cgi_write_pipe[IN] = src.m_cgi_write_pipe[IN];
+	this->m_cgi_write_pipe[OUT] = src.m_cgi_write_pipe[OUT];
 	this->m_request_data.m_owner = this;
 }
 
@@ -130,15 +168,16 @@ Client &Client::operator=(Client const & rhs) {
 	this->m_cgi_pid = rhs.m_cgi_pid;
 	this->m_cgi_running = rhs.m_cgi_running;
 	this->m_cgi_write= rhs.m_cgi_write;
+	this->m_cgi_end_chunk= rhs.m_cgi_end_chunk;
 	this->m_request_data.m_owner = this;
-	std::cout<<"client operator ="<<std::endl;
+	this->m_cgi_read_pipe[IN] = rhs.m_cgi_read_pipe[IN];
+	this->m_cgi_read_pipe[OUT] = rhs.m_cgi_read_pipe[OUT];
+	this->m_cgi_write_pipe[IN] = rhs.m_cgi_write_pipe[IN];
+	this->m_cgi_write_pipe[OUT] = rhs.m_cgi_write_pipe[OUT];
+	this->m_cgi_write_offset = rhs.m_cgi_write_offset;
 	return *this;
 }
 
-void	Server::removeClient(int client_socket) {
-	if (this->m_client_map.erase(client_socket) != 1)
-		throw serverError("removeClient: ", "trying to remove unexisting client");
-}
 
 void	Client::updateServerConf()
 {
@@ -155,3 +194,20 @@ void	Client::updateServerConf()
 	}
 	this->m_v_server = &((*(this->m_v_server_blocks))[0]);//if not found, return the first added,default one
 }
+
+void	Client::reset() {
+	this->m_request_str.clear();
+	this->m_response_str.clear();
+	this->m_request_data.reset();
+	this->m_response_data.reset();
+	//client always linked to a virtual context (blocks of virtual servers on the same ip:port), not to a particular block, so only reset v_server
+	this->m_v_server = 0;
+	//cgi
+	this->m_cgi_pid = -1;
+	this->m_cgi_running = false;
+	this->m_cgi_write = 0;
+	this->m_cgi_write_offset = 0;
+	this->m_cgi_end_chunk = false;
+	this->m_cgi_out_buf.clear();
+}
+

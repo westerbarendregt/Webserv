@@ -17,6 +17,8 @@ std::string base64_decode(std::string const& encoded_string);
 std::string	getDate(const time_t * clock);
 
 char	*ft_strdup(std::string &src);
+size_t	fullMetaData(std::string const & src);
+std::string hexString(size_t	n);
 
 
 #endif
