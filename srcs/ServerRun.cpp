@@ -40,27 +40,28 @@ void	Server::run(){
 				c = getClient(i);
 				if (this->receive(c) > 0) {
 				 	if (!c->m_request_data.m_metadata_parsed) {
-				 		if (fullMetaData(c->m_request_str) == std::string::npos)
+				 		if (ft::fullMetaData(c->m_request_str) == std::string::npos)
 				 			continue ;
 				 		RequestParser::Parse(*c);
 						c->m_request_data.m_metadata_parsed = true;
 						RequestParser::Print(*c);
 				 		this->m_request_handler.handleMetadata(*c); 
 				 	}
+					else if (!c->m_request_data.m_done){
+				 		RequestParser::GetBody(*c);
+						RequestParser::Print(*c);
+					}
 				 	if (c->m_request_data.m_done)
 					{
 				 		this->m_request_handler.handleRequest(*c);
 						FD_CLR(c->m_socket, &this->m_read_all);
 						FD_SET(c->m_socket, &this->m_write_all);
-						// reset client struct and request.str()
 						c->m_request_str.clear();
 						//maybe at this point we want to remove it from the read_all
 						//set, to not get a read from select while we haven't
 						//sent the full response
 					}
-				 	else // c->m_request_data.m_done
-				 		RequestParser::HandleBody(*c);
-				} // receive
+				}
 				else {
 					this->closeClientConnection(*c);
 				}

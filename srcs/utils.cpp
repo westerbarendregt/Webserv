@@ -8,6 +8,8 @@
 #include <iostream>
 #include "WebServer.hpp"
 
+
+namespace ft {
 static size_t		write_reverse(size_t n, char *buf)
 {
 	size_t	len;
@@ -58,6 +60,66 @@ static int	atoiIsBlank(char c)
 				|| c == '\r' || c == '\n' || c == ' ');
 }
 
+static bool		checkHex(char c1)
+{
+	char c = tolower(c1);
+	if (c == 'a' || c == 'b' || c == 'c')
+		return true;
+	if (c == 'd' || c == 'e' || c == 'f')
+		return true;
+	return false;
+}	
+
+static int		makeDecimal(char c1)
+{
+	int i = 0;
+	if (c1 >= 48 && c1 <= 57)
+		return c1 - '0';
+	char c = tolower(c1);
+	for (; c - i != 'a'; ++i);
+	return 10 + i;
+}
+
+static int		atoiConvertHex(const char *str, int sign)
+{
+	long int	result;
+	int			i;
+
+	result = 0;
+	i = 0;
+	while ((str[i] >= 48 && str[i] <= 57) || checkHex(str[i]))
+	{
+		if (result && LONG_MAX / result == 16)
+			return (((int)result * 16 + (str[i] - '0')) * sign);
+		if (result && LONG_MAX / result < 16 && sign == -1)
+			return (0);
+		if (result && LONG_MAX / result < 16 && sign == 1)
+			return (-1);
+		int dec = makeDecimal(str[i]);
+		result = result * 16 + dec;
+		i++;
+	}
+	return (((int)result) * sign);
+}
+
+size_t		AtoiHex(const char *str)
+{
+	int			i;
+	int			sign;
+
+	i = 0;
+	sign = 1;
+	while (atoiIsBlank(str[i]))
+		i++;
+	if (str[i] == '-' || str[i] == '+')
+	{
+		if (str[i] == '-')
+			sign = -1;
+		i++;
+	}
+	return (atoiConvertHex(str + i, sign));
+}
+
 static int	atoiConvert(const char *str, int sign)
 {
 	long int	result;
@@ -79,7 +141,7 @@ static int	atoiConvert(const char *str, int sign)
 	return (((int)result) * sign);
 }
 
-int			ftAtoi(const char *str)
+size_t			Atoi(const char *str)
 {
 	int			i;
 	int			sign;
@@ -121,7 +183,7 @@ uint16_t hostToNetworkShort(uint16_t hostshort) {
 	return (hostshort & 0x00FF) << 8 | (hostshort & 0xFF00) >> 8;
 }
 
-int		ft_getline_crlf(std::string& total, std::string& line, int line_break, size_t& start) // make line_break 1 if you want it in, zero if you don't
+int		getline_crlf(std::string& total, std::string& line, int line_break, size_t& start) // make line_break 1 if you want it in, zero if you don't
 {
 	size_t len;
 
@@ -134,12 +196,12 @@ int		ft_getline_crlf(std::string& total, std::string& line, int line_break, size
 	}
 	else {
 		line = total.substr(start, total.size() - start);
-		start = 0;
+		// start = 0;
 	}
 	return 0;
 }
 
-int		ft_getline(std::string& total, std::string& line, int line_break, size_t& start) // make line_break 1 if you want it in, zero if you don't
+int		getline(std::string& total, std::string& line, int line_break, size_t& start) // make line_break 1 if you want it in, zero if you don't
 {
 	size_t len;
 
@@ -152,14 +214,14 @@ int		ft_getline(std::string& total, std::string& line, int line_break, size_t& s
 	}
 	else {
 		line = total.substr(start, total.size() - start);
-		start = 0;
+		// start = 0;
 	}
 	return 0;
 }
 
 
 
-bool	ft_compare(char c, char *str)
+bool	compare(char c, char *str)
 {
 	for (int i = 0; str[i]; ++i)
 		if (str[i] == c)
@@ -167,7 +229,7 @@ bool	ft_compare(char c, char *str)
 	return false;
 }
 
-char	*ft_strdup(std::string &src) {
+char	*strdup(std::string &src) {
 	char *result = reinterpret_cast<char *>(malloc(src.size() + 1));
 
 	src.copy(result, src.size(), 0);
@@ -189,7 +251,7 @@ std::string intToString(int n) {
 	return s;
 }
 
-std::string	getDate(const time_t * clock) {
+std::string	convertDate(const time_t * clock) {
 	char s[1025] = {};
 	struct tm*	timeptr = gmtime(clock);
 
@@ -211,4 +273,5 @@ std::string hexString(size_t n) {
 
 size_t	fullMetaData(std::string const &src) {
 	return src.find("\r\n\r\n");
+}
 }
