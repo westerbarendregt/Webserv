@@ -67,24 +67,23 @@ void	Cgi::read(t_client &c) {
 }
 
 
-void	Cgi::stop(t_client &c) {
+void	Cgi::closeAll(t_client &c) {
 	if (c.m_cgi_read_pipe[IN] != -1 && ::close(c.m_cgi_read_pipe[IN]) == -1) {
-		std::cout << "Cgi::stop : close(m_cgi_read_pipe[IN]): " << strerror(errno)<<std::endl;
+		std::cout << "Cgi::closeAll: close(m_cgi_read_pipe[IN]): " << strerror(errno)<<std::endl;
 	}
 	if (c.m_cgi_read_pipe[OUT] != -1 && ::close(c.m_cgi_read_pipe[OUT]) == -1) {
-		std::cout << "Cgi::stop : close(m_cgi_read_pipe[OUT]): " << strerror(errno)<<std::endl;
+		std::cout << "Cgi::closeAll: close(m_cgi_read_pipe[OUT]): " << strerror(errno)<<std::endl;
 	}
 	if (c.m_cgi_write_pipe[IN] != -1 && ::close(c.m_cgi_write_pipe[IN]) == -1) {
-		std::cout << "Cgi::stop : close(m_cgi_write_pipe[IN]): " << strerror(errno)<<std::endl;
+		std::cout << "Cgi::closeAll: close(m_cgi_write_pipe[IN]): " << strerror(errno)<<std::endl;
 	}
 	if (c.m_cgi_write_pipe[OUT] != -1 && ::close(c.m_cgi_write_pipe[OUT]) == -1) {
-		std::cout << "Cgi::stop : close(m_cgi_write_pipe[OUT]): " << strerror(errno)<<std::endl;
+		std::cout << "Cgi::closeAll: close(m_cgi_write_pipe[OUT]): " << strerror(errno)<<std::endl;
 	}
 	c.m_cgi_read_pipe[IN] =-1;
 	c.m_cgi_read_pipe[OUT] =-1;
 	c.m_cgi_write_pipe[IN] =-1;
 	c.m_cgi_write_pipe[OUT] =-1;
-	c.m_cgi_running = false;
 	c.m_range_fd = 0;
 }
 
@@ -218,6 +217,12 @@ void	Cgi::reset() {
 	}
 }
 
+void	Cgi::reset(t_client &c) {
+	this->reset();
+	this->closeAll(c);
+	this->kill(c);
+}
+
 void	Cgi::clear() {
 	this->reset();
 	if (this->m_env_array)
@@ -236,7 +241,37 @@ void	Cgi::generateResponse(t_client &c) {
 		size_t	metadata_index = ft::fullMetaData(c.m_cgi_out_buf);
 		if (metadata_index == std::string::npos)
 			return ;
+		//add own header
+		//add cgi generated headers, need opti
 		c.m_response_str.append(c.m_cgi_out_buf, 0, metadata_index + CRLF_LEN);
+		c.m_response_str.append(CRLF);
+		c.m_response_data.m_cgi_metadata_parsed = true;
+		c.m_cgi_out_buf.erase(0, metadata_index + CRLF_LEN);
+	}
+	if (c.m_response_data.m_cgi_metadata_sent) {
+		if (c.m_cgi_out_buf.size() == 0)
+			c.m_cgi_end_chunk = 1;
+		c.m_response_str.append(ft::hexString(c.m_cgi_out_buf.size()) + CRLF + c.m_cgi_out_buf + CRLF);
+		c.m_cgi_out_buf.clear();
+	}
+}
+
+void	RequestHandler::handleCgiResponse(t_client &c) {
+	if (!c.m_response_data.m_cgi_metadata_parsed) {
+		//tranfer headers from output buf to response struct
+		//check for valid header
+		//transfer headers from response struct to response_str
+		size_t	metadata_index = ft::fullMetaData(c.m_cgi_out_buf);
+		if (metadata_index == std::string::npos)
+			return ;
+		//add own header
+		c.m_response_str.append(this->statusLine(200));
+		c.m_response_str.append(this->GetDate());
+		c.m_response_str.append(this->GetServer());
+		c.m_response_str.append(this->GetTransferEncoding());
+		//add cgi generated headers, need opti
+		c.m_response_str.append(c.m_cgi_out_buf, 0, metadata_index + CRLF_LEN);
+		//
 		c.m_response_str.append(CRLF);
 		c.m_response_data.m_cgi_metadata_parsed = true;
 		c.m_cgi_out_buf.erase(0, metadata_index + CRLF_LEN);
@@ -306,6 +341,17 @@ void	Cgi::setCgiFd(fd_set *read_set, fd_set *write_set, t_client &c) {
 		FD_SET(c.m_cgi_write_pipe[OUT], write_set);
 }
 
+void	Cgi::kill(t_client &c)
+{
+	if (waitpid(c.m_cgi_pid, NULL, WNOHANG) == -1) {
+		std::cout << "Cgi::kill: waitpid: " << strerror(errno)<<std::endl;
+	}
+	if (::kill(c.m_cgi_pid, SIGKILL) == -1) {
+		std::cout << "Cgi::kill: kill: " << strerror(errno)<<std::endl;
+	}
+	c.m_cgi_running = false;
+}
+
 int RequestHandler::handleCgi(t_client &c) {
 	pid_t	wpid = 0;
 	int		wstatus = 0;
@@ -336,14 +382,20 @@ int RequestHandler::handleCgi(t_client &c) {
 		this->m_cgi.read(c);
 		//generate response
 		if (c.m_cgi_end_chunk) //just read last chunk
-			this->m_cgi.stop(c);
-		this->m_cgi.generateResponse(c);
+			this->m_cgi.closeAll(c);
+		this->handleCgiResponse(c);
 		if (!c.m_response_data.m_cgi_metadata_parsed)
 			return CONTINUE; //hasn't received fullmetadata
 	}
 	catch (HTTPError &e) {
 		std::cerr << e.what() << std::endl;
-		m_client->m_request_data.m_status_code = e.HTTPStatusCode();
+		this->m_cgi.closeAll(c);
+		if (c.m_cgi_running)
+			this->m_cgi.kill(c);
+		this->m_client->m_request_data.m_status_code = e.HTTPStatusCode();
+		//this->m_client->m_response_str = generateErrorPage(this->m_client->m_request_data.m_status_code);
+		//instead of sending error page, we send last chunk
+		// or maybe a way to append error page
 	}
 	return SUCCESS;
 }

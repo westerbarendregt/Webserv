@@ -28,6 +28,7 @@ class RequestHandler
 		~RequestHandler();
 		void	handleMetadata(t_client &c);
 		void	handleCgiMetadata(t_request &request, std::string &file);
+		void	handleCgiResponse(t_client &c);
 		int		handleCgi(t_client &c);
 		void	handleRequest(t_client &c);
 		bool	validCgi(t_request &request, size_t extension_index);
