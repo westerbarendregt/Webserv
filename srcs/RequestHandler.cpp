@@ -431,7 +431,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		Authenticated(c, *this);
 		// std::cout<<"stat file: "<<stat_file<<std::endl;
 		if (m_client->m_request_data.m_method == PUT)
-			if (real_path.back() == '/' || (stat(real_path.c_str(), &this->m_statbuf) && S_ISDIR(this->m_statbuf.st_mode)))
+			if (real_path[real_path.size() - 1] == '/' || (stat(real_path.c_str(), &this->m_statbuf) && S_ISDIR(this->m_statbuf.st_mode)))
 				throw HTTPError("RequestHandler::handleMetadata::PUT", "file is a directory", 409);
 	} catch (HTTPError & e) {
 		std::cerr << e.what() << std::endl;
@@ -442,7 +442,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 
 std::string		RequestHandler::handlePUT()
 {
-	const char *m_file = this->m_request_data->m_real_path.substr(this->m_request_data->m_real_path.find_last_of('/') + 1).c_str();
+	std::string m_file = this->m_request_data->m_real_path.substr(this->m_request_data->m_real_path.find_last_of('/') + 1);
 	std::cout<<"m_file: "<< m_file <<std::endl;
 	const char *upload_store = this->m_request_data->m_location->second["upload_store"].c_str();
 	std::cout << "upload_store: " << upload_store << std::endl;
@@ -457,7 +457,7 @@ std::string		RequestHandler::handlePUT()
 	char * current_dir = getcwd(NULL, 0);
 	if (chdir(upload_store))
 		throw HTTPError("RequestHandler::PUT", "Upload store directory doesn't exist", 500);
-	int fd  = open(m_file, O_TRUNC | O_CREAT | O_WRONLY, S_IRWXU); // s_irwxu = owner having all persmissions
+	int fd  = open(m_file.c_str(), O_TRUNC | O_CREAT | O_WRONLY, S_IRWXU); // s_irwxu = owner having all persmissions
 	if (fd == -1)
 		throw HTTPError("RequestHandler::PUT", "error creating file", 500);
 	size_t written = write(fd, this->m_request_data->m_body.c_str(), this->m_request_data->m_content_length);
@@ -471,7 +471,7 @@ std::string		RequestHandler::handlePUT()
 	
 	// now write the handleheader functions!!
 	SetServer();
-	this->m_client->m_response_data.m_location = std::string(upload_store) + std::string(m_file);
+	this->m_client->m_response_data.m_location = std::string(upload_store) + m_file;
 	SetLocation();
 	// handleCONTENT_LENGTH();
 	// handleDATE();
