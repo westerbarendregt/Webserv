@@ -99,8 +99,8 @@ void	Cgi::write(t_client &c) {
 		throw HTTPError("Cgi::write: ", strerror(errno), 500);
 	}
 	if (static_cast<size_t>(nbytes) == len) {
-		close(c.getWriteFd());
-		c.getWriteFd() = -1;
+		close(c.m_cgi_write_pipe[OUT]);
+		c.m_cgi_write_pipe[OUT] = -1;
 	}
 	else {
 		c.m_cgi_write_offset += nbytes;
@@ -108,22 +108,22 @@ void	Cgi::write(t_client &c) {
 }
 
 void	Cgi::setParentIo(t_client &c) {
-	if (c.m_request_data.m_method == POST) {
+	if (c.m_cgi_post) {
 		if (pipe(c.m_cgi_write_pipe) == -1) {
 			throw HTTPError("Cgi::run: pipe(cgi_write_pipe)", strerror(errno), 500);
 		}
-		if (c.getWriteFd() > c.m_range_fd)
-			c.m_range_fd = c.getWriteFd();
+		if (c.m_cgi_write_pipe[OUT] > c.m_range_fd)
+			c.m_range_fd = c.m_cgi_write_pipe[OUT];
 	}
 	if (pipe(c.m_cgi_read_pipe) == -1) {
 		throw HTTPError("Cgi::run: pipe(cgi_read_pipe)", strerror(errno), 500);
 	}
-	if (fcntl(c.getReadFd(), F_SETFL, O_NONBLOCK) == -1)
+	if (fcntl(c.m_cgi_read_pipe[IN], F_SETFL, O_NONBLOCK) == -1)
 		std::cout << "Cgi::init : fcntl(m_cgi_read_pipe[IN]): " << strerror(errno)<<std::endl;
 	if (fcntl(c.m_cgi_read_pipe[OUT], F_SETFL, O_NONBLOCK) == -1)
 		std::cout << "Cgi::init : fcntl(m_cgi_read_pipe[OUT]): " << strerror(errno)<<std::endl;
-	if (c.getReadFd() > c.m_range_fd)
-		c.m_range_fd = c.getReadFd();
+	if (c.m_cgi_read_pipe[IN] > c.m_range_fd)
+		c.m_range_fd = c.m_cgi_read_pipe[IN];
 }
 
 void	Cgi::setChildIo(t_client &c) {
@@ -298,14 +298,12 @@ bool	RequestHandler::validCgi(t_request &request, size_t extension_index) {
 
 
 void	Cgi::setCgiFd(fd_set *read_set, fd_set *write_set, t_client &c) {
+	FD_ZERO(read_set);
+	FD_ZERO(write_set);
 	if (!c.m_cgi_end_chunk)
-		FD_SET(c.getReadFd(), read_set);
-	else 
-		FD_ZERO(read_set);
-	if (c.m_cgi_post && c.m_cgi_write_offset)
-		FD_SET(c.getWriteFd(), write_set);
-	else
-		FD_ZERO(write_set);
+		FD_SET(c.m_cgi_read_pipe[IN], read_set);
+	if (c.m_cgi_post && c.m_cgi_write_pipe[OUT] != -1)
+		FD_SET(c.m_cgi_write_pipe[OUT], write_set);
 }
 
 int RequestHandler::handleCgi(t_client &c) {
@@ -316,12 +314,7 @@ int RequestHandler::handleCgi(t_client &c) {
 	int	&write_fd = c.getWriteFd();
 
 	try {
-		this->m_cgi.setCgiFd(&read_set, &write_set, c);
-		if (select(c.m_range_fd + 1, &read_set, &write_set, NULL, 0) == -1)
-			throw HTTPError("RequestHandler::handleCgi: select", strerror(errno), 500);
-		if (c.m_cgi_post && FD_ISSET(write_fd, &write_set)) {
-			this->m_cgi.write(c);
-		}
+		//wait
 		if (c.m_cgi_running) {
 			wpid = waitpid(c.m_cgi_pid, &wstatus, WNOHANG);
 			if (wpid == -1)
@@ -329,20 +322,29 @@ int RequestHandler::handleCgi(t_client &c) {
 			if (wpid) // has exited, maybe also check for WIFEXITED(), WSTATUS() here
 				c.m_cgi_running = false;
 		}
-		if (FD_ISSET(read_fd, &read_set))
-			this->m_cgi.read(c);
-		else
-			return 0; //not available to read yet
+		//select
+		this->m_cgi.setCgiFd(&read_set, &write_set, c);
+		if (select(c.m_range_fd + 1, &read_set, &write_set, NULL, 0) == -1)
+			throw HTTPError("RequestHandler::handleCgi: select", strerror(errno), 500);
+		//write
+		if (c.m_cgi_post && FD_ISSET(write_fd, &write_set)) {
+			this->m_cgi.write(c);
+		}
+		//read
+		if (!FD_ISSET(read_fd, &read_set))
+			return CONTINUE;
+		this->m_cgi.read(c);
+		//generate response
 		if (c.m_cgi_end_chunk) //just read last chunk
 			this->m_cgi.stop(c);
 		this->m_cgi.generateResponse(c);
 		if (!c.m_response_data.m_cgi_metadata_parsed)
-			return 0; //hasn't received fullmetadata
+			return CONTINUE; //hasn't received fullmetadata
 	}
 	catch (HTTPError &e) {
 		std::cerr << e.what() << std::endl;
 		m_client->m_request_data.m_error = e.HTTPStatusCode();
 		//generate error page here
 	}
-	return 1;
+	return SUCCESS;
 }

@@ -68,7 +68,7 @@ void	Server::run(){
 			} // FD_ISSET(this->read_fd)
 			else if (FD_ISSET(i, &this->m_write_fd)) {
 				c = getClient(i);
-				if (c->m_request_data.m_cgi && !this->m_request_handler.handleCgi(*c))
+				if (c->m_request_data.m_cgi && this->m_request_handler.handleCgi(*c) == CONTINUE)
 					continue ;
 				this->respond(*c);
 				std::cout<<"listening..."<<std::endl;
