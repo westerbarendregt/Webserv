@@ -37,6 +37,7 @@ class RequestHandler
 
 	private:
 		Cgi				m_cgi;
+		void	setCgiFd(fd_set *read_set, fd_set *write_set, t_client &c);
 		struct	stat	m_statbuf;
 		std::string handleGET();
 		std::string handleHEAD();

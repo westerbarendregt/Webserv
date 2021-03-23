@@ -24,8 +24,11 @@ class	Cgi {
 	private:
 		void	init();
 		void	exec(t_client &c);
-		int		read(t_client &c);
-		void	populateResponse(t_client &c);
+		void	read(t_client &c);
+		void	setChildIo(t_client &c);
+		void	setParentIo(t_client &c);
+		void	setCgiFd(fd_set *read_set, fd_set *write_set, t_client &c);
+		void	generateResponse(t_client &c);
 		void	stop(t_client &c);
 		void	write(t_client &c);
 		void	fillEnv(t_request_data &request);
