@@ -18,7 +18,7 @@ Request::Request()
 	m_chunked(false),
 	m_cgi(0),
 	m_autoindex(0),
-	m_error(0),
+	m_status_code(0),
 	m_start(0),
 	m_location(),
 	m_query_string(""),
@@ -41,7 +41,7 @@ Request::Request(Request const & src)
 	 m_chunked(src.m_chunked),
 	 m_cgi(src.m_cgi),
 	 m_autoindex(src.m_autoindex),
-	 m_error(src.m_error),
+	 m_status_code(src.m_status_code),
 	 m_start(src.m_start),
 	 m_location(src.m_location),
 	 m_query_string(src.m_query_string),
@@ -64,7 +64,7 @@ Request &Request::operator=(Request const & rhs) {
 	 this->m_chunked        = rhs.m_chunked;
 	 this->m_cgi            = rhs.m_cgi;
 	 this->m_autoindex      = rhs.m_autoindex;
-	 this->m_error          = rhs.m_error;
+	 this->m_status_code    = rhs.m_status_code;
 	 this->m_start          = rhs.m_start;
 	 this->m_location       = rhs.m_location;
 	 this->m_query_string   = rhs.m_query_string;
@@ -86,8 +86,8 @@ void	Request::reset() {
 	this->m_done = false;
 	this->m_chunked = false;
 	this->m_cgi = 0;
-	this->m_autoindex= 0;
-	this->m_error = 0;
+	this->m_autoindex = 0;
+	this->m_status_code = 0;
 	this->m_start = 0;
 	this->m_location  = s_v_server_conf::t_routes::iterator();
 	this->m_query_string.clear();
@@ -97,15 +97,22 @@ void	Request::reset() {
 }
 
 Response::Response()
-	: m_content_type(),
-	 m_cgi_metadata_parsed(false),
-	 m_cgi_metadata_sent(false)
+	:m_cgi_metadata_parsed(false),
+	 m_cgi_metadata_sent(false),
+	 m_content_type(""),
+	 m_body(""),
+	 m_location(""),
+	 m_response_headers()
 {
 }
 
 void	Response::reset() {
-	this->m_cgi_metadata_parsed = 0;
-	this->m_cgi_metadata_sent = 0;
+	this->m_cgi_metadata_parsed = false;
+	this->m_cgi_metadata_sent = false;
+	this->m_content_type = "";
+	this->m_body = "";
+	this->m_location = "";
+	this->m_response_headers.clear();
 }
 
 Client::Client() 

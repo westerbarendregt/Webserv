@@ -35,27 +35,50 @@ class RequestHandler
 		void printStatusCodes();
 		void printMimeTypes();
 
+		void 		SetAllow();
+		void 		SetContentLanguage();
+		void 		SetContentLength();
+		void		SetContentLocation();
+		void		SetContentType();
+		void		SetDate();
+		void		SetLastModified();
+		void		SetRetryAfter();
+		void		SetServer();
+		void		SetLocation();
+		void		SetTransferEncoding();
+		void		SetWWWAuthenticate();
+
+		std::string GetAllow();
+		std::string GetContentLanguage();
+		std::string GetContentLength();
+		std::string GetContentLocation();
+		std::string GetContentType();
+		std::string GetDate();
+		std::string GetLastModified();
+		std::string GetLocation();
+		std::string GetRetryAfter();
+		std::string GetServer();
+		std::string GetTransferEncoding();
+		std::string GetWWWAuthenticate();
+
 	private:
 		Cgi				m_cgi;
 		void	setCgiFd(fd_set *read_set, fd_set *write_set, t_client &c);
 		struct	stat	m_statbuf;
 		std::string handleGET();
-		std::string handleHEAD();
-		std::string handlePOST();
+		// std::string handleHEAD();
+		// std::string handlePOST();
 		std::string handlePUT();
-		std::string handleDELETE();
+		// std::string handleDELETE();
 
-		std::string Content_Length(std::string const & body);
-		std::string Content_Type();
-		std::string Server();
-		std::string date();
-		//
-		std::string transferEncoding();
 
-		std::string statusLine();
-		std::string statusLine(int error);
-		std::string responseBody();
-		std::string responseHeaders(std::string const & body);
+		std::string handleAutoIndex();
+
+
+		std::string statusLine(int status_code = 0);
+		void		responseBody();
+		std::string responseHeaders();
+		void		CheckBodyLimits();
 
 		std::string	generateErrorPage(int error);
 
@@ -65,9 +88,9 @@ class RequestHandler
 		std::map<std::string, std::string>	m_mime_types;
 		void	initMimeTypes();
 
-		std::vector<std::string>	m_response_headers;
-
 		t_client	*m_client;
+		Request		*m_request_data;
+		Response	*m_response_data;
 };
 
 #endif
