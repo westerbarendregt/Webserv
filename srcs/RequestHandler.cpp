@@ -447,7 +447,7 @@ std::string		RequestHandler::handlePUT()
 	const char *upload_store = this->m_request_data->m_location->second["upload_store"].c_str();
 	std::cout << "upload_store: " << upload_store << std::endl;
 
-	std::string path_to_file = std::string(upload_store) + std::string(m_file);
+	std::string path_to_file = std::string(upload_store) + m_file;
 	std::cout<<"path to file]: "<<path_to_file<<std::endl;
 
 	if (stat(path_to_file.c_str(), &this->m_statbuf) == 0)
