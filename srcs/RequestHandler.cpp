@@ -327,7 +327,14 @@ std::string	RequestHandler::generateErrorPage(int error) {
 			"</html>" CRLF
 			;
 
+	//if there are no headers, we don't send any headers allowing the user agent
+	//to properly close the connection
+	//if we want to keep this format we would clear the header vector and generate the response ones
+	this->m_client->m_response_data.reset();
 	this->m_client->m_response_data.m_content_type = "text/html";
+	this->SetServer();
+	this->SetDate();
+	this->SetContentLength();
 	std::string	response_headers = responseHeaders();
 
 	return status_line + response_headers + CRLF + this->m_response_data->m_body;
