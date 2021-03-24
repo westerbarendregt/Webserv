@@ -64,7 +64,9 @@ re:
 	$(MAKE) fclean
 	$(MAKE) all
 
-run: $(NAME)
+run: $(NAME) config
 		./$(NAME) $(LOG_FILE)
+config:
+	WWW=${PWD}/www ./generate_config.pl
 
 .PHONY: all clean fclean re
