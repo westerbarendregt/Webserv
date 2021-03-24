@@ -42,7 +42,7 @@ struct	Response//for now only used for CGI
 		bool						m_cgi_metadata_sent;
 		std::string					m_content_type;
 		std::string					m_body;
-		std::string 				m_location;
+		// std::string 				m_location;
 		std::vector<std::string>	m_response_headers;
 };
 

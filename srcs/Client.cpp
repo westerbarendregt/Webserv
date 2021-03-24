@@ -101,7 +101,7 @@ Response::Response()
 	 m_cgi_metadata_sent(false),
 	 m_content_type(""),
 	 m_body(""),
-	 m_location(""),
+	//  m_location(""),
 	 m_response_headers()
 {
 }
@@ -111,7 +111,7 @@ void	Response::reset() {
 	this->m_cgi_metadata_sent = false;
 	this->m_content_type = "";
 	this->m_body = "";
-	this->m_location = "";
+	// this->m_location = "";
 	this->m_response_headers.clear();
 }
 
@@ -190,16 +190,20 @@ Client &Client::operator=(Client const & rhs) {
 void	Client::updateServerConf()
 {
 	std::string host2 = this->m_request_data.m_headers[HOST];
+
 	if (host2.empty()) {
 		throw HTTPError("updateServerConf", "empty host header." , 400);
 	}
+
 	host2.resize(host2.size() - 1); // remove when problem fixed in RequestParser
+	std::cout<<"handling metadata..2: "<< (*(this->m_v_server_blocks)).size() << std::endl;
 	for (size_t i = 0; i < (*(this->m_v_server_blocks)).size(); ++i) {
 		if ((*(this->m_v_server_blocks))[i].m_configs.m_directives["server_name"] == host2) {
 			this->m_v_server = &(*(this->m_v_server_blocks))[i];//select server by server_name
 			return ;
 		}
 	}
+	std::cout<<"handling metadata..3"<<std::endl;
 	this->m_v_server = &((*(this->m_v_server_blocks))[0]);//if not found, return the first added,default one
 }
 

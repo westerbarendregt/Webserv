@@ -181,9 +181,12 @@ void		RequestHandler::SetLastModified(){
 }
 
 std::string	RequestHandler::GetLocation(){
-	std::string location = "Location:";
+	std::string location = "Location: ";
 
-	location += this->m_client->m_response_data.m_location;
+	location += "http://";
+	location += m_request_data->m_headers[HOST];
+	location += m_request_data->m_path;
+	// location += this->m_client->m_response_data.m_location;
 	return location + CRLF;
 }
 
@@ -328,6 +331,10 @@ std::string	RequestHandler::generateErrorPage(int error) {
 			;
 
 	this->m_client->m_response_data.m_content_type = "text/html";
+	SetServer();
+	SetDate();
+	SetContentType();
+	SetContentLength();
 	std::string	response_headers = responseHeaders();
 
 	return status_line + response_headers + CRLF + this->m_response_data->m_body;
@@ -457,7 +464,8 @@ std::string		RequestHandler::handlePUT()
 	char * current_dir = getcwd(NULL, 0);
 	if (chdir(upload_store))
 		throw HTTPError("RequestHandler::PUT", "Upload store directory doesn't exist", 500);
-	int fd  = open(m_file.c_str(), O_TRUNC | O_CREAT | O_WRONLY, S_IRWXU); // s_irwxu = owner having all persmissions
+	system("ls -la");
+	int fd  = open(m_file.c_str(), O_TRUNC | O_CREAT | O_WRONLY,  S_IRWXU); // S_IRWXU = owner having all persmissions 
 	if (fd == -1)
 		throw HTTPError("RequestHandler::PUT", "error creating file", 500);
 	size_t written = write(fd, this->m_request_data->m_body.c_str(), this->m_request_data->m_content_length);
@@ -471,8 +479,12 @@ std::string		RequestHandler::handlePUT()
 	
 	// now write the handleheader functions!!
 	SetServer();
-	this->m_client->m_response_data.m_location = std::string(upload_store) + m_file;
-	SetLocation();
+	SetDate();
+	if (this->m_request_data->m_status_code == 201){
+		SetContentLength();
+		// this->m_client->m_response_data.m_location = std::string(upload_store) + m_file;
+		SetLocation();
+	}
 	// handleCONTENT_LENGTH();
 	// handleDATE();
 	// handleCONTENT_TYPE(request);
