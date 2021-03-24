@@ -246,7 +246,7 @@ std::string RequestHandler::statusLine(int status_code) {
 }
 
 void 		RequestHandler::responseBody() {
-	int fd = open(this->m_client->m_request_data.m_file.c_str(), O_RDONLY);
+	int fd = open(this->m_client->m_request_data.m_real_path.c_str(), O_RDONLY);
 	if (fd == -1) {
 		throw HTTPError("RequestHandler::responseBody", "error opening file", 500);
 	}
@@ -285,6 +285,7 @@ std::string RequestHandler::handleGET() {
 	} else {
 		responseBody();
 	}
+	//no headers are added here, making the client hang
 	std::string	response_headers = responseHeaders();
 
 	return status_line + response_headers + CRLF + this->m_response_data->m_body;
@@ -315,7 +316,8 @@ std::string RequestHandler::handleGET() {
 // }
 
 std::string	RequestHandler::generateErrorPage(int error) {
-	std::string status_line = statusLine();
+	std::string status_line = statusLine(error); 
+	// previously called with no argument while it expected an int, and had to modify a request variable at the response level so this function can generate an appropriate status header, which didn't make sense
 
 	this->m_response_data->m_body = 
 			"<html>" CRLF
@@ -327,11 +329,12 @@ std::string	RequestHandler::generateErrorPage(int error) {
 			"</html>" CRLF
 			;
 
-	//if there are no headers, we don't send any headers allowing the user agent
+	//if there are no headers already populated, we don't send any headers allowing the user agent
 	//to properly close the connection
 	//if we want to keep this format we would clear the header vector and generate the response ones
-	this->m_client->m_response_data.reset();
-	this->m_client->m_response_data.m_content_type = "text/html";
+	//or just append the headers to the response_headers string
+	this->m_response_data->m_response_headers.clear();
+	this->m_response_data->m_content_type = "text/html";
 	this->SetServer();
 	this->SetDate();
 	this->SetContentLength();

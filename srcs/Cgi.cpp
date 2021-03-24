@@ -59,10 +59,13 @@ void	Cgi::read(t_client &c) {
 
 	std::fill(buf, buf + sizeof(buf), 0);
 	ssize_t	nbytes = ::read(c.getReadFd(), buf, 4096);
-	if (nbytes == -1) {
-		throw HTTPError("Cgi::read", strerror(errno), 500);
+	if (nbytes <= 0) {
+		if (nbytes == -1)
+			throw HTTPError("Cgi::read", strerror(errno), 500);
+		c.m_cgi_out_buf.clear();
+		c.m_cgi_end_chunk = true;
 	}
-	if (nbytes)
+	else
 		c.m_cgi_out_buf.append(buf);
 }
 
@@ -88,7 +91,6 @@ void	Cgi::closeAll(t_client &c) {
 }
 
 void	Cgi::write(t_client &c) {
-	std::cout<<"write"<<std::endl;
 	size_t	len = c.m_request_data.m_body.size() + 1 - c.m_cgi_write_offset;
 	ssize_t	nbytes = ::write(c.getWriteFd(), 
 			c.m_request_data.m_body.c_str() + c.m_cgi_write_offset,
@@ -144,7 +146,6 @@ void	Cgi::setChildIo(t_client &c) {
 
 
 void	Cgi::exec(t_client &c) {
-	std::cout<<"exec"<<std::endl;
 	if ((c.m_cgi_pid = fork()) == -1) {
 		this->clear();
 		throw HTTPError("Cgi::exec: fork", strerror(errno), 500);
@@ -258,12 +259,15 @@ void	Cgi::generateResponse(t_client &c) {
 
 void	RequestHandler::handleCgiResponse(t_client &c) {
 	if (!c.m_response_data.m_cgi_metadata_parsed) {
-		//tranfer headers from output buf to response struct
-		//check for valid header
-		//transfer headers from response struct to response_str
+
 		size_t	metadata_index = ft::fullMetaData(c.m_cgi_out_buf);
-		if (metadata_index == std::string::npos)
+		if (metadata_index == std::string::npos) {
+			if (c.m_cgi_end_chunk) { //script didn't provide http header
+				c.m_response_str = this->generateErrorPage(500);
+				c.m_response_data.m_cgi_metadata_parsed = true;
+			}
 			return ;
+		}
 		//add own header
 		c.m_response_str.append(this->statusLine(200));
 		c.m_response_str.append(this->GetDate());
@@ -393,9 +397,9 @@ int RequestHandler::handleCgi(t_client &c) {
 		if (c.m_cgi_running)
 			this->m_cgi.kill(c);
 		this->m_client->m_request_data.m_status_code = e.HTTPStatusCode();
-		//this->m_client->m_response_str = generateErrorPage(this->m_client->m_request_data.m_status_code);
-		//instead of sending error page, we send last chunk
-		// or maybe a way to append error page
+		//once the transfer has started, we can only send last chunk
+		c.m_cgi_out_buf.clear();
+		this->handleCgiResponse(c);
 	}
 	return SUCCESS;
 }

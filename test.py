@@ -75,6 +75,3 @@ def test_cgi_post():
 test_async_cgi_get()
 test_async_cgi_post()
 test_cgi_post()
-
-
-#r=requests.get('http://127.0.0.1:8080/path/to/index.html', headers={"Host": "no"})
