@@ -31,7 +31,6 @@ class	Cgi {
 		void	exec(t_client &c);
 		void	read(t_client &c);
 		void	write(t_client &c);
-		void	generateResponse(t_client &c);
 		void	closeAll(t_client &c);
 		void	kill(t_client &c);
 		void	reset();

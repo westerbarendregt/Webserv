@@ -234,29 +234,6 @@ void	Cgi::clear() {
 	this->m_argv = 0;
 }
 
-void	Cgi::generateResponse(t_client &c) {
-	if (!c.m_response_data.m_cgi_metadata_parsed) {
-		//tranfer headers from output buf to response struct
-		//check for valid header
-		//transfer headers from response struct to response_str
-		size_t	metadata_index = ft::fullMetaData(c.m_cgi_out_buf);
-		if (metadata_index == std::string::npos)
-			return ;
-		//add own header
-		//add cgi generated headers, need opti
-		c.m_response_str.append(c.m_cgi_out_buf, 0, metadata_index + CRLF_LEN);
-		c.m_response_str.append(CRLF);
-		c.m_response_data.m_cgi_metadata_parsed = true;
-		c.m_cgi_out_buf.erase(0, metadata_index + CRLF_LEN);
-	}
-	if (c.m_response_data.m_cgi_metadata_sent) {
-		if (c.m_cgi_out_buf.size() == 0)
-			c.m_cgi_end_chunk = 1;
-		c.m_response_str.append(ft::hexString(c.m_cgi_out_buf.size()) + CRLF + c.m_cgi_out_buf + CRLF);
-		c.m_cgi_out_buf.clear();
-	}
-}
-
 void	RequestHandler::handleCgiResponse(t_client &c) {
 	if (!c.m_response_data.m_cgi_metadata_parsed) {
 
