@@ -464,7 +464,7 @@ std::string		RequestHandler::handlePUT()
 	char * current_dir = getcwd(NULL, 0);
 	if (chdir(upload_store))
 		throw HTTPError("RequestHandler::PUT", "Upload store directory doesn't exist", 500);
-	system("ls -la");
+	// system("ls -la");
 	int fd  = open(m_file.c_str(), O_TRUNC | O_CREAT | O_WRONLY,  S_IRWXU); // S_IRWXU = owner having all persmissions 
 	if (fd == -1)
 		throw HTTPError("RequestHandler::PUT", "error creating file", 500);
