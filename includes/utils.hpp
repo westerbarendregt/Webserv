@@ -27,6 +27,7 @@ char	    *strdup(std::string &src);
 size_t	    fullMetaData(std::string const & src);
 std::string hexString(size_t	n);
 int	getNextLine(int fd, std::string &line);
+std::string inet_ntoa(struct in_addr &in);
 }
 
 #endif

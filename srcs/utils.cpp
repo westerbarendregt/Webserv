@@ -1,6 +1,6 @@
 #include <ctime>
 #include <string>//std::string
-#include <string.h>//memset
+#include <string.h>
 #include <unistd.h>//size_t
 #include <stdlib.h>//malloc
 #include <stdint.h>
@@ -33,7 +33,7 @@ std::string sputnbr(size_t n)
 	char	buf[20];
 	char	swap;
 
-	memset(buf, 0, 20);//fill
+	std::fill(buf, buf + 20, 0);
 	end = 0;
 	if (!n)
 	{
@@ -306,5 +306,14 @@ std::string hexString(size_t n) {
 
 size_t	fullMetaData(std::string const &src) {
 	return src.find("\r\n\r\n");
+}
+
+std::string inet_ntoa(struct in_addr &in)
+{
+  unsigned char *bytes = reinterpret_cast<unsigned char *>(&in);
+  return intToString(bytes[0])
+	  + "." + intToString(bytes[1])
+	  + "." + intToString(bytes[2])
+	  + "." + intToString(bytes[3]);
 }
 }

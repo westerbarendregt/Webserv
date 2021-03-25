@@ -187,7 +187,7 @@ void	Cgi::fillEnv(t_request_data &request) {
 	this->m_env_map["PATH_TRANSLATED"]= getcwd(buf, PATH_MAX) + this->m_env_map["PATH_INFO"]; //or htdocs
 	this->m_env_map["QUERY_STRING"] = request.m_query_string;
 	struct	sockaddr_in	*tmp = reinterpret_cast<struct sockaddr_in*>(&request.m_owner->m_sockaddr);
-	this->m_env_map["REMOTE_ADDR"] = inet_ntoa(tmp->sin_addr);//replace
+	this->m_env_map["REMOTE_ADDR"] = ft::inet_ntoa(tmp->sin_addr);
 	this->m_env_map["REMOTE_IDENT"] =""; //?
 	this->m_env_map["REMOTE_USER"] =""; //?
 	this->m_env_map["REQUEST_METHOD"] = methods[request.m_method]; //maybe simpler way?
