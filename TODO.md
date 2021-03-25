@@ -1,0 +1,8 @@
+- [ ] Adding the value in the index directive is not compatible with query strings / cgi
+- [ ] On PUT requests check file permissions before calling open
+  - [ ] test what nginx does when it doesn't have permissions
+- [ ] Make compare function in python script that compares nginx with our webserv
+- [ ] Add signal handler for sigterm / ctrl-c
+- [ ] Test with chunked input
+- [ ] Implement missing headers
+- [ ] Write tests for POST cgi with html forms

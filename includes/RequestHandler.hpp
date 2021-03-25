@@ -65,13 +65,13 @@ class RequestHandler
 		Cgi				m_cgi;
 		struct	stat	m_statbuf;
 		std::string handleGET();
-		// std::string handleHEAD();
+		 std::string handleHEAD();
 		// std::string handlePOST();
 		std::string handlePUT();
 		// std::string handleDELETE();
 
 
-		std::string handleAutoIndex();
+		void	handleAutoIndex();
 
 
 		std::string statusLine(int status_code = 0);

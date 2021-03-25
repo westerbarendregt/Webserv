@@ -1,5 +1,5 @@
 import requests
-import  os
+import os
 import time
 
 def test_async_cgi_get():

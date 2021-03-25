@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "Authentication.hpp"
 #include "Conf.hpp"
@@ -33,12 +34,13 @@ RequestHandler::RequestHandler() {
 
 RequestHandler::~RequestHandler() {}
 
-std::string RequestHandler::handleAutoIndex() {
+void	RequestHandler::handleAutoIndex() {
 	struct	stat	buf;
 	struct	dirent*	d;
 	struct	tm*	timeptr;
 	char 	s[1025] = {};
-	std::string	body;
+	std::string&	body = this->m_client->m_response_data.m_body;
+	std::string	link;
 
 	DIR*	dir = opendir(this->m_client->m_request_data.m_real_path.c_str());
 	if (dir == NULL) {
@@ -54,22 +56,24 @@ std::string RequestHandler::handleAutoIndex() {
 
 	while ((d = readdir(dir)) != NULL) {
 		std::string	name = d->d_name;
+		std::string	local = this->m_client->m_request_data.m_real_path + d->d_name;
+
 		if (name == ".") {
 			continue;
 		}
-		if (stat(name.c_str(), &buf) == -1) {
+		if (stat(local.c_str(), &buf) == -1) {
 			throw HTTPError("RequestHandler::handleAutoIndex ", strerror(errno), 500);
 		}
 		if (S_ISDIR(buf.st_mode) && name.length() < 50) {
-			std::cout << name << " IS A DIRECTORY???" << std::endl;
 			name.append(1, '/');
 		}
+		link = name;
 		if (name.length() > 50) {
 			name.resize(47);
 			name.append("..>");
 		}
 		body += "<a href=\"";
-		body += d->d_name;
+		body += link;
 		body += "\">" + name + "</a>";
 		for (int i = name.length(); i < 51; ++i) {
 			body.append(1, ' ');
@@ -94,8 +98,6 @@ std::string RequestHandler::handleAutoIndex() {
 	}
 
 	this->m_client->m_response_data.m_content_type = "text/html";
-
-	return body;
 }
 
 std::string RequestHandler::GetAllow() {
@@ -246,7 +248,7 @@ std::string RequestHandler::statusLine(int status_code) {
 }
 
 void 		RequestHandler::responseBody() {
-	int fd = open(this->m_client->m_request_data.m_file.c_str(), O_RDONLY);
+	int fd = open(this->m_client->m_request_data.m_real_path.c_str(), O_RDONLY);
 	if (fd == -1) {
 		throw HTTPError("RequestHandler::responseBody", "error opening file", 500);
 	}
@@ -278,25 +280,27 @@ std::string RequestHandler::responseHeaders()
 }
 
 std::string RequestHandler::handleGET() {
-
-	std::string status_line = statusLine();
-	if (this->m_client->m_request_data.m_autoindex) {
-		handleAutoIndex();
-	} else {
-		responseBody();
-	}
-	std::string	response_headers = responseHeaders();
-
-	return status_line + response_headers + CRLF + this->m_response_data->m_body;
+	return handleHEAD() + this->m_response_data->m_body;
 }
 
-// std::string RequestHandler::handleHEAD() {
-// 	std::string status_line = statusLine();
-// 	responseBody();
-// 	std::string	response_headers = responseHeaders();
+ std::string RequestHandler::handleHEAD() {
 
-// 	return status_line + response_headers + CRLF;
-// }
+	 std::string status_line = statusLine(200);
+	 if (this->m_client->m_request_data.m_autoindex) {
+		 handleAutoIndex();
+	 } else {
+		 responseBody();
+	 }
+
+	 SetContentLength();
+	 SetContentType();
+	 SetDate();
+	 SetServer();
+
+	 std::string	response_headers = responseHeaders();
+
+	 return status_line + response_headers + CRLF;
+ }
 
 // std::string RequestHandler::handlePOST() {
 // 	std::string status_line = statusLine();
@@ -351,15 +355,20 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			<<"\n\tSERVER_NAME "<< m_client->m_v_server->m_configs.m_directives["server_name"]
 			<<"\n\tLOCATION/ROUTE "<< m_client->m_request_data.m_location->first<<"\n-----------"<<std::endl;
 		std::string &real_path =  c.m_request_data.m_real_path;
+		std::string	&file = c.m_request_data.m_file;
 		std::string	stat_file;
 		real_path = c.m_request_data.m_path;
 		std::string const & location = c.m_request_data.m_location->first;
+		std::cout << "location: " << location << std::endl;
 		std::string & alias = c.m_request_data.m_location->second["alias"];
+		std::cout << "alias: " << alias << std::endl;
+		std::cout << "index: " << this->m_client->m_request_data.m_location->second["index"] << std::endl;
 		/*replacing location path by alias path (what if alias empty?)*/
 		if (alias[alias.size() - 1] != '/')
 			alias.append("/");
 		real_path.replace(real_path.find(location), location.length(), alias);
 		std::cout<<"real_path: "<<real_path<<std::endl;
+		std::cout<<"path: "<<this->m_client->m_request_data.m_path<<std::endl;
 		size_t	prefix = 0;
 		size_t	next_prefix = 0;
 		//stat every /prefix/ until
@@ -385,9 +394,25 @@ void	RequestHandler::handleMetadata(t_client &c) {
 				break ;
 			prefix = next_prefix;
 		}
-			c.m_request_data.m_file = real_path.substr(prefix + 1, std::string::npos);
 
 		// if we stopped at file
+		if ((this->m_statbuf.st_mode & S_IFMT) == S_IFDIR) {
+			if (stat_file[stat_file.size() - 1] != '/')
+				stat_file.append("/");
+			std::string const &	index = this->m_client->m_request_data.m_location->second["index"];
+			std::vector<std::string>	v = ft::split(index);
+			for (std::vector<std::string>::iterator it = v.begin(); it != v.end(); ++it) {
+
+				std::string	path_index = stat_file + *it;
+				std::cout << "path_index: " << path_index << std::endl;
+				if (stat(path_index.c_str(), &this->m_statbuf) == 0 && (this->m_statbuf.st_mode & S_IFMT) == S_IFREG) {
+					real_path = path_index;
+					std::cout << "real_path: " << real_path << std::endl;
+					break;
+				}
+			}
+		}
+		c.m_request_data.m_file = real_path.substr(prefix + 1, std::string::npos);
 		if ((this->m_statbuf.st_mode & S_IFMT) == S_IFREG) {
 			std::cout<<"m_real_path: "<<c.m_request_data.m_real_path<<std::endl;
 			std::cout<<"m_file: "<<c.m_request_data.m_file<<std::endl;
@@ -405,7 +430,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			{
 				//	normal file;
 				//	check extension against mime types;
-				this->m_client->m_response_data.m_content_type = this->m_mime_types[stat_file.substr(stat_file.rfind('.') + 1)];
+				this->m_client->m_response_data.m_content_type = this->m_mime_types[file.substr(file.rfind('.') + 1)];
 				std::cout << "content-type: "<<this->m_client->m_response_data.m_content_type<<std::endl;
 				//	if there are additional entries after this file, we throw bad request
 				if (c.m_request_data.m_method != PUT)
@@ -416,15 +441,17 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		//		see if autoindex on then flag it so handleRequest can call the appropriate method
 		//		else return bad request?
 		//		//we dont need to check if remaining entries, because loop on 141 doesn't stop at a directory unless it's the last prefix in uri
-		else if (c.m_request_data.m_location->second["autoindex"] == "on")
+		else if (this->m_client->m_request_data.m_method != PUT)
 		{
-			std::cout<<"dir listing"<<std::endl;
-			c.m_request_data.m_autoindex= true;
+			if (c.m_request_data.m_location->second["autoindex"] == "on")
+			{
+				std::cout<<"dir listing"<<std::endl;
+				c.m_request_data.m_autoindex= true;
+			}
+			else
+				throw HTTPError("RequestHandler::handleMetadata", "directory listing not enabled", 403);
 		}
 		// std::cout<<"m_real_path: "<<c.m_request_data.m_real_path<<std::endl;
-		else if (c.m_request_data.m_method != PUT)
-			throw HTTPError("RequestHandler::handleMetadata", "directory listing not enabled", 403);
-
 		// else 
 		// 	throw HTTPError("RequestHandler::handleMetadata", "directory listing not enabled", 404);
 		AllowedMethods(c, *this);
@@ -516,9 +543,9 @@ void	RequestHandler::handleRequest(t_client &c) {
 				case GET:
 					m_client->m_response_str = handleGET();
 					break;
-				// case HEAD:
-				// 	m_client->m_response_str = handleHEAD();
-				// 	break;
+				 case HEAD:
+				 	m_client->m_response_str = handleHEAD();
+				 	break;
 				// case POST:
 				// 	m_client->m_response_str = handlePOST();
 				// 	break;

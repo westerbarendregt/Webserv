@@ -10,11 +10,10 @@ int	usage() {
 }
 
 int	main(int ac, char **av) {
-		if (ac > 2)
+	if (ac > 2)
 		return (usage());
 
 	char	const *path = ac == 2 ? av[1] : DEFAULT_PATH;
-
 
 	try
 	{

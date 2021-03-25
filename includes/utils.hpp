@@ -26,6 +26,7 @@ std::string	convertDate(const time_t * clock);
 char	    *strdup(std::string &src);
 size_t	    fullMetaData(std::string const & src);
 std::string hexString(size_t	n);
+std::vector<std::string>	split(std::string const & s, char delim = ' ');
 }
 
 #endif
