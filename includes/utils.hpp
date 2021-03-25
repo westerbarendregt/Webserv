@@ -28,6 +28,7 @@ size_t	    fullMetaData(std::string const & src);
 std::string hexString(size_t	n);
 std::vector<std::string>	split(std::string const & s, char delim = ' ');
 int	getNextLine(int fd, std::string &line);
+std::string inet_ntoa(struct in_addr &in);
 }
 
 #endif

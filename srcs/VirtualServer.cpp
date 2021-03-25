@@ -9,14 +9,14 @@
 #include "utils.hpp"
 #include "Server.hpp"
 
-VirtualServer::VirtualServer(t_v_server_conf conf) //reference?
+VirtualServer::VirtualServer(t_v_server_conf conf)
 : m_host(conf.m_directives["listen"]),
 m_port(""),
 m_socket(-1),
 m_configs(conf),
 m_sockaddr()
 {
-	memset(&this->m_sockaddr, 0, sizeof(this->m_sockaddr));//fill
+	std::fill(reinterpret_cast<unsigned char *>(&this->m_sockaddr), reinterpret_cast<unsigned char *>(&this->m_sockaddr) + sizeof(this->m_sockaddr), 0);
 }
 
 void	VirtualServer::setAddr() {
@@ -26,11 +26,10 @@ void	VirtualServer::setAddr() {
 	if (this->m_port.empty() || this->m_port.find_first_not_of("0123456789", 0) != std::string::npos)
 		throw serverError("server init", "invalid port");
 	this->m_sockaddr.sin_family = AF_INET;
-	//std::cout<<"inet_() "<<config_addr.substr(0, c)<<std::endl;
 	this->m_sockaddr.sin_addr.s_addr = inet_addr(config_addr.substr(0, c).c_str());
-	//std::cout<<"inet_ntoa()"<<inet_ntoa(this->m_sockaddr.sin_addr)<<std::endl;
+	//std::cout<<"ft::inet_ntoa()"<<ft::inet_ntoa(this->m_sockaddr.sin_addr)<<std::endl;
 	this->m_sockaddr.sin_port = ft::hostToNetworkShort(ft::Atoi(this->m_port.c_str()));
-	memset(this->m_sockaddr.sin_zero, 0, sizeof(this->m_sockaddr.sin_zero));//fill
+	std::fill(this->m_sockaddr.sin_zero, this->m_sockaddr.sin_zero + sizeof(this->m_sockaddr.sin_zero), 0);
 }
 
 void	VirtualServer::init() {
