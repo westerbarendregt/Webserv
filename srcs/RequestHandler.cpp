@@ -457,15 +457,18 @@ std::string		RequestHandler::handlePUT()
 	std::string path_to_file = std::string(upload_store) + m_file;
 	std::cout<<"path to file]: "<<path_to_file<<std::endl;
 
-	if (stat(path_to_file.c_str(), &this->m_statbuf) == 0)
+	if (stat(path_to_file.c_str(), &this->m_statbuf) == 0){
 		this->m_request_data->m_status_code = 204;
+		if ((this->m_statbuf.st_uid != getuid())) // checking if owner id of file is the same as the webserver id.
+			throw HTTPError("RequestHandler::PUT", "Webserv is not the owner of this file", 403);
+	}
 	else 
 		this->m_request_data->m_status_code = 201;
 	char * current_dir = getcwd(NULL, 0);
 	if (chdir(upload_store))
 		throw HTTPError("RequestHandler::PUT", "Upload store directory doesn't exist", 500);
 	// system("ls -la");
-	int fd  = open(m_file.c_str(), O_TRUNC | O_CREAT | O_WRONLY,  S_IRWXU); // S_IRWXU = owner having all persmissions 
+	int fd  = open(m_file.c_str(), O_TRUNC | O_CREAT | O_WRONLY,  0600); // S_IRWXU = owner having all persmissions 
 	if (fd == -1)
 		throw HTTPError("RequestHandler::PUT", "error creating file", 500);
 	size_t written = write(fd, this->m_request_data->m_body.c_str(), this->m_request_data->m_content_length);
@@ -477,12 +480,10 @@ std::string		RequestHandler::handlePUT()
 	// system("pwd");
 	// system("ls");
 	
-	// now write the handleheader functions!!
 	SetServer();
 	SetDate();
 	if (this->m_request_data->m_status_code == 201){
 		SetContentLength();
-		// this->m_client->m_response_data.m_location = std::string(upload_store) + m_file;
 		SetLocation();
 	}
 	// handleCONTENT_LENGTH();
