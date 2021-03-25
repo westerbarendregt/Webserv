@@ -28,6 +28,7 @@ class RequestHandler
 		~RequestHandler();
 		void	handleMetadata(t_client &c);
 		void	handleCgiMetadata(t_request &request, std::string &file);
+		void	handleCgiResponse(t_client &c);
 		int		handleCgi(t_client &c);
 		void	handleRequest(t_client &c);
 		bool	validCgi(t_request &request, size_t extension_index);
@@ -63,6 +64,7 @@ class RequestHandler
 
 	private:
 		Cgi				m_cgi;
+		void	setCgiFd(fd_set *read_set, fd_set *write_set, t_client &c);
 		struct	stat	m_statbuf;
 		std::string handleGET();
 		 std::string handleHEAD();

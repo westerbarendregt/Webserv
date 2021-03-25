@@ -33,18 +33,9 @@ void	Server::closeClientConnection(t_client &c) {
 		FD_CLR(c.m_socket, &this->m_read_all);
 	if (FD_ISSET(c.m_socket, &this->m_write_all))
 		FD_CLR(c.m_socket, &this->m_write_all);
-	if (c.m_cgi_running) {
-		//pid
-		if (waitpid(c.m_cgi_pid, NULL, WNOHANG) == -1) {
-			std::cout << "Server::closeClientConnection : wait: " << strerror(errno)<<std::endl;
-		}
-		if (kill(c.m_cgi_pid, SIGKILL) == -1) {
-			std::cout << "Server::closeClientConnection : kill: " << strerror(errno)<<std::endl;
-		}
-		//io
-		this->m_request_handler.m_cgi.stop(c);
-
-	}
+	this->m_request_handler.m_cgi.closeAll(c);
+	if (c.m_cgi_running)
+		this->m_request_handler.m_cgi.kill(c);
 	if (this->m_client_map.erase(c.m_socket) != 1)
 		throw serverError("removeClient: ", "trying to remove unexisting client");
 }

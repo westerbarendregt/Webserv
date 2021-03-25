@@ -74,6 +74,8 @@ class	Client
 		Request&				 			getRequest(){
 			return m_request_data;						
 		}
+		int		&getReadFd();
+		int		&getWriteFd();
 		void	reset();
 	private:
 		std::string							m_request_str;
@@ -87,13 +89,13 @@ class	Client
 		socklen_t							m_addrlen;
 		pid_t								m_cgi_pid;
 		bool								m_cgi_running;
-		bool								m_cgi_write;
+		bool								m_cgi_post;
 		bool								m_cgi_end_chunk;
 		int									m_cgi_read_pipe[2];
 		int									m_cgi_write_pipe[2];
 		size_t								m_cgi_write_offset;
 		std::string							m_cgi_out_buf;
-		// RequestHandler&						m_request_handler;			
+		int									m_range_fd;
 };
 
 #endif

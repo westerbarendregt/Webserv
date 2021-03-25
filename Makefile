@@ -15,6 +15,7 @@ INCLUDES	:=	-Iincludes
 
 SRC_DIR		:= 	srcs
 OBJ_DIR		:=	objs
+CONF_DIR 		:=	conf
 
 OBJ =	main
 OBJ +=	Authentication
@@ -56,15 +57,20 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HEADER)
 clean:
 	@$(RM) -r $(wildcard $(OBJ_DIR))
 
+clean_config:
+	@$(RM) -r $(wildcard $(CONF_DIR)/*.conf)
+
 fclean:
-	@$(MAKE) clean
+	@$(MAKE) clean clean_config
 	$(RM) $(wildcard $(NAME))
 
 re:
 	$(MAKE) fclean
 	$(MAKE) all
 
-run: $(NAME)
+run: $(NAME) config
 		./$(NAME) $(LOG_FILE)
+config:
+	WWW=${PWD}/www ./generate_config.pl
 
 .PHONY: all clean fclean re

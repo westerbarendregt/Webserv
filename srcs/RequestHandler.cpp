@@ -319,7 +319,7 @@ std::string RequestHandler::handleGET() {
 // }
 
 std::string	RequestHandler::generateErrorPage(int error) {
-	std::string status_line = statusLine();
+	std::string status_line = statusLine(error); 
 
 	this->m_response_data->m_body = 
 			"<html>" CRLF
@@ -331,7 +331,12 @@ std::string	RequestHandler::generateErrorPage(int error) {
 			"</html>" CRLF
 			;
 
-	this->m_client->m_response_data.m_content_type = "text/html";
+	this->m_response_data->m_response_headers.clear();
+	this->m_response_data->m_content_type = "text/html";
+	this->SetServer();
+	this->SetDate();
+	this->SetContentLength();
+	this->SetContentType();
 	std::string	response_headers = responseHeaders();
 
 	return status_line + response_headers + CRLF + this->m_response_data->m_body;
@@ -395,7 +400,6 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			prefix = next_prefix;
 		}
 
-		// if we stopped at file
 		if ((this->m_statbuf.st_mode & S_IFMT) == S_IFDIR) {
 			if (stat_file[stat_file.size() - 1] != '/')
 				stat_file.append("/");
@@ -413,6 +417,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			}
 		}
 		c.m_request_data.m_file = real_path.substr(prefix + 1, std::string::npos);
+		// if we stopped at file
 		if ((this->m_statbuf.st_mode & S_IFMT) == S_IFREG) {
 			std::cout<<"m_real_path: "<<c.m_request_data.m_real_path<<std::endl;
 			std::cout<<"m_file: "<<c.m_request_data.m_file<<std::endl;
