@@ -1,5 +1,6 @@
 #define DEFAULT_PATH "./conf/webserv.conf"
 #include <iostream>
+#include <signal.h>
 #include <unistd.h>
 #include "Server.hpp"
 #include "utils.hpp"

@@ -1,5 +1,6 @@
 #include "Cgi.hpp"
 #include <stdlib.h>
+#include <signal.h>
 #include <limits.h>
 #include <unistd.h>
 #include <sys/socket.h>
