@@ -27,7 +27,7 @@ def test_async_cgi_get():
     except Exception as e :
         print(e)
         print("---FAILED---")
-        return None
+        os._exit(1)
     print("---OK---")
 
 def test_async_cgi_post():
@@ -57,7 +57,7 @@ def test_async_cgi_post():
     except Exception as e:
         print(e)
         print("---FAILED---")
-        return None
+        os._exit(1);
     print("---OK---")
 
 
@@ -69,7 +69,7 @@ def test_cgi_post():
     except Exception as e:
         print(e)
         print("---FAILED---")
-        return None
+        os._exit(1);
     print("---OK---")
 
 test_async_cgi_get()

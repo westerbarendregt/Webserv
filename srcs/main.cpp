@@ -1,4 +1,4 @@
-#define DEFAULT_PATH "./webserv.conf"
+#define DEFAULT_PATH "./conf/webserv.conf"
 #include <iostream>
 #include <unistd.h>
 #include "Server.hpp"
