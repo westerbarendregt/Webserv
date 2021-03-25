@@ -2,7 +2,10 @@
 #include <iostream>
 #include <signal.h>
 #include <unistd.h>
+#include <string.h>
+#include <errno.h>
 #include "Server.hpp"
+#include "Error.hpp"
 #include "utils.hpp"
 
 int	usage() {
@@ -19,6 +22,9 @@ int	main(int ac, char **av) {
 
 	try
 	{
+		if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
+			throw serverError("main: signal:", strerror(errno));
+		}
 		Server s(path);
 		s.init();
 		s.run();

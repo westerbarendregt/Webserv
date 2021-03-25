@@ -17,7 +17,7 @@
 #   <local ref> <local oid> <remote ref> <remote oid>
 #
 
-trap "killall webserv > /dev/null 2>&1; make fclean ; exit 1" SIGHUP SIGINT SIGTERM
+trap "pkill webserv > /dev/null 2>&1; make fclean ; exit 1" SIGHUP SIGINT SIGTERM
 remote="$1"
 url="$2"
 
@@ -30,11 +30,12 @@ if !(pgrep webserv > /dev/null)
 fi
 if !(python3 ./tests/test.py);
 then
+	pkill webserv > /dev/null 2>&1
 	echo "FAILED"
 	exit 1
 fi
 
-killall webserv > /dev/null 2>&1
+pkill webserv > /dev/null 2>&1
 
 make fclean
 
