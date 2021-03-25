@@ -47,11 +47,8 @@ static size_t	const hash_len[] = {1, 4, 5};
 static const char *blocks[] = {"server", "location"};
 static const char *main_directives[] = {0};
 static const char *server_directives[] = {"listen", "server_name", "error_pages", "client_max_body_size", 0};
-static const char *route_directives[] = {"index", "limit_except", "root", "autoindex", "upload_store",  "allow_method", "auth_basic", "auth_basic_user_file", 0}; //add cgi later
+static const char *route_directives[] = {"index", "limit_except", "root", "autoindex", "upload_store",  "allow_method", "auth_basic", "auth_basic_user_file", "location_max_body_size", 0}; //add cgi later
 static const char **directives_string[] = {main_directives, server_directives, route_directives};
-
-std::string sputnbr(size_t n);
-
 
 class	ConfigParser
 {
@@ -115,7 +112,7 @@ class	ConfigParser
 	class parseError : public std::exception {
 		public:
 			parseError(const char *path, size_t n) 
-				: _error(std::string(path) + ": syntax error line " + sputnbr(n) + "\n") {
+				: _error(std::string(path) + ": syntax error line " + ft::sputnbr(n) + "\n") {
 			}
 			parseError(const char *path, const char *message) 
 				: _error(std::string(path) + ": " + message) {

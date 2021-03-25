@@ -25,7 +25,7 @@ struct	Request
 		bool								m_chunked;
 		bool								m_cgi;
 		bool								m_autoindex;
-		int									m_error;
+		int									m_status_code;
 		size_t								m_start;
 		s_v_server_conf::t_routes::iterator m_location;
 		std::string							m_query_string;
@@ -37,15 +37,19 @@ struct	Request
 struct	Response//for now only used for CGI
 {
 		Response();
-		void	reset();
-		std::string	m_content_type;
-		bool	m_cgi_metadata_parsed;
-		bool	m_cgi_metadata_sent;
+		void						reset();
+		bool						m_cgi_metadata_parsed;
+		bool						m_cgi_metadata_sent;
+		std::string					m_content_type;
+		std::string					m_body;
+		std::string 				m_location;
+		std::vector<std::string>	m_response_headers;
 };
 
 class	Client
 {
 	public:
+		// typedef	Request_handler					t_request_handler;
 		typedef	Request							t_request_data;
 		typedef	Response						t_response_data;
 		typedef VirtualServer					t_v_server;
@@ -61,12 +65,12 @@ class	Client
 		Client 	&operator=(Client const & rhs);
 		void	updateServerConf();
 
-		void		testingRequest(std::string str){
-			m_request_str = str;
-		}
-		int									testGetError(){
-			return m_request_data.m_error;
-		}
+		// void		testingRequest(std::string str){
+		// 	m_request_str = str;
+		// }
+		// int									testGetError(){
+		// 	return m_request_data.m_error;
+		// }
 		Request&				 			getRequest(){
 			return m_request_data;						
 		}
@@ -89,6 +93,7 @@ class	Client
 		int									m_cgi_write_pipe[2];
 		size_t								m_cgi_write_offset;
 		std::string							m_cgi_out_buf;
+		// RequestHandler&						m_request_handler;			
 };
 
 #endif

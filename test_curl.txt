@@ -1,0 +1,1 @@
+curl -i -X PUT -H 'AUTHORIZATION: Basic d2Vic2VydjpjaGVlc2U=' -F "sleutel=hallo webserver" localhost:8080/webserv/text1235.txt

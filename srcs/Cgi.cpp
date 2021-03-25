@@ -39,7 +39,7 @@ void	Cgi::convertEnv(t_client &c) {
 	size_t	i = 0;
 	while (it != this->m_env_map.end()) {
 		std::string	convert(it->first + "=" + it->second);
-		this->m_env_array[i] = ft_strdup(convert);
+		this->m_env_array[i] = ft::strdup(convert);
 		if (!this->m_env_array[i])
 			throw (serverError("Cgi::convertEnv", "failed to allocate cgi env"));
 		std::cout<<this->m_env_array[i]<<std::endl;//remove
@@ -47,8 +47,8 @@ void	Cgi::convertEnv(t_client &c) {
 		++i;
 	}
 	this->m_env_array[i] = 0;
-	this->m_argv[0] = ft_strdup(c.m_request_data.m_location->second["cgi_path"]);
-	this->m_argv[1] = ft_strdup(c.m_request_data.m_file);
+	this->m_argv[0] = ft::strdup(c.m_request_data.m_location->second["cgi_path"]);
+	this->m_argv[1] = ft::strdup(c.m_request_data.m_file);
 	this->m_argv[2] = 0;
 }
 
@@ -169,7 +169,7 @@ void	Cgi::fillEnv(t_request_data &request) {
 	char	buf[PATH_MAX];
 	(void)buf;
 	this->m_env_map["AUTH_TYPE"]=std::string(request.m_headers[AUTHORIZATION]);
-	this->m_env_map["CONTENT_LENGTH"]=intToString(request.m_body.size());
+	this->m_env_map["CONTENT_LENGTH"]=ft::intToString(request.m_body.size());
 	this->m_env_map["CONTENT_TYPE"]=std::string(request.m_headers[CONTENTTYPE]);
 	this->m_env_map["GATEWAY_INTERFACE"]="CGI/1.1";
 	this->m_env_map["PATH_INFO"]=request.m_path_info; //  used to specify the name of the file to be opened and interpreted  by the cgi program
@@ -182,7 +182,7 @@ void	Cgi::fillEnv(t_request_data &request) {
 	this->m_env_map["REQUEST_METHOD"] = methods[request.m_method]; //maybe simpler way?
 	this->m_env_map["REQUEST_URI"] = request.m_path;
 	this->m_env_map["SCRIPT_FILENAME"] = request.m_file; //if cgi-bin/test.php script_name is cgi-bin/test-cgi.php
-	this->m_env_map["SERVER_NAME"] ="webserv";
+	this->m_env_map["SERVER_NAME"] =SERVER_VERSION;
 	this->m_env_map["SERVER_PORT"] = request.m_owner->m_v_server->m_port;
 	this->m_env_map["SERVER_PROTOCOL"]="HTTP/1.1";
 	this->m_env_map["SERVER_SOFTWARE"]="HTTP 1.1";
@@ -223,7 +223,7 @@ void	Cgi::populateResponse(t_client &c) {
 		//tranfer headers from output buf to response struct
 		//check for valid header
 		//transfer headers from response struct to response_str
-		size_t	metadata_index = fullMetaData(c.m_cgi_out_buf);
+		size_t	metadata_index = ft::fullMetaData(c.m_cgi_out_buf);
 		if (metadata_index == std::string::npos)
 			return ;
 		c.m_response_str.append(c.m_cgi_out_buf, 0, metadata_index + CRLF_LEN);
@@ -234,7 +234,7 @@ void	Cgi::populateResponse(t_client &c) {
 	if (c.m_response_data.m_cgi_metadata_sent) {
 		if (c.m_cgi_out_buf.size() == 0)
 			c.m_cgi_end_chunk = 1;
-		c.m_response_str.append(hexString(c.m_cgi_out_buf.size()) + CRLF + c.m_cgi_out_buf + CRLF);
+		c.m_response_str.append(ft::hexString(c.m_cgi_out_buf.size()) + CRLF + c.m_cgi_out_buf + CRLF);
 		c.m_cgi_out_buf.clear();
 	}
 }
@@ -310,7 +310,7 @@ int RequestHandler::handleCgi(t_client &c) {
 	}
 	catch (HTTPError &e) {
 		std::cerr << e.what() << std::endl;
-		m_client->m_request_data.m_error = e.HTTPStatusCode();
+		m_client->m_request_data.m_status_code = e.HTTPStatusCode();
 	}
 	return 1;
 }

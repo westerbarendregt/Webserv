@@ -3,21 +3,30 @@
 
 # include <string>
 
+namespace base64 
+{
+std::string encode(unsigned char const* bytes_to_encode, unsigned int in_len);
+std::string decode(std::string const& encoded_string);
+}
+
+namespace ft
+{
 uint16_t    hostToNetworkShort(uint16_t hostshort);
 uint32_t    hostToNetworkLong(uint32_t hostlong);
 bool 	    isBigEndian();
-int		    ftAtoi(const char *str);
+size_t		Atoi(const char *str);
 std::string sputnbr(size_t n);
-int		    ft_getline_crlf(std::string& total, std::string& line, int line_break, size_t& start);
-int		    ft_getline(std::string& total, std::string& line, int line_break, size_t& start);
-bool	    ft_compare(char c, char *str);
+int		    getline_crlf(std::string& total, std::string& line, int line_break, size_t& start);
+int		    getline(std::string& total, std::string& line, int line_break, size_t& start);
+bool	    compare(char c, char *str);
 std::string intToString(int n);
-std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_len);
-std::string base64_decode(std::string const& encoded_string);
+size_t		AtoiHex(const char *str);
+std::string	convertDate(const time_t * clock);
 
-char	*ft_strdup(std::string &src);
-size_t	fullMetaData(std::string const & src);
+char	    *strdup(std::string &src);
+size_t	    fullMetaData(std::string const & src);
 std::string hexString(size_t	n);
-int	get_next_line(int fd, std::string &line);
+int	getNextLine(int fd, std::string &line);
+}
 
 #endif
