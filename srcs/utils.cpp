@@ -221,8 +221,8 @@ int		getline(std::string& total, std::string& line, int line_break, size_t& star
 	return 0;
 }
 
-int	get_next_line(int fd, std::string& line)  { // lol
-	static char read_buf[4096];
+int	getNextLine(int fd, std::string& line)  { // lol
+	static char read_buf[5000];
 	static std::string saved;
 	size_t	found = saved.find('\n', 0);
 	static ssize_t	bytes = -1;
@@ -250,8 +250,8 @@ int	get_next_line(int fd, std::string& line)  { // lol
 		}
 	}
 	if (bytes == -1)
-		throw serverError("get_next_line: read:", strerror(errno));
-	return get_next_line(fd, line);
+		throw serverError("getNextLine: read:", strerror(errno));
+	return getNextLine(fd, line);
 }
 
 bool	compare(char c, char *str)

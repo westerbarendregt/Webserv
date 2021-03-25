@@ -91,7 +91,7 @@ class	ConfigParser
 		int	file = open(path, O_RDONLY);
 		if (file == -1)
 			throw serverError("ConfigParser::parse", strerror(errno));
-		while (get_next_line(file, line)) {
+		while (ft::getNextLine(file, line)) {
 			line.erase(0, line.find_first_not_of(BLANKS, 0)); // remove blanks before first field
 			line.erase(std::find(line.begin(), line.end(), '#'), line.end()); //remove comments
 			if (!line.empty()) {
