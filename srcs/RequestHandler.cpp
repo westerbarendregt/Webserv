@@ -249,7 +249,7 @@ std::string RequestHandler::statusLine(int status_code) {
 }
 
 void 		RequestHandler::responseBody() {
-	int fd = open(this->m_client->m_request_data.m_file.c_str(), O_RDONLY);
+	int fd = open(this->m_client->m_request_data.m_real_path.c_str(), O_RDONLY);
 	if (fd == -1) {
 		throw HTTPError("RequestHandler::responseBody", "error opening file", 500);
 	}
@@ -288,6 +288,7 @@ std::string RequestHandler::handleGET() {
 	} else {
 		responseBody();
 	}
+	//no headers are added here, making the client hang
 	std::string	response_headers = responseHeaders();
 
 	return status_line + response_headers + CRLF + this->m_response_data->m_body;
@@ -318,7 +319,8 @@ std::string RequestHandler::handleGET() {
 // }
 
 std::string	RequestHandler::generateErrorPage(int error) {
-	std::string status_line = statusLine();
+	std::string status_line = statusLine(error); 
+	// previously called with no argument while it expected an int, and had to modify a request variable at the response level so this function can generate an appropriate status header, which didn't make sense
 
 	this->m_response_data->m_body = 
 			"<html>" CRLF

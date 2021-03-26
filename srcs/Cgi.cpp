@@ -1,5 +1,6 @@
 #include "Cgi.hpp"
 #include <stdlib.h>
+#include <signal.h>
 #include <limits.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -16,7 +17,9 @@
 #include "RequestParser.hpp"
 
 Cgi::Cgi()
-	: m_env_array(0), m_argv(0){}
+	: m_env_array(0), m_argv(0)
+{
+}
 
 Cgi::~Cgi() {
 	this->clear();
@@ -52,45 +55,45 @@ void	Cgi::convertEnv(t_client &c) {
 	this->m_argv[2] = 0;
 }
 
-int	Cgi::read(t_client &c) {
+void	Cgi::read(t_client &c) {
 	char buf[5000];
 
 	std::fill(buf, buf + sizeof(buf), 0);
-	ssize_t	nbytes = ::read(c.m_cgi_read_pipe[IN], buf, 4096);
-	if (nbytes == -1) {
-		if (errno == EAGAIN || errno == EWOULDBLOCK) //or use select
-			return -1;
-		throw HTTPError("Cgi::read", strerror(errno), 500);
+	ssize_t	nbytes = ::read(c.getReadFd(), buf, 4096);
+	if (nbytes <= 0) {
+		if (nbytes == -1)
+			throw HTTPError("Cgi::read", strerror(errno), 500);
+		c.m_cgi_out_buf.clear();
+		c.m_cgi_end_chunk = true;
 	}
-	if (nbytes)
+	else
 		c.m_cgi_out_buf.append(buf);
-	return 1;
 }
 
 
-void	Cgi::stop(t_client &c) {
+void	Cgi::closeAll(t_client &c) {
 	if (c.m_cgi_read_pipe[IN] != -1 && ::close(c.m_cgi_read_pipe[IN]) == -1) {
-		std::cout << "Cgi::stop : close(m_cgi_read_pipe[IN]): " << strerror(errno)<<std::endl;
+		std::cout << "Cgi::closeAll: close(m_cgi_read_pipe[IN]): " << strerror(errno)<<std::endl;
 	}
 	if (c.m_cgi_read_pipe[OUT] != -1 && ::close(c.m_cgi_read_pipe[OUT]) == -1) {
-		std::cout << "Cgi::stop : close(m_cgi_read_pipe[OUT]): " << strerror(errno)<<std::endl;
+		std::cout << "Cgi::closeAll: close(m_cgi_read_pipe[OUT]): " << strerror(errno)<<std::endl;
 	}
 	if (c.m_cgi_write_pipe[IN] != -1 && ::close(c.m_cgi_write_pipe[IN]) == -1) {
-		std::cout << "Cgi::stop : close(m_cgi_write_pipe[IN]): " << strerror(errno)<<std::endl;
+		std::cout << "Cgi::closeAll: close(m_cgi_write_pipe[IN]): " << strerror(errno)<<std::endl;
 	}
 	if (c.m_cgi_write_pipe[OUT] != -1 && ::close(c.m_cgi_write_pipe[OUT]) == -1) {
-		std::cout << "Cgi::stop : close(m_cgi_write_pipe[OUT]): " << strerror(errno)<<std::endl;
+		std::cout << "Cgi::closeAll: close(m_cgi_write_pipe[OUT]): " << strerror(errno)<<std::endl;
 	}
 	c.m_cgi_read_pipe[IN] =-1;
 	c.m_cgi_read_pipe[OUT] =-1;
 	c.m_cgi_write_pipe[IN] =-1;
 	c.m_cgi_write_pipe[OUT] =-1;
-	c.m_cgi_running = false;
+	c.m_range_fd = 0;
 }
 
 void	Cgi::write(t_client &c) {
 	size_t	len = c.m_request_data.m_body.size() + 1 - c.m_cgi_write_offset;
-	ssize_t	nbytes = ::write(c.m_cgi_write_pipe[OUT], 
+	ssize_t	nbytes = ::write(c.getWriteFd(), 
 			c.m_request_data.m_body.c_str() + c.m_cgi_write_offset,
 			len);
 
@@ -100,12 +103,48 @@ void	Cgi::write(t_client &c) {
 	if (static_cast<size_t>(nbytes) == len) {
 		close(c.m_cgi_write_pipe[OUT]);
 		c.m_cgi_write_pipe[OUT] = -1;
-		c.m_cgi_write = false;
 	}
 	else {
 		c.m_cgi_write_offset += nbytes;
 	}
 }
+
+void	Cgi::setParentIo(t_client &c) {
+	if (c.m_cgi_post) {
+		if (pipe(c.m_cgi_write_pipe) == -1) {
+			throw HTTPError("Cgi::run: pipe(cgi_write_pipe)", strerror(errno), 500);
+		}
+		if (c.m_cgi_write_pipe[OUT] > c.m_range_fd)
+			c.m_range_fd = c.m_cgi_write_pipe[OUT];
+	}
+	if (pipe(c.m_cgi_read_pipe) == -1) {
+		throw HTTPError("Cgi::run: pipe(cgi_read_pipe)", strerror(errno), 500);
+	}
+	if (fcntl(c.m_cgi_read_pipe[IN], F_SETFL, O_NONBLOCK) == -1)
+		std::cout << "Cgi::init : fcntl(m_cgi_read_pipe[IN]): " << strerror(errno)<<std::endl;
+	if (fcntl(c.m_cgi_read_pipe[OUT], F_SETFL, O_NONBLOCK) == -1)
+		std::cout << "Cgi::init : fcntl(m_cgi_read_pipe[OUT]): " << strerror(errno)<<std::endl;
+	if (c.m_cgi_read_pipe[IN] > c.m_range_fd)
+		c.m_range_fd = c.m_cgi_read_pipe[IN];
+}
+
+void	Cgi::setChildIo(t_client &c) {
+	if (dup2(c.m_cgi_read_pipe[OUT], STDOUT_FILENO) == -1) {
+		throw HTTPError("Cgi::exec: dup2(cgi_read_pipe[OUT], STDOUT_FILENO)", strerror(errno), 500);
+	}
+	if (close(c.m_cgi_read_pipe[IN]) == -1
+		|| close(c.m_cgi_read_pipe[OUT]) == -1)
+		throw HTTPError("Cgi::setChildIo: close(cgi_read_pipe[IN-OUT])", strerror(errno), 500);
+	if (c.m_cgi_post) {
+		if (dup2(c.m_cgi_write_pipe[IN], STDIN_FILENO) == -1) {
+			throw HTTPError("Cgi::exec: dup2(cgi_write_pipe[IN], STDIN_FILENO)", strerror(errno), 500);
+		}
+	if (close(c.m_cgi_write_pipe[IN]) == -1
+		|| close(c.m_cgi_write_pipe[OUT]) == -1)
+		throw HTTPError("Cgi::setChildIo: close(cgi_write_pipe[IN-OUT])", strerror(errno), 500);
+	}
+}
+
 
 void	Cgi::exec(t_client &c) {
 	if ((c.m_cgi_pid = fork()) == -1) {
@@ -113,57 +152,29 @@ void	Cgi::exec(t_client &c) {
 		throw HTTPError("Cgi::exec: fork", strerror(errno), 500);
 	}
 	if (!c.m_cgi_pid) {
-		if (dup2(c.m_cgi_read_pipe[OUT], STDOUT_FILENO) == -1) {
-			throw HTTPError("Cgi::exec: dup2(cgi_read_pipe[OUT], STDOUT_FILENO)", strerror(errno), 500);
-		}
-		close(c.m_cgi_read_pipe[OUT]);
-		close(c.m_cgi_read_pipe[IN]);
-		if (c.m_cgi_write) {
-			if (dup2(c.m_cgi_write_pipe[IN], STDIN_FILENO) == -1) {
-				throw HTTPError("Cgi::exec: dup2(cgi_write_pipe[IN], STDIN_FILENO)", strerror(errno), 500);
-			}
-			close(c.m_cgi_write_pipe[OUT]);
-			close(c.m_cgi_write_pipe[IN]);
-		}
+		this->setChildIo(c);
 		if (execve(this->m_argv[0], this->m_argv, this->m_env_array) == -1) {
 			this->clear();
 			throw HTTPError("Cgi::exec: execve", strerror(errno), 500);
 		}
 	}
-	close(c.m_cgi_read_pipe[OUT]); // check error 
-	close(c.m_cgi_write_pipe[IN]);
+	if (close(c.m_cgi_read_pipe[OUT]) == -1)
+		throw HTTPError("Cgi::exec: close(m_cgi_read_pipe[OUT])", strerror(errno), 500);
 	c.m_cgi_read_pipe[OUT] = -1;
-	c.m_cgi_write_pipe[IN] = -1;
 }
 
 void	Cgi::run(t_client &c) {
 	std::cout<<"run cgi"<<std::endl;
 	if (!c.m_cgi_running) {
 		c.m_cgi_running = true;
+		c.m_cgi_post = c.m_request_data.m_method == POST;
 		this->init();
 		this->fillEnv(c.m_request_data);
 		this->convertEnv(c);
-		if (c.m_request_data.m_method == POST) {
-			c.m_cgi_write = true;
-			if (pipe(c.m_cgi_write_pipe) == -1) {
-				throw HTTPError("Cgi::run: pipe(cgi_write_pipe)", strerror(errno), 500);
-			}
-		}
-		if (pipe(c.m_cgi_read_pipe) == -1) {
-			throw HTTPError("Cgi::run: pipe(cgi_read_pipe)", strerror(errno), 500);
-		}
-		if (fcntl(c.m_cgi_read_pipe[IN], F_SETFL, O_NONBLOCK) == -1)
-			std::cout << "Cgi::init : fcntl(m_cgi_read_pipe[IN]): " << strerror(errno)<<std::endl;
-		if (fcntl(c.m_cgi_read_pipe[OUT], F_SETFL, O_NONBLOCK) == -1)
-			std::cout << "Cgi::init : fcntl(m_cgi_read_pipe[OUT]): " << strerror(errno)<<std::endl;
+		this->setParentIo(c);
 		this->exec(c);
 	}
 }
-
-/*TODO*/
-/*
- * recode inet_ntoa
- * */
 
 void	Cgi::fillEnv(t_request_data &request) {
 	char	buf[PATH_MAX];
@@ -176,7 +187,7 @@ void	Cgi::fillEnv(t_request_data &request) {
 	this->m_env_map["PATH_TRANSLATED"]= getcwd(buf, PATH_MAX) + this->m_env_map["PATH_INFO"]; //or htdocs
 	this->m_env_map["QUERY_STRING"] = request.m_query_string;
 	struct	sockaddr_in	*tmp = reinterpret_cast<struct sockaddr_in*>(&request.m_owner->m_sockaddr);
-	this->m_env_map["REMOTE_ADDR"] = inet_ntoa(tmp->sin_addr);//replace
+	this->m_env_map["REMOTE_ADDR"] = ft::inet_ntoa(tmp->sin_addr);
 	this->m_env_map["REMOTE_IDENT"] =""; //?
 	this->m_env_map["REMOTE_USER"] =""; //?
 	this->m_env_map["REQUEST_METHOD"] = methods[request.m_method]; //maybe simpler way?
@@ -208,6 +219,12 @@ void	Cgi::reset() {
 	}
 }
 
+void	Cgi::reset(t_client &c) {
+	this->reset();
+	this->closeAll(c);
+	this->kill(c);
+}
+
 void	Cgi::clear() {
 	this->reset();
 	if (this->m_env_array)
@@ -218,15 +235,25 @@ void	Cgi::clear() {
 	this->m_argv = 0;
 }
 
-void	Cgi::populateResponse(t_client &c) {
+void	RequestHandler::handleCgiResponse(t_client &c) {
 	if (!c.m_response_data.m_cgi_metadata_parsed) {
-		//tranfer headers from output buf to response struct
-		//check for valid header
-		//transfer headers from response struct to response_str
+
 		size_t	metadata_index = ft::fullMetaData(c.m_cgi_out_buf);
-		if (metadata_index == std::string::npos)
+		if (metadata_index == std::string::npos) {
+			if (c.m_cgi_end_chunk) { //script didn't provide http header
+				c.m_response_str = this->generateErrorPage(500);
+				c.m_response_data.m_cgi_metadata_parsed = true;
+			}
 			return ;
+		}
+		//add own header
+		c.m_response_str.append(this->statusLine(200));
+		c.m_response_str.append(this->GetDate());
+		c.m_response_str.append(this->GetServer());
+		c.m_response_str.append(this->GetTransferEncoding());
+		//add cgi generated headers, need opti
 		c.m_response_str.append(c.m_cgi_out_buf, 0, metadata_index + CRLF_LEN);
+		//
 		c.m_response_str.append(CRLF);
 		c.m_response_data.m_cgi_metadata_parsed = true;
 		c.m_cgi_out_buf.erase(0, metadata_index + CRLF_LEN);
@@ -286,31 +313,71 @@ bool	RequestHandler::validCgi(t_request &request, size_t extension_index) {
 	return false;
 }
 
+
+void	Cgi::setCgiFd(fd_set *read_set, fd_set *write_set, t_client &c) {
+	FD_ZERO(read_set);
+	FD_ZERO(write_set);
+	if (!c.m_cgi_end_chunk)
+		FD_SET(c.m_cgi_read_pipe[IN], read_set);
+	if (c.m_cgi_post && c.m_cgi_write_pipe[OUT] != -1)
+		FD_SET(c.m_cgi_write_pipe[OUT], write_set);
+}
+
+void	Cgi::kill(t_client &c)
+{
+	if (waitpid(c.m_cgi_pid, NULL, WNOHANG) == -1) {
+		std::cout << "Cgi::kill: waitpid: " << strerror(errno)<<std::endl;
+	}
+	if (::kill(c.m_cgi_pid, SIGKILL) == -1) {
+		std::cout << "Cgi::kill: kill: " << strerror(errno)<<std::endl;
+	}
+	c.m_cgi_running = false;
+}
+
 int RequestHandler::handleCgi(t_client &c) {
 	pid_t	wpid = 0;
+	int		wstatus = 0;
+	fd_set	read_set, write_set;
+	int	&read_fd = c.getReadFd();
+	int	&write_fd = c.getWriteFd();
+
 	try {
-		if (c.m_cgi_write) {
-			this->m_cgi.write(c);
-		}
-		int	wstatus = 0;
+		//wait
 		if (c.m_cgi_running) {
 			wpid = waitpid(c.m_cgi_pid, &wstatus, WNOHANG);
 			if (wpid == -1)
 				throw HTTPError("RequestHandler::handleCgi : wait", strerror(errno), 500);
+			if (wpid) // has exited, maybe also check for WIFEXITED(), WSTATUS() here
+				c.m_cgi_running = false;
 		}
-		if (this->m_cgi.read(c) == -1)
-			return 0; // read pipe temporarily not available
-		this->m_cgi.populateResponse(c);
+		//select
+		this->m_cgi.setCgiFd(&read_set, &write_set, c);
+		if (select(c.m_range_fd + 1, &read_set, &write_set, NULL, 0) == -1)
+			throw HTTPError("RequestHandler::handleCgi: select", strerror(errno), 500);
+		//write
+		if (c.m_cgi_post && FD_ISSET(write_fd, &write_set)) {
+			this->m_cgi.write(c);
+		}
+		//read
+		if (!FD_ISSET(read_fd, &read_set))
+			return CONTINUE;
+		this->m_cgi.read(c);
+		//generate response
+		if (c.m_cgi_end_chunk) //just read last chunk
+			this->m_cgi.closeAll(c);
+		this->handleCgiResponse(c);
 		if (!c.m_response_data.m_cgi_metadata_parsed)
-			return 0; //hasn't received fullmetadata
-		if (wpid)
-			c.m_cgi_running = false;
-		if (c.m_cgi_end_chunk)// has exited
-			this->m_cgi.stop(c);
+			return CONTINUE; //hasn't received fullmetadata
 	}
 	catch (HTTPError &e) {
 		std::cerr << e.what() << std::endl;
-		m_client->m_request_data.m_status_code = e.HTTPStatusCode();
+		this->m_cgi.closeAll(c);
+		if (c.m_cgi_running)
+			this->m_cgi.kill(c);
+		this->m_client->m_request_data.m_status_code = e.HTTPStatusCode();
+		//once the transfer has started, we can only send last chunk
+		c.m_cgi_out_buf.clear();
+		this->handleCgiResponse(c);
 	}
-	return 1;
+	return SUCCESS;
 }

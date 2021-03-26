@@ -12,6 +12,7 @@ enum	e_status {
 	SUCCESS = 0,
 	IN = 0,
 	ERROR = 1,
+	CONTINUE = 1,
 	OUT = 1
 };
 

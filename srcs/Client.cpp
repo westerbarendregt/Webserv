@@ -126,11 +126,11 @@ Client::Client()
 	m_addrlen(sizeof(m_sockaddr)),
 	m_cgi_pid(-1),
 	m_cgi_running(0),
-	m_cgi_write(0),
+	m_cgi_post(false),
 	m_cgi_end_chunk(0),
 	m_cgi_write_offset(0),
-	m_cgi_out_buf()
-	// m_request_handler();
+	m_cgi_out_buf(),
+	m_range_fd(0)
 {
 	this->m_cgi_read_pipe[IN] = -1;
 	this->m_cgi_read_pipe[OUT] = -1;
@@ -152,10 +152,11 @@ Client::Client(Client const & src)
 	m_addrlen(src.m_addrlen),
 	m_cgi_pid(src.m_cgi_pid),
 	m_cgi_running(src.m_cgi_running),
-	m_cgi_write(src.m_cgi_write),
+	m_cgi_post(src.m_cgi_post),
 	m_cgi_end_chunk(src.m_cgi_end_chunk),
 	m_cgi_write_offset(src.m_cgi_write_offset),
-	m_cgi_out_buf(src.m_cgi_out_buf)
+	m_cgi_out_buf(src.m_cgi_out_buf),
+	m_range_fd(src.m_range_fd)
 {
 	this->m_cgi_read_pipe[IN] = src.m_cgi_read_pipe[IN];
 	this->m_cgi_read_pipe[OUT] = src.m_cgi_read_pipe[OUT];
@@ -175,7 +176,7 @@ Client &Client::operator=(Client const & rhs) {
 	this->m_addrlen = rhs.m_addrlen;
 	this->m_cgi_pid = rhs.m_cgi_pid;
 	this->m_cgi_running = rhs.m_cgi_running;
-	this->m_cgi_write= rhs.m_cgi_write;
+	this->m_cgi_post = rhs.m_cgi_post;
 	this->m_cgi_end_chunk= rhs.m_cgi_end_chunk;
 	this->m_request_data.m_owner = this;
 	this->m_cgi_read_pipe[IN] = rhs.m_cgi_read_pipe[IN];
@@ -183,6 +184,8 @@ Client &Client::operator=(Client const & rhs) {
 	this->m_cgi_write_pipe[IN] = rhs.m_cgi_write_pipe[IN];
 	this->m_cgi_write_pipe[OUT] = rhs.m_cgi_write_pipe[OUT];
 	this->m_cgi_write_offset = rhs.m_cgi_write_offset;
+	this->m_cgi_out_buf = rhs.m_cgi_out_buf;
+	this->m_range_fd = rhs.m_range_fd;
 	return *this;
 }
 
@@ -217,9 +220,16 @@ void	Client::reset() {
 	//cgi
 	this->m_cgi_pid = -1;
 	this->m_cgi_running = false;
-	this->m_cgi_write = 0;
+	this->m_cgi_post = false;
 	this->m_cgi_write_offset = 0;
 	this->m_cgi_end_chunk = false;
 	this->m_cgi_out_buf.clear();
 }
 
+int	&Client::getWriteFd() {
+	return  this->m_cgi_write_pipe[OUT];
+}
+
+int	&Client::getReadFd() {
+	return  this->m_cgi_read_pipe[IN];
+}
