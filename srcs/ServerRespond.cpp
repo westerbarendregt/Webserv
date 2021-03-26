@@ -4,16 +4,11 @@
 #include <string.h>
 
 void	Server::respond(int client_socket) {
-	std::cout<<"sending response"<<std::endl;
 	t_client *c;
 	if ((c = this->getClient(client_socket)) == NULL) {
 		throw serverError("removeClient: ", "trying to remove unexisting client");
 	}
-	std::cout << "RESPONSE:\n" << c->m_response_str.c_str() << std::endl << std::endl;
-	 if (send(c->m_socket, c->m_response_str.c_str(), c->m_response_str.size() + 1, 0) == -1)
-		 std::cout<<"send: "<<strerror(errno)<<std::endl;
-	 //check return value of send and see if we sent everything
-	 FD_CLR(c->m_socket, &this->m_write_all);// only if full response sent
+	this->respond(*c);
 }
 
 void	Server::respond(t_client &c) {
@@ -21,8 +16,9 @@ void	Server::respond(t_client &c) {
 	std::cout << "RESPONSE:\n" << c.m_response_str.c_str() << std::endl;
 	ssize_t	sent = 0;
 	size_t	len = c.m_response_str.size();
-	 if ((sent = send(c.m_socket, c.m_response_str.c_str(), len, 0)) == -1)
-		 std::cout<<"send: "<<strerror(errno)<<std::endl;
+	 if ((sent = send(c.m_socket, c.m_response_str.c_str(), len, 0)) == -1) {  //MSG_NOSIGNAL is not portable on MACOS, see main for global signal(SIGPIPE)
+		 return closeClientConnection(c);
+	 }
 	 c.m_response_str.erase(0, sent);
 	 if (static_cast<size_t>(sent) == len) {
 		 c.m_response_data.m_cgi_metadata_sent = 1;
@@ -31,5 +27,7 @@ void	Server::respond(t_client &c) {
 	 	FD_CLR(c.m_socket, &this->m_write_all);
 	 	FD_SET(c.m_socket, &this->m_read_all);
 		c.reset();
+		if (c.m_request_data.m_cgi)
+			this->m_request_handler.m_cgi.reset(c);
 	 }
 }
