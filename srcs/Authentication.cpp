@@ -20,7 +20,7 @@ void                AllowedMethods(Client& c, RequestHandler& req)
 void                CheckCorrectCredentials(std::string decoded, std::string path_ht)
 {
     int fd = open(path_ht.c_str(), O_RDONLY);
-    std::cout << "printing path: " << path_ht.c_str() << "--done" << std::endl;
+    std::cout << "printing path: " << path_ht.c_str() << std::endl;
     if (fd == -1)
         throw HTTPError("Authentication", "Incorrect path to .htpasswd or .htpasswd couldn't be opended", 403);
     char buf[1001];

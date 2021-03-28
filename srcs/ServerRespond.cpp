@@ -19,6 +19,7 @@ void	Server::respond(t_client &c) {
 	 if ((sent = send(c.m_socket, c.m_response_str.c_str(), len, 0)) == -1) {  //MSG_NOSIGNAL is not portable on MACOS, see main for global signal(SIGPIPE)
 		 return closeClientConnection(c);
 	 }
+	 c.m_response_data.m_response_headers.clear();
 	 c.m_response_str.erase(0, sent);
 	 if (static_cast<size_t>(sent) == len) {
 		 c.m_response_data.m_cgi_metadata_sent = 1;

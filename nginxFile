@@ -1,0 +1,21 @@
+HTTP/1.1 204 No Content
+Server: nginx/1.19.8
+Date: Sun, 28 Mar 2021 11:35:11 GMT
+Connection: keep-alive
+
+-----------------------------------------------8080
+HTTP/1.1 404 Not Found
+Server: nginx/1.19.8
+Date: Sun, 28 Mar 2021 11:35:11 GMT
+Content-Type: text/html
+Content-Length: 153
+Connection: keep-alive
+
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx/1.19.8</center>
+</body>
+</html>
+-----------------------------------------------8080
