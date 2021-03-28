@@ -1,4 +1,4 @@
-#define DEFAULT_PATH "./conf/webserv.conf"
+#define DEFAULT_PATH "./conf/tester.conf"
 #include <iostream>
 #include <signal.h>
 #include <unistd.h>

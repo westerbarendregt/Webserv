@@ -348,7 +348,8 @@ void	RequestHandler::handleMetadata(t_client &c) {
 	std::cout<<"handling metadata.."<<std::endl;
 
 	this->m_client = &c;
-
+	this->m_request_data = &c.m_request_data;
+	this->m_response_data = &c.m_response_data;
 	try {
 		//updating virtual server pointer based on client request's host header
 		m_client->updateServerConf();
@@ -431,8 +432,8 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			c.m_request_data.m_autoindex= true;
 		}
 		// std::cout<<"m_real_path: "<<c.m_request_data.m_real_path<<std::endl;
-		else if (c.m_request_data.m_method != PUT)
-			throw HTTPError("RequestHandler::handleMetadata", "directory listing not enabled", 403);
+		// else if (c.m_request_data.m_method != PUT)
+		// 	throw HTTPError("RequestHandler::handleMetadata", "directory listing not enabled", 403);
 
 		// else 
 		// 	throw HTTPError("RequestHandler::handleMetadata", "directory listing not enabled", 404);
@@ -517,9 +518,6 @@ void	RequestHandler::CheckBodyLimits()
 }
 
 void	RequestHandler::handleRequest(t_client &c) {
-	this->m_client = &c;
-	this->m_request_data = &c.m_request_data;
-	this->m_response_data = &c.m_response_data;
 	try {
 		CheckBodyLimits();
 		if (m_request_data->m_status_code >= 400) {
