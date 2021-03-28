@@ -14,10 +14,7 @@ def runPort(port, file, method, headers, body, url_file_name):
     if method == "PUT":
         url_file_name += port
     host = "localhost:"+port+url_file_name
-    # method = "PUT"
-    # auth = "'AUTHORIZATION: Basic d2Vic2VydjpjaGVlc2U='"
     file_keys = "\"sleutel=hallo webserver\""
-    # print (host)
     args = []
     args.append("curl")
     args.append("-i")
