@@ -456,8 +456,8 @@ void	RequestHandler::handleMetadata(t_client &c) {
 				std::cout<<"dir listing"<<std::endl;
 				c.m_request_data.m_autoindex= true;
 			}
-			// else
-			// 	throw HTTPError("RequestHandler::handleMetadata", "directory listing not enabled", 403);
+			else
+				throw HTTPError("RequestHandler::handleMetadata", "directory listing not enabled", 403);
 		}
 		// std::cout<<"m_real_path: "<<c.m_request_data.m_real_path<<std::endl;
 		// else if (c.m_request_data.m_method != PUT)
@@ -481,12 +481,8 @@ void	RequestHandler::handleMetadata(t_client &c) {
 std::string		RequestHandler::handlePUT()
 {
 	std::string m_file = this->m_request_data->m_real_path.substr(this->m_request_data->m_real_path.find_last_of('/') + 1);
-	std::cout<<"m_file: "<< m_file <<std::endl;
 	const char *upload_store = this->m_request_data->m_location->second["upload_store"].c_str();
-	std::cout << "upload_store: " << upload_store << std::endl;
-
 	std::string path_to_file = std::string(upload_store) + m_file;
-	std::cout<<"path to file]: "<<path_to_file<<std::endl;
 
 	if (stat(path_to_file.c_str(), &this->m_statbuf) == 0){
 		this->m_request_data->m_status_code = 204;
@@ -496,9 +492,9 @@ std::string		RequestHandler::handlePUT()
 	else 
 		this->m_request_data->m_status_code = 201;
 	char * current_dir = getcwd(NULL, 0);
+
 	if (chdir(upload_store))
 		throw HTTPError("RequestHandler::PUT", "Upload store directory doesn't exist", 500);
-	// system("ls -la");
 	int fd  = open(m_file.c_str(), O_TRUNC | O_CREAT | O_WRONLY,  0600); // S_IRWXU = owner having all persmissions 
 	if (fd == -1)
 		throw HTTPError("RequestHandler::PUT", "error creating file", 500);
@@ -507,25 +503,14 @@ std::string		RequestHandler::handlePUT()
 		throw HTTPError("RequestHandler::PUT", "error closing file", 500);
 	if (written != this->m_request_data->m_content_length)
 		throw HTTPError("RequestHandler::PUT", "Didn't write the compleet file", 500);
-	chdir(current_dir);	
-	// system("pwd");
-	// system("ls");
-	
+	chdir(current_dir);
+
 	SetServer();
 	SetDate();
 	if (this->m_request_data->m_status_code == 201){
 		SetContentLength();
 		SetLocation();
 	}
-	// handleCONTENT_LENGTH();
-	// handleDATE();
-	// handleCONTENT_TYPE(request);
-	// handleCONNECTION_HEADER(request);
-
-	// this->_response += "\r\n";
-	// if (!_body.empty())
-	// 	this->_response += _body + "\r\n";
-
 	std::string status_line = statusLine();
 	std::string	response_headers = responseHeaders();
 	return status_line + response_headers + CRLF;

@@ -139,23 +139,14 @@ class RequestParser
 		std::string line;
 		int ret = 1;
 
-			// std::cout << "line: " << c.m_request_str << std::endl;
-			// std::cout << "index: " << c.m_request_data.m_start << std::endl;
 		if (ft::getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start))
 		{
-			// std::cout << "once" << std::endl;
-				std::cout << "this line------------------"<< std::endl;
-			// std::cout << "once" << std::endl;
 			size_t current_chunk_size = ft::AtoiHex(line.c_str());
-			std::cout << current_chunk_size <<  "["<< line << "]"<< std::endl;
 			if (current_chunk_size == 0 && line == "0\r\n")
 			{
 				c.m_request_data.m_done = true;
-				std::cout << "this line22------------------"<< std::endl;
-				std::cout << "body_size: "<< c.m_request_data.m_body.size() << std::endl << "length:" << c.m_request_data.m_content_length << std::endl;
 				if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
 					return SUCCESS;
-				std::cout << "this error"<< std::endl;
 				return ERROR;
 			}
 			if (line.find(CRLF) != std::string::npos)
@@ -168,7 +159,6 @@ class RequestParser
 						c.m_request_data.m_body.append(line.substr(0, line.size() - 2));
 						if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
 							return SUCCESS;
-						// std::cout << "this error2"<< std::endl;
 						return ERROR;
 					}
 					c.m_request_data.m_body.append(line);
@@ -176,7 +166,6 @@ class RequestParser
 			}
 		}
 
-		std::cout << "this error3------------------"<< std::endl;
 		return SUCCESS;
 	}
 
@@ -206,10 +195,8 @@ class RequestParser
 		std::string line;
 		int ret = 1;
 
-		// std::cout << "start_body:::::: " << c.m_request_data.m_start << std::endl;
 		if (c.m_request_data.m_chunked == true)
 		{
-			std::cout << "TRUE"<< std::endl;
 			if (ChunkedData(c)){
 				c.m_request_data.m_start = 0;
 				return ERROR;
@@ -226,7 +213,6 @@ class RequestParser
 		}
 		if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
 		{
-			// std::cout << "[DONE]" << std::endl;
 			c.m_request_data.m_done = true;
 			c.m_request_data.m_start = 0;
 		}
@@ -293,15 +279,7 @@ class RequestParser
 			c.m_request_data.m_done = true;
 			c.m_request_data.m_start = 0;
 		}
-		// std::cout << "start:parse:::: " << c.m_request_data.m_start << std::endl;
 		return SUCCESS;
-	}
-
-	static	void	HandleBody(Client &) {
- 			// adds to body, updates necessary information, compares lenght of body with Content-Length header field
-			// if chunk, appends to body and searches for end chunk
-			//updates c->m_request.done when detects end of body
-			// it would also mark the request as done if body is complete
 	}
 };
 

@@ -110,7 +110,6 @@ void	Response::reset() {
 	this->m_cgi_metadata_sent = false;
 	this->m_content_type = "";
 	this->m_body = "";
-	// this->m_location = "";
 	this->m_response_headers.clear();
 }
 

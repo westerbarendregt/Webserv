@@ -74,6 +74,3 @@ config:
 	WWW=${PWD}/www ./generate_config.pl
 
 .PHONY: all clean fclean re
-
-run2: 
-	./$(NAME) webserv.conf
