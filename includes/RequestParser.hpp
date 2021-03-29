@@ -143,12 +143,19 @@ class RequestParser
 			// std::cout << "index: " << c.m_request_data.m_start << std::endl;
 		if (ft::getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start))
 		{
+			// std::cout << "once" << std::endl;
+				std::cout << "this line------------------"<< std::endl;
+			// std::cout << "once" << std::endl;
 			size_t current_chunk_size = ft::AtoiHex(line.c_str());
+			std::cout << current_chunk_size <<  "["<< line << "]"<< std::endl;
 			if (current_chunk_size == 0 && line == "0\r\n")
 			{
 				c.m_request_data.m_done = true;
-				if (c.m_request_data.m_body.size() != c.m_request_data.m_content_length)
+				std::cout << "this line22------------------"<< std::endl;
+				std::cout << "body_size: "<< c.m_request_data.m_body.size() << std::endl << "length:" << c.m_request_data.m_content_length << std::endl;
+				if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
 					return SUCCESS;
+				std::cout << "this error"<< std::endl;
 				return ERROR;
 			}
 			if (line.find(CRLF) != std::string::npos)
@@ -161,13 +168,16 @@ class RequestParser
 						c.m_request_data.m_body.append(line.substr(0, line.size() - 2));
 						if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
 							return SUCCESS;
+						// std::cout << "this error2"<< std::endl;
 						return ERROR;
 					}
 					c.m_request_data.m_body.append(line);
 				}
 			}
 		}
-		return ERROR;
+
+		std::cout << "this error3------------------"<< std::endl;
+		return SUCCESS;
 	}
 
   public:
@@ -205,6 +215,7 @@ class RequestParser
 				return ERROR;
 			}
 			c.m_request_data.m_start = 0;
+			c.m_request_str.clear();
 			return SUCCESS;
 		}
 		else if (c.m_request_data.m_chunked == false){
@@ -221,6 +232,7 @@ class RequestParser
 		}
 		else 
 			c.m_request_data.m_done = false;
+		c.m_request_str.clear();
 		return SUCCESS;
 	}
 

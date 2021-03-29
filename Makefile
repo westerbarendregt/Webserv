@@ -66,7 +66,7 @@ fclean:
 
 re:
 	$(MAKE) fclean
-	$(MAKE) all
+	$(MAKE) all config
 
 run: $(NAME) config
 		./$(NAME) $(LOG_FILE)

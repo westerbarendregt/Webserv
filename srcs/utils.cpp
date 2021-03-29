@@ -309,15 +309,6 @@ size_t	fullMetaData(std::string const &src) {
 	return src.find("\r\n\r\n");
 }
 
-std::string inet_ntoa(struct in_addr &in)
-{
-  unsigned char *bytes = reinterpret_cast<unsigned char *>(&in);
-  return intToString(bytes[0])
-	  + "." + intToString(bytes[1])
-	  + "." + intToString(bytes[2])
-	  + "." + intToString(bytes[3]);
-}
-
 std::vector<std::string>	split(std::string const & s, char delim) {
 	std::vector<std::string>	v;
 	std::size_t	pos, prev = 0;
@@ -332,4 +323,12 @@ std::vector<std::string>	split(std::string const & s, char delim) {
 	return v;
 }
 
+std::string inet_ntoa(struct in_addr &in)
+{
+  unsigned char *bytes = reinterpret_cast<unsigned char *>(&in);
+  return intToString(bytes[0])
+	  + "." + intToString(bytes[1])
+	  + "." + intToString(bytes[2])
+	  + "." + intToString(bytes[3]);
+}
 }
