@@ -1,21 +1,40 @@
-HTTP/1.1 204 No Content
-Server: nginx/1.19.8
-Date: Sun, 28 Mar 2021 11:35:11 GMT
-Connection: keep-alive
-
------------------------------------------------8080
-HTTP/1.1 404 Not Found
-Server: nginx/1.19.8
-Date: Sun, 28 Mar 2021 11:35:11 GMT
+HTTP/1.1 200 OK
+Content-Length: 307
 Content-Type: text/html
-Content-Length: 153
-Connection: keep-alive
+Date: Mon, 29 Mar 2021 13:15:07 GMT
+Server: webserv/1.0
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to webserv!</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Welcome to webserv!</h1>
+
+<p><em>Thank you for using webserv.</em></p>
+</body>
+</html>
+-----------------------------------------------8080
+HTTP/1.1 405 Method Not Allowed
+Allow: GET
+Server: webserv/1.0
+Date: Mon, 29 Mar 2021 13:15:07 GMT
+Content-Type: text/html
+Content-Length: 170
 
 <html>
-<head><title>404 Not Found</title></head>
+<head><title>405 Method Not Allowed</title></head>
 <body>
-<center><h1>404 Not Found</h1></center>
-<hr><center>nginx/1.19.8</center>
+<center><h1>405 Method Not Allowed</h1></center>
+<hr><center>webserv/1.0</center>
 </body>
 </html>
 -----------------------------------------------8080

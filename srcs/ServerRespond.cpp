@@ -25,6 +25,10 @@ void	Server::respond(t_client &c) {
 		 c.m_response_data.m_cgi_metadata_sent = 1;
 		 if (c.m_request_data.m_cgi && !c.m_cgi_end_chunk)
 			 return ;
+		if (c.m_request_data.m_status_code >= 400){
+			this->closeClientConnection(c);
+			return ;
+		}
 	 	FD_CLR(c.m_socket, &this->m_write_all);
 	 	FD_SET(c.m_socket, &this->m_read_all);
 		c.reset();

@@ -36,9 +36,12 @@ def runPort(port, file, method, headers, body, url_file_name):
 
 
 def runCommand(port):
-    runBoth("PUT", ["'AUTHORIZATION: Basic d2Vic2VydjpjaGVlc2U='", "Connection: keep-alive"], "", 
-            "/put_test/111.txt", port)
-    runBoth("POST", "", "hello", "/directory/", port)
+    runBoth("GET", ["Host: localhost:8080", "User-agent: Go-http-client/1.1", "Accept-Encoding: gzip"], "", "/", port)
+    runBoth("POST", ["Host: localhost:8080", "User-agent: Go-http-client/1.1", "Accept-Encoding: chunked", "Content-Type: test/file"], "", "/", port)
+    runBoth("HEAD", ["Host: localhost:8080", "User-agent: Go-http-client/1.1"], "", "/", port)
+    # runBoth("PUT", ["'AUTHORIZATION: Basic d2Vic2VydjpjaGVlc2U='", "Connection: keep-alive"], "", 
+    #         "/put_test/111.txt", port)
+    # runBoth("POST", "", "hellos", "/directory/", port)
     nginxFile.close()
     webservFile.close()
     os.system("diff webservFile nginxFile")

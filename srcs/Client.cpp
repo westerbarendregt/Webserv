@@ -196,7 +196,7 @@ void	Client::updateServerConf()
 		throw HTTPError("updateServerConf", "empty host header." , 400);
 	}
 
-	host2.resize(host2.size() - 1); // remove when problem fixed in RequestParser
+	host2.resize(host2.size());// - 1); // remove when problem fixed in RequestParser
 	std::cout<<"handling metadata..2: "<< (*(this->m_v_server_blocks)).size() << std::endl;
 	for (size_t i = 0; i < (*(this->m_v_server_blocks)).size(); ++i) {
 		if ((*(this->m_v_server_blocks))[i].m_configs.m_directives["server_name"] == host2) {
