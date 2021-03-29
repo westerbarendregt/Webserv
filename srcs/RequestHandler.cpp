@@ -520,10 +520,16 @@ std::string		RequestHandler::handlePUT()
 
 void	RequestHandler::CheckBodyLimits()
 {
+	std::cout << "1\n";
 	std::string& max_body_server = m_client->m_v_server->m_configs.m_directives["client_max_body_size"];
+	std::cout << "hello: "<< std::endl << max_body_server << std::endl;
 	std::string& max_body_location = m_request_data->m_location->second["location_max_body_size"];
+	
+	std::cout << max_body_location << std::endl;
 	size_t server_body_limit = ft::Atoi(max_body_server.c_str());
+	std::cout << "1\n";
 	size_t location_body_limit = ft::Atoi(max_body_location.c_str());
+	std::cout << "1\n";
 	std::cout << "server_limit: " << server_body_limit << std::endl;
 	std::cout << "location_limit: " << location_body_limit << std::endl;
 
@@ -536,11 +542,14 @@ void	RequestHandler::CheckBodyLimits()
 
 void	RequestHandler::handleRequest(t_client &c) {
 	try {
-		CheckBodyLimits();
+		// CheckBodyLimits();
+		std::cout << "1\n";
 		if (m_request_data->m_status_code >= 400) {
 			this->m_client->m_response_str = generateErrorPage(m_request_data->m_status_code);
+		std::cout << "2\n";
 		} else if (m_request_data->m_cgi) {
 			this->m_cgi.run(c);
+		std::cout << "3\n";
 		} else {
 			switch (m_request_data->m_method) {
 				case GET:

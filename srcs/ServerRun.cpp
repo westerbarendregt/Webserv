@@ -45,16 +45,17 @@ void	Server::run(){
 				 		RequestParser::Parse(*c);
 						c->m_request_data.m_metadata_parsed = true;
 						RequestParser::Print(*c);
-				 		this->m_request_handler.handleMetadata(*c); 
+						if (c->m_request_data.m_status_code < 400)
+				 			this->m_request_handler.handleMetadata(*c); 
 				 	}
 					else if (!c->m_request_data.m_done){
-						std::cout << "GETTING BODY!!!!!!!!!!!!" << std::endl;
+							// std::cout << "GETTING BODY!!!!!!!!!!!!" << std::endl;
 				 		RequestParser::GetBody(*c);
 						RequestParser::Print(*c);
 					}
 				 	if (c->m_request_data.m_done)
 					{
-						std::cout <<"YES DONE!" << std::endl;
+						// std::cout <<"YES DONE!" << std::endl;
 				 		this->m_request_handler.handleRequest(*c);
 						FD_CLR(c->m_socket, &this->m_read_all);
 						FD_SET(c->m_socket, &this->m_write_all);

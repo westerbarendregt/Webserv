@@ -4,14 +4,16 @@
 void                AllowedMethods(Client& c, RequestHandler& req)
 {
     std::string allowed = c.getRequest().m_location->second["allow_method"]; // get this resource from allowed methods from the location
-    if (allowed[0] == 0){
-        std::cout << "[METHOD = ALLOWED]" << std::endl;
+    if (allowed.empty()){
+        std::cout << "[ALL METHODS ALLOWED]" << std::endl;
         return ;
     } // checking if location has an limited methods that are allowed
     std::string method = RequestParser::GetMethodString(c);
     if (allowed.find(method) == std::string::npos) // checking if used method is in allowed methods of location
     {
         req.SetAllow();
+        // if (c.getRequest().m_method == HEAD)
+        //     throw HTTPError("Allowed Methods", "Method not allowed", 404);
         throw HTTPError("Allowed Methods", "Method not allowed", 405);
     }
     std::cout << "[METHOD = ALLOWED]" << std::endl;
