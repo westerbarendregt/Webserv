@@ -33,7 +33,7 @@ Request::Request(Request const & src)
 	 m_path(src.m_path),
 	 m_protocol(src.m_protocol),
 	 m_content_length(src.m_content_length),
-	m_headers(src.m_headers.begin(), src.m_headers.end()),
+	 m_headers(src.m_headers.begin(), src.m_headers.end()),
 	 m_if_body(src.m_if_body),
 	 m_body(src.m_body),
 	 m_metadata_parsed(src.m_metadata_parsed),
@@ -101,8 +101,7 @@ Response::Response()
 	 m_cgi_metadata_sent(false),
 	 m_content_type(""),
 	 m_body(""),
-	//  m_location(""),
-	 m_response_headers()
+	 m_response_headers(0)
 {
 }
 

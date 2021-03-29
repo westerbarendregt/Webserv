@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include <iostream>
+#include <vector>
 #include <errno.h>
 #include "Error.hpp"
 #include "WebServer.hpp"
@@ -316,4 +317,19 @@ std::string inet_ntoa(struct in_addr &in)
 	  + "." + intToString(bytes[2])
 	  + "." + intToString(bytes[3]);
 }
+
+std::vector<std::string>	split(std::string const & s, char delim) {
+	std::vector<std::string>	v;
+	std::size_t	pos, prev = 0;
+
+	do {
+		pos = s.find(delim, prev);
+		std::string	token = s.substr(prev, (pos == std::string::npos) ? std::string::npos : pos - prev);
+		if (!token.empty()) v.push_back(token);
+		prev = pos + 1;
+	} while (pos != std::string::npos);
+
+	return v;
+}
+
 }

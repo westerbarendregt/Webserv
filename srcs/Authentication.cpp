@@ -42,8 +42,10 @@ void                CheckCorrectCredentials(std::string decoded, std::string pat
 void                Authenticated(Client& c, RequestHandler& req)
 {
     std::string path_ht = c.getRequest().m_location->second["auth_basic_user_file"]; // replace this with path to .htpasswd found in location! 
-    if (path_ht[0] == 0) // checks if location needs authentication. 
+    if (path_ht[0] == 0){
+        std::cout << "[NO AUTHENTICATION NEEDED]" << std::endl;
         return ;
+    } // checks if location needs authentication. 
     std::string auth = c.getRequest().m_headers[AUTHORIZATION];
     // std::cout << "AUTH: " << auth << std::endl;
     if (auth == ""){ // checking if there is authentication. 
