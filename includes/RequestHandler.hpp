@@ -67,8 +67,8 @@ class RequestHandler
 		void	setCgiFd(fd_set *read_set, fd_set *write_set, t_client &c);
 		struct	stat	m_statbuf;
 		std::string handleGET();
-		 std::string handleHEAD();
-		// std::string handlePOST();
+		std::string handleHEAD();
+		std::string handlePOST();
 		std::string handlePUT();
 		// std::string handleDELETE();
 

@@ -71,6 +71,6 @@ re:
 run: $(NAME) config
 		./$(NAME) $(LOG_FILE)
 config:
-	WWW=${PWD}/www ./generate_config.pl
+	WWW=${PWD}/www REPO=${PWD} ./generate_config.pl
 
 .PHONY: all clean fclean re

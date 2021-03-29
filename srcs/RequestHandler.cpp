@@ -305,19 +305,21 @@ std::string RequestHandler::handleGET() {
 	 return status_line + response_headers + CRLF;
  }
 
-// std::string RequestHandler::handlePOST() {
-// 	std::string status_line = statusLine();
-// 	responseBody();
-// 	std::string	response_headers = responseHeaders();
-
-// 	return status_line + response_headers + CRLF + response_body;
-// }
+ std::string RequestHandler::handlePOST() {
+ 	std::string status_line = statusLine(405);
+	SetContentLength();
+	SetContentType();
+	SetDate();
+	SetServer();
+	std::string	response_headers = responseHeaders();
+	return status_line + response_headers + CRLF;
+ }
 
 // std::string RequestHandler::handleDELETE() {
 // 	std::string status_line = statusLine();
 // 	std::string response_body = responseBody();
 // 	std::string	response_headers = responseHeaders();
-
+//
 // 	return status_line + response_headers + CRLF + response_body;
 // }
 
@@ -547,9 +549,9 @@ void	RequestHandler::handleRequest(t_client &c) {
 				 case HEAD:
 				 	m_client->m_response_str = handleHEAD();
 				 	break;
-				// case POST:
-				// 	m_client->m_response_str = handlePOST();
-				// 	break;
+				 case POST:
+				 	m_client->m_response_str = handlePOST();
+				 	break;
 				case PUT:
 					m_client->m_response_str = handlePUT();
 					break;
