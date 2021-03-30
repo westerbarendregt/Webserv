@@ -325,16 +325,32 @@ std::string RequestHandler::handleGET() {
 
 std::string	RequestHandler::generateErrorPage(int error) {
 	std::string status_line = statusLine(error); 
-		std::string ret;
-	this->m_response_data->m_body = 
-			"<html>" CRLF
-			"<head><title>" + ft::intToString(error) + ' ' + m_status_codes[error] + "</title></head>" CRLF
-			"<body>" CRLF
-			"<center><h1>" + ft::intToString(error) + ' ' + m_status_codes[error] + "</h1></center>" CRLF
-			"<hr><center>" + SERVER_VERSION + "</center>" CRLF
-			"</body>" CRLF
-			"</html>" CRLF
-			;
+	std::string ret;
+
+	std::string	default_error_page = this->m_client->m_request_data.m_location->second["error_page"];
+	std::vector<std::string>	v = ft::split(default_error_page);
+	std::string	error_path = v.back();
+	v.pop_back();
+
+	for (std::vector<std::string>::iterator it = v.begin(); it != v.end(); ++it) {
+		if (*it == ft::intToString(error)) {
+			this->m_client->m_request_data.m_real_path = error_path;
+			responseBody();
+			break;
+		}
+	}
+
+	if (this->m_client->m_response_data.m_body.empty()) {
+		this->m_response_data->m_body =
+				"<html>" CRLF
+				"<head><title>" + ft::intToString(error) + ' ' + m_status_codes[error] + "</title></head>" CRLF
+				"<body>" CRLF
+				"<center><h1>" + ft::intToString(error) + ' ' + m_status_codes[error] + "</h1></center>" CRLF
+				"<hr><center>" + SERVER_VERSION + "</center>" CRLF
+				"</body>" CRLF
+				"</html>" CRLF
+				;
+	}
 
 	this->m_client->m_response_data.m_content_type = "text/html";
 	SetServer();
