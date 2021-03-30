@@ -9,12 +9,12 @@
 
 
 Monday 29-03
-- [ ] Fix getLocation with alias/
+- [x] Fix getLocation with alias/
+- [ ] write uri parser test
 - [ ] Make comparing python tester work with a result of 1 or 0
 - READ THE PAPER!
-* - [ ] Implement some checks with hostname:port
-* - [ ] try some tests with siege 
-* - [ ] Running the tester
-* - [ ] Handling POST better on none CGI requests
-* - [ ] 
-* - [ ]
+- [ ] Implement some checks with hostname:port
+- [ ] try some tests with siege 
+- [ ] Running the tester
+- [ ] Handling POST better on none CGI requests
+- [ ] fix test GET Expected 404 on http://localhost:8080/directory/Yeah
