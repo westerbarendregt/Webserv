@@ -195,6 +195,7 @@ class RequestParser
 		std::string line;
 		int ret = 1;
 
+		std::cout << "11" << std::endl;
 		if (c.m_request_data.m_chunked == true)
 		{
 			if (ChunkedData(c)){
@@ -206,18 +207,23 @@ class RequestParser
 			return SUCCESS;
 		}
 		else if (c.m_request_data.m_chunked == false){
+			std::cout << "22" << std::endl;
 			while (ret){
+				std::cout << "88" << std::endl;
 				ret = ft::getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start);
 				c.m_request_data.m_body.append(line);
 			}
 		}
+		std::cout << "33" << std::endl;
 		if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
 		{
+			std::cout << "44" << std::endl;
 			c.m_request_data.m_done = true;
 			c.m_request_data.m_start = 0;
 		}
 		else 
 			c.m_request_data.m_done = false;
+		std::cout << "55" << std::endl;
 		c.m_request_str.clear();
 		return SUCCESS;
 	}
@@ -275,10 +281,8 @@ class RequestParser
 				return ErrorRequest(c, 2);
 		}
 		else
-		{ 
 			c.m_request_data.m_done = true;
-			c.m_request_data.m_start = 0;
-		}
+		c.m_request_data.m_start = 0;
 		return SUCCESS;
 	}
 };

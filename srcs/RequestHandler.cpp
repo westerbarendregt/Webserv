@@ -295,10 +295,10 @@ std::string RequestHandler::handleGET() {
 		 responseBody();
 	 }
 
-	 SetContentLength();
-	 SetContentType();
-	 SetDate();
 	 SetServer();
+	 SetDate();
+	 SetContentType();
+	 SetContentLength();
 
 	 std::string	response_headers = responseHeaders();
 
