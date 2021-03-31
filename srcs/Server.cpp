@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <string.h>
+#include "Logger.hpp"
 
 Server::Server(char const *path) {
 	ConfigParser::parse(path, this->m_v_server_all);
@@ -27,7 +28,7 @@ Server::t_client	*Server::getClient(int client_socket) {
 }
 
 void	Server::closeClientConnection(t_client &c) {
-	std::cout<<"closing connection "<<c.m_socket<<std::endl; //log
+	Logger::Log()<<"closing connection "<<c.m_socket<<std::endl; //log
 	::close(c.m_socket);
 	if (FD_ISSET(c.m_socket, &this->m_read_all))
 		FD_CLR(c.m_socket, &this->m_read_all);

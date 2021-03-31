@@ -1,11 +1,12 @@
 #include "Authentication.hpp"
 #include "RequestHandler.hpp"
+#include "Logger.hpp"
 
 void                AllowedMethods(Client& c, RequestHandler& req)
 {
     std::string allowed = c.getRequest().m_location->second["allow_method"]; // get this resource from allowed methods from the location
     if (allowed.empty()){
-        std::cout << "[ALL METHODS ALLOWED]" << std::endl;
+        Logger::Log() << "[ALL METHODS ALLOWED]" << std::endl;
         return ;
     } // checking if location has an limited methods that are allowed
     std::string method = RequestParser::GetMethodString(c);
@@ -16,13 +17,13 @@ void                AllowedMethods(Client& c, RequestHandler& req)
         //     throw HTTPError("Allowed Methods", "Method not allowed", 404);
         throw HTTPError("Allowed Methods", "Method not allowed", 405);
     }
-    std::cout << "[METHOD = ALLOWED]" << std::endl;
+    Logger::Log() << "[METHOD = ALLOWED]" << std::endl;
 }
 
 void                CheckCorrectCredentials(std::string decoded, std::string path_ht)
 {
     int fd = open(path_ht.c_str(), O_RDONLY);
-    // std::cout << "printing path: " << path_ht.c_str() << std::endl;
+    // Logger::Log() << "printing path: " << path_ht.c_str() << std::endl;
     if (fd == -1)
         throw HTTPError("Authentication", "Incorrect path to .htpasswd or .htpasswd couldn't be opended", 403);
     char buf[1001];
@@ -43,7 +44,7 @@ void                Authenticated(Client& c, RequestHandler& req)
 {
     std::string path_ht = c.getRequest().m_location->second["auth_basic_user_file"]; // replace this with path to .htpasswd found in location! 
     if (path_ht[0] == 0){
-        std::cout << "[NO AUTHENTICATION NEEDED]" << std::endl;
+		Logger::Log() << "[NO AUTHENTICATION NEEDED]" << std::endl;
         return ;
     } // checks if location needs authentication. 
     std::string auth = c.getRequest().m_headers[AUTHORIZATION];
@@ -57,5 +58,5 @@ void                Authenticated(Client& c, RequestHandler& req)
     encoded = auth.substr(auth.find(' ') + 1);
     decoded = base64::decode(encoded); // decode the incoming username and password
     CheckCorrectCredentials(decoded, path_ht);
-    std::cout << "[USER-AGENT = AUTHENTICATED]" << std::endl;
+	Logger::Log() << "[USER-AGENT = AUTHENTICATED]" << std::endl;
 }

@@ -2,6 +2,7 @@
 #include "Server.hpp"
 #include "Error.hpp"
 #include "WebServer.hpp"
+#include "Logger.hpp"
 #include <unistd.h>
 
 Request::Request()

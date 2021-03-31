@@ -8,6 +8,7 @@
 #include "Error.hpp"
 #include "utils.hpp"
 #include "Server.hpp"
+#include "Logger.hpp"
 
 VirtualServer::VirtualServer(t_v_server_conf conf)
 : m_host(conf.m_directives["listen"]),
@@ -27,7 +28,7 @@ void	VirtualServer::setAddr() {
 		throw serverError("server init", "invalid port");
 	this->m_sockaddr.sin_family = AF_INET;
 	this->m_sockaddr.sin_addr.s_addr = inet_addr(config_addr.substr(0, c).c_str());
-	//std::cout<<"ft::inet_ntoa()"<<ft::inet_ntoa(this->m_sockaddr.sin_addr)<<std::endl;
+	//Logger::Log()<<"ft::inet_ntoa()"<<ft::inet_ntoa(this->m_sockaddr.sin_addr)<<std::endl;
 	this->m_sockaddr.sin_port = ft::hostToNetworkShort(ft::Atoi(this->m_port.c_str()));
 	std::fill(this->m_sockaddr.sin_zero, this->m_sockaddr.sin_zero + sizeof(this->m_sockaddr.sin_zero), 0);
 }
@@ -51,7 +52,6 @@ VirtualServer::t_routes::iterator	VirtualServer::getLocation(t_request &request)
 	size_t	found, len, location_len = 0;
 	size_t	const uri_len = request.m_path.length();
 	while (it != this->m_configs.m_routes.end()) {
-		std::cout<<request.m_path<<" "<<it->first<<std::endl;
 		location_len = it->first.length();
 		len = location_len < uri_len ? location_len : uri_len;
 		//len prevents location: dir/ uri: directory from matching since len characters has to match

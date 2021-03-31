@@ -1,4 +1,5 @@
 #include "RequestHandler.hpp"
+#include "Logger.hpp"
 
 void	RequestHandler::initStatusCodes() {
 
@@ -53,6 +54,6 @@ void	RequestHandler::printStatusCodes() {
 	std::map<int, std::string>::iterator	it;
 
 	for (it = m_status_codes.begin(); it != m_status_codes.end(); ++it) {
-		std::cout << it->first << " => " << m_status_codes[it->first] << std::endl;
+		Logger::Log() << it->first << " => " << m_status_codes[it->first] << std::endl;
 	}
 }
