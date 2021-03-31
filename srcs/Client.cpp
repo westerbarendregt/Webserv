@@ -2,6 +2,7 @@
 #include "Server.hpp"
 #include "Error.hpp"
 #include "WebServer.hpp"
+#include "Logger.hpp"
 #include <unistd.h>
 
 Request::Request()
@@ -197,14 +198,14 @@ void	Client::updateServerConf()
 	}
 
 	host2.resize(host2.size());// - 1); // remove when problem fixed in RequestParser
-	std::cout<<"handling metadata..2: "<< (*(this->m_v_server_blocks)).size() << std::endl;
+	Logger::Log()<<"handling metadata..2: "<< (*(this->m_v_server_blocks)).size() << std::endl;
 	for (size_t i = 0; i < (*(this->m_v_server_blocks)).size(); ++i) {
 		if ((*(this->m_v_server_blocks))[i].m_configs.m_directives["server_name"] == host2) {
 			this->m_v_server = &(*(this->m_v_server_blocks))[i];//select server by server_name
 			return ;
 		}
 	}
-	std::cout<<"handling metadata..3"<<std::endl;
+	Logger::Log()<<"handling metadata..3"<<std::endl;
 	this->m_v_server = &((*(this->m_v_server_blocks))[0]);//if not found, return the first added,default one
 }
 

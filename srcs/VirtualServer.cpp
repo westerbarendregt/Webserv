@@ -8,6 +8,7 @@
 #include "Error.hpp"
 #include "utils.hpp"
 #include "Server.hpp"
+#include "Logger.hpp"
 
 VirtualServer::VirtualServer(t_v_server_conf conf)
 : m_host(conf.m_directives["listen"]),
@@ -27,7 +28,7 @@ void	VirtualServer::setAddr() {
 		throw serverError("server init", "invalid port");
 	this->m_sockaddr.sin_family = AF_INET;
 	this->m_sockaddr.sin_addr.s_addr = inet_addr(config_addr.substr(0, c).c_str());
-	//std::cout<<"ft::inet_ntoa()"<<ft::inet_ntoa(this->m_sockaddr.sin_addr)<<std::endl;
+	//Logger::Log()<<"ft::inet_ntoa()"<<ft::inet_ntoa(this->m_sockaddr.sin_addr)<<std::endl;
 	this->m_sockaddr.sin_port = ft::hostToNetworkShort(ft::Atoi(this->m_port.c_str()));
 	std::fill(this->m_sockaddr.sin_zero, this->m_sockaddr.sin_zero + sizeof(this->m_sockaddr.sin_zero), 0);
 }
