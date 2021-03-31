@@ -17,7 +17,7 @@ webservPort = "5000"
 nginxPort= "8080"
 ret = 0
 
-def runPort(port, file, method, headers, body, url_file_name):
+def runPort(port, file, method, headers, body, url_file_name, print_out):
     # url_file_name = "/put_test/101" + port + ".txt"
     if method == "PUT":
         url_file_name += port
@@ -40,8 +40,10 @@ def runPort(port, file, method, headers, body, url_file_name):
     # print(args)
     
     output = subprocess.run(args, capture_output=True)
-    # print (output.stdout.decode())
-    file.write(output.stdout.decode())
+    if print_out == 1:
+        print (output.stdout.decode())
+    else:
+        file.write(output.stdout.decode())
     # file.close()
 
 
@@ -56,20 +58,20 @@ def runCommand(port):
     print(bcolors.WARNING + "-----------------------------------------------"+ bcolors.ENDC)
 
 def runBoth(method, headers, body, url, port):#webservPort, nginxPort):
+    webservFile = open("webservFile", "w+")
+    webservFile.truncate(0)
+    nginxFile = open("nginxFile", "w+")
+    nginxFile.truncate(0)
+    args = []
     if port == "0":
-        webservFile = open("webservFile", "w+")
-        webservFile.truncate(0)
-        nginxFile = open("nginxFile", "w+")
-        nginxFile.truncate(0)
-        args = []
         args2 = []
-        args.append("Host: localhost:"+port)
-        args2.append("Host: localhost:"+port)
+        args.append("Host: localhost:"+"8080")
+        args2.append("Host: localhost:"+"5000")
         for i in headers:
             args.append(i)
             args2.append(i)
-        runPort("8080", nginxFile, method, args, body, url)
-        runPort("5000", webservFile, method, args2, body, url)
+        runPort("8080", nginxFile, method, args, body, url, 0)
+        runPort("5000", webservFile, method, args2, body, url, 0)
         nginxFile.close()
         webservFile.close()
         # os.system("diff webservFile nginxFile")
@@ -94,15 +96,21 @@ def runBoth(method, headers, body, url, port):#webservPort, nginxPort):
         # nginxFile = open("nginxFile", "w+")
         # nginxFile.truncate(0)
         # nginxFile.close()
-        os.remove("nginxFile")
         # webservFile = open("webservFile", "w+")
         # webservFile.truncate(0)
         # webservFile.close()
-        os.remove("webservFile")
-    if port == "8080":
-        runPort(port, nginxFile, method, ["Host: localhost:"+port, headers], body, url)
-    elif port == "5000":
-        runPort(port, webservFile, method, ["Host: localhost:"+port, headers], body, url)
+    else:
+        args.append("Host: localhost:"+port)
+        for i in headers:
+            args.append(i)
+        if port == "8080":
+            runPort(port, nginxFile, method, args, body, url, 1)
+        elif port == "5000":
+            runPort(port, webservFile, method, args, body, url, 1)
+    nginxFile.close()
+    webservFile.close()
+    os.remove("nginxFile")
+    os.remove("webservFile")
 
 
 
