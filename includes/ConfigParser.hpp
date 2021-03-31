@@ -76,6 +76,7 @@ class	ConfigParser
 			std::string &listen = conf.m_directives["listen"];
 			formatIp(listen);
 			//add check for invalid ip:port
+			//add check for duplicate t_v_server with same port and same server_name
 			v_server_all[listen].push_back(t_v_server(conf));
 			tokens.pop();
 		}

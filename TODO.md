@@ -13,7 +13,10 @@ Monday 29-03
 - [ ] write uri parser test
 - [ ] Make comparing python tester work with a result of 1 or 0
 - READ THE PAPER!
-- [ ] Implement some checks with hostname:port
+-  Implement some checks with hostname:port
+	- [x] for host headers that include a port, only compare what precedes the port
+	- [ ] write tests for multi_name.conf
+	- [ ] handle duplicate server_name for same port
 - [ ] try some tests with siege 
 - [ ] Running the tester
 - [ ] Handling POST better on none CGI requests
