@@ -6,16 +6,22 @@
 #VARIABLE=name ./generate_config.pl to set a custom one
 
 my @files = @ARGV;
+my $template_dir = "conf_templates/";
+my $conf_dir = "conf/";
+
 
 if (!@files) {
-	opendir (DH, "conf_templates");
+	opendir (DH, $template_dir);
 	@files = readdir(DH);
 	closedir(DH);
-	chdir "conf_templates";
+	foreach $file (@files) {
+		$file = $template_dir.$file;
+	}
 }
 
 foreach $file (@files) {
-	if (-f $file && !system("perl -p -e 's/\\\$([_A-Z]+)/\$ENV{\$1}/g' < $file > $ENV{PWD}/conf/$file")) {
-		print "created conf/$file\n";
+	my $file_name = substr($file, length($template_dir));
+	if (-f $file && !system("perl -p -e 's/\\\$([_A-Z]+)/\$ENV{\$1}/g' < $file > $ENV{PWD}/$conf_dir$file_name")) {
+		print "created $conf_dir$file_name\n";
 	}
 }

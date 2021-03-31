@@ -296,10 +296,10 @@ std::string RequestHandler::handleGET() {
 		 responseBody();
 	 }
 
-	 SetContentLength();
-	 SetContentType();
-	 SetDate();
 	 SetServer();
+	 SetDate();
+	 SetContentType();
+	 SetContentLength();
 
 	 std::string	response_headers = responseHeaders();
 
@@ -396,19 +396,24 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			<<c.m_v_server->m_configs.m_directives["listen"]
 			<<"\n\tSERVER_NAME "<< m_client->m_v_server->m_configs.m_directives["server_name"]
 			<<"\n\tLOCATION/ROUTE "<< m_client->m_request_data.m_location->first<<"\n-----------"<<std::endl;
+
 		std::string &real_path =  c.m_request_data.m_real_path;
 		std::string	&file = c.m_request_data.m_file;
 		std::string	stat_file;
 		real_path = c.m_request_data.m_path;
 		std::string const & location = c.m_request_data.m_location->first;
-		Logger::Log() << "location: " << location << std::endl;
 		std::string & alias = c.m_request_data.m_location->second["alias"];
+
+		Logger::Log() << "location: " << location << std::endl;
 		Logger::Log() << "alias: " << alias << std::endl;
 		Logger::Log() << "index: " << this->m_client->m_request_data.m_location->second["index"] << std::endl;
+
 		/*replacing location path by alias path (what if alias empty?)*/
 		if (alias[alias.size() - 1] != '/')
 			alias.append("/");
-		real_path.replace(real_path.find(location), location.length(), alias);
+		size_t	const replace_len = location.size() > real_path.size() ? real_path.size() : location.size();
+		real_path.replace(0, replace_len, alias);
+
 		Logger::Log()<<"real_path: "<<real_path<<std::endl;
 		Logger::Log()<<"path: "<<this->m_client->m_request_data.m_path<<std::endl;
 		size_t	prefix = 0;
@@ -424,14 +429,14 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			Logger::Log()<<"\tstat "<<stat_file<<std::endl;
 			if (c.m_request_data.m_method != PUT)
 				if (stat(stat_file.c_str(), &this->m_statbuf))
-					throw HTTPError("RequestHandler::handleMetadata 1", "invalid full path", 404);
+					throw HTTPError("RequestHandler::handleMetadata: stat", "invalid full path", 404);
 			//also check permission
 			if ((this->m_statbuf.st_mode & S_IFMT) == S_IFREG) // if file
 				break ;
 			if (c.m_request_data.m_method != PUT)
 				if ((this->m_statbuf.st_mode & S_IFMT) != S_IFDIR 
 						&& (this->m_statbuf.st_mode & S_IFMT) != S_IFLNK) // if something else than a directory/smlink
-					throw HTTPError("RequestHandler::handleMetadata 2", "invalid full path, not a file/directory/symlink", 404);
+					throw HTTPError("RequestHandler::handleMetadata: stat", "invalid full path, not a file/directory/symlink", 404);
 			if (next_prefix == std::string::npos)
 				break ;
 			prefix = next_prefix;
@@ -477,12 +482,11 @@ void	RequestHandler::handleMetadata(t_client &c) {
 				//	if there are additional entries after this file, we throw bad request
 				if (c.m_request_data.m_method != PUT)
 					if (next_prefix != std::string::npos)
-						throw HTTPError("RequestHandler::handleMetadata", "invalid full path 3", 404);
+						throw HTTPError("RequestHandler::handleMetadata", "invalid full path", 404);
 			}
 		} 
 		//		see if autoindex on then flag it so handleRequest can call the appropriate method
 		//		else return bad request?
-		//		//we dont need to check if remaining entries, because loop on 141 doesn't stop at a directory unless it's the last prefix in uri
 		else if (this->m_client->m_request_data.m_method != PUT)
 		{
 			if (c.m_request_data.m_location->second["autoindex"] == "on")
@@ -493,12 +497,6 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			else
 				throw HTTPError("RequestHandler::handleMetadata", "directory listing not enabled", 403);
 		}
-		// Logger::Log()<<"m_real_path: "<<c.m_request_data.m_real_path<<std::endl;
-		// else if (c.m_request_data.m_method != PUT)
-		// 	throw HTTPError("RequestHandler::handleMetadata", "directory listing not enabled", 403);
-
-		// else 
-		// 	throw HTTPError("RequestHandler::handleMetadata", "directory listing not enabled", 404);
 		AllowedMethods(c, *this);
 		Authenticated(c, *this);
 		// Logger::Log()<<"stat file: "<<stat_file<<std::endl;
@@ -507,8 +505,8 @@ void	RequestHandler::handleMetadata(t_client &c) {
 				throw HTTPError("RequestHandler::handleMetadata::PUT", "file is a directory", 409);
 	} catch (HTTPError & e) {
 		std::cerr << e.what() << std::endl;
-		m_client->m_request_data.m_status_code = e.HTTPStatusCode();
-		m_client->m_request_data.m_done = true;
+		this->m_request_data->m_status_code = e.HTTPStatusCode();
+		this->m_request_data->m_done = true;
 	}
 }
 
@@ -571,10 +569,12 @@ void	RequestHandler::handleRequest(t_client &c) {
 	this->m_request_data = &c.m_request_data;
 	this->m_response_data = &c.m_response_data;
 	try {
-		CheckBodyLimits();
 		if (m_request_data->m_status_code >= 400) {
 			this->m_client->m_response_str = generateErrorPage(m_request_data->m_status_code);
-		} else if (m_request_data->m_cgi) {
+			return ;
+		}//first generate errorPage before doing any other check 
+		CheckBodyLimits();
+		if (m_request_data->m_cgi) {
 			this->m_cgi.run(c);
 		} else {
 			switch (m_request_data->m_method) {

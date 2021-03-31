@@ -276,10 +276,8 @@ class RequestParser
 				return ErrorRequest(c, 2);
 		}
 		else
-		{ 
 			c.m_request_data.m_done = true;
-			c.m_request_data.m_start = 0;
-		}
+		c.m_request_data.m_start = 0;
 		return SUCCESS;
 	}
 };
