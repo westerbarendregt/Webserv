@@ -523,8 +523,8 @@ std::string		RequestHandler::handlePUT()
 	}
 	else 
 		this->m_request_data->m_status_code = 201;
-	char * current_dir = getcwd(NULL, 0);
-
+	char* current_dir = getcwd(NULL, 0);
+	
 	if (chdir(upload_store))
 		throw HTTPError("RequestHandler::PUT", "Upload store directory doesn't exist", 500);
 	int fd  = open(m_file.c_str(), O_TRUNC | O_CREAT | O_WRONLY,  0600); // S_IRWXU = owner having all persmissions 
