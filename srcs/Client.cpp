@@ -190,21 +190,24 @@ Client &Client::operator=(Client const & rhs) {
 
 void	Client::updateServerConf()
 {
-	std::string host2 = this->m_request_data.m_headers[HOST];
+	std::string const & host = this->m_request_data.m_headers[HOST];
+	size_t	len = 0;
 
-	if (host2.empty()) {
+	if (host.empty()) {
 		throw HTTPError("updateServerConf", "empty host header." , 400);
 	}
-
-	host2.resize(host2.size());// - 1); // remove when problem fixed in RequestParser
-	std::cout<<"handling metadata..2: "<< (*(this->m_v_server_blocks)).size() << std::endl;
 	for (size_t i = 0; i < (*(this->m_v_server_blocks)).size(); ++i) {
-		if ((*(this->m_v_server_blocks))[i].m_configs.m_directives["server_name"] == host2) {
-			this->m_v_server = &(*(this->m_v_server_blocks))[i];//select server by server_name
-			return ;
+		t_v_server & v_server = (*(this->m_v_server_blocks))[i];
+		t_directives	const & directives = v_server.m_configs.m_directives;
+		t_directives::const_iterator	 const & it = directives.find("server_name");
+		if (directives.find("server_name") != directives.end()) {
+			len = host.find(':', 0);
+			if (it->second.compare(0, it->second.size(), host, 0, len) == 0) {
+				this->m_v_server = &v_server;
+				return ;
+			}
 		}
 	}
-	std::cout<<"handling metadata..3"<<std::endl;
 	this->m_v_server = &((*(this->m_v_server_blocks))[0]);//if not found, return the first added,default one
 }
 

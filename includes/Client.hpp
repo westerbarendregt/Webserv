@@ -34,7 +34,7 @@ struct	Request
 		std::string							m_file;
 };
 
-struct	Response//for now only used for CGI
+struct	Response
 {
 		Response();
 		void						reset();
@@ -54,6 +54,7 @@ class	Client
 		typedef VirtualServer					t_v_server;
 		typedef VirtualServer::t_v_server_conf	t_v_server_conf;
 		typedef	std::vector<t_v_server>			t_v_server_blocks;
+		typedef s_v_server_conf::t_directives	t_directives;
 		friend class Server;
 		friend class RequestParser;
 		friend class RequestHandler;

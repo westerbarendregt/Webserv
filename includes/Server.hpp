@@ -22,6 +22,7 @@ class	Server
 		typedef	RequestHandler						t_request_handler;
 		typedef	int									t_port;
 		typedef	std::vector<t_v_server>				t_v_server_blocks;
+		typedef	t_v_server_conf::t_directives		t_directives;
 		typedef std::map<t_ip_port, t_v_server_blocks> t_v_server_all;
 		typedef std::map<int, t_client> 			t_client_map;
 
