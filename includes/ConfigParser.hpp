@@ -54,6 +54,7 @@ class	ConfigParser
 {
 	public:
 		typedef Server::t_v_server_conf		t_v_server_conf;
+		typedef Server::t_directives		t_directives;
 		typedef Server::t_v_server			t_v_server;
 		typedef Server::t_v_server_blocks			t_v_server_blocks;
 		typedef Server::t_v_server_all		t_v_server_all;
@@ -71,13 +72,32 @@ class	ConfigParser
 
 	static	void	convertTokens(t_config_tokens &tokens, t_v_server_all &v_server_all) {
 		t_v_server_conf	conf;
+		bool	duplicate;
+
 		while (!tokens.empty()) {
 			conf = tokens.front();
+			duplicate = false;
 			std::string &listen = conf.m_directives["listen"];
+			std::string	const & server_name = conf.m_directives["server_name"];
+			duplicate = false;
+
 			formatIp(listen);
 			//add check for invalid ip:port
-			//add check for duplicate t_v_server with same port and same server_name
-			v_server_all[listen].push_back(t_v_server(conf));
+			t_v_server_blocks	& v_server_blocks = v_server_all[listen];
+			if (v_server_blocks.size() > 0) {
+				for (t_v_server_blocks::const_iterator v_server = v_server_blocks.begin(); v_server != v_server_blocks.end(); ++v_server) {
+					t_directives::const_iterator directive = v_server->m_configs.m_directives.find("server_name");
+					if (directive == v_server->m_configs.m_directives.end())
+						continue ;
+					if (server_name == directive->second) {
+						std::cerr << "duplicated server_name: "<< server_name <<", ignoring..."<<std::endl;
+						duplicate = true;
+						break ;
+					}
+				}
+			}
+			if (!duplicate)
+				v_server_all[listen].push_back(t_v_server(conf));
 			tokens.pop();
 		}
 	}
