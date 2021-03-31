@@ -15,6 +15,7 @@
 #include "utils.hpp"
 #include "WebServer.hpp"
 #include "RequestParser.hpp"
+#include "Logger.hpp"
 
 Cgi::Cgi()
 	: m_env_array(0), m_argv(0)
@@ -45,7 +46,7 @@ void	Cgi::convertEnv(t_client &c) {
 		this->m_env_array[i] = ft::strdup(convert);
 		if (!this->m_env_array[i])
 			throw (serverError("Cgi::convertEnv", "failed to allocate cgi env"));
-		std::cout<<this->m_env_array[i]<<std::endl;//remove
+		Logger::Log()<<this->m_env_array[i]<<std::endl;//remove
 		++it;
 		++i;
 	}
@@ -73,16 +74,16 @@ void	Cgi::read(t_client &c) {
 
 void	Cgi::closeAll(t_client &c) {
 	if (c.m_cgi_read_pipe[IN] != -1 && ::close(c.m_cgi_read_pipe[IN]) == -1) {
-		std::cout << "Cgi::closeAll: close(m_cgi_read_pipe[IN]): " << strerror(errno)<<std::endl;
+		Logger::Log() << "Cgi::closeAll: close(m_cgi_read_pipe[IN]): " << strerror(errno)<<std::endl;
 	}
 	if (c.m_cgi_read_pipe[OUT] != -1 && ::close(c.m_cgi_read_pipe[OUT]) == -1) {
-		std::cout << "Cgi::closeAll: close(m_cgi_read_pipe[OUT]): " << strerror(errno)<<std::endl;
+		Logger::Log() << "Cgi::closeAll: close(m_cgi_read_pipe[OUT]): " << strerror(errno)<<std::endl;
 	}
 	if (c.m_cgi_write_pipe[IN] != -1 && ::close(c.m_cgi_write_pipe[IN]) == -1) {
-		std::cout << "Cgi::closeAll: close(m_cgi_write_pipe[IN]): " << strerror(errno)<<std::endl;
+		Logger::Log() << "Cgi::closeAll: close(m_cgi_write_pipe[IN]): " << strerror(errno)<<std::endl;
 	}
 	if (c.m_cgi_write_pipe[OUT] != -1 && ::close(c.m_cgi_write_pipe[OUT]) == -1) {
-		std::cout << "Cgi::closeAll: close(m_cgi_write_pipe[OUT]): " << strerror(errno)<<std::endl;
+		Logger::Log() << "Cgi::closeAll: close(m_cgi_write_pipe[OUT]): " << strerror(errno)<<std::endl;
 	}
 	c.m_cgi_read_pipe[IN] =-1;
 	c.m_cgi_read_pipe[OUT] =-1;
@@ -121,9 +122,9 @@ void	Cgi::setParentIo(t_client &c) {
 		throw HTTPError("Cgi::run: pipe(cgi_read_pipe)", strerror(errno), 500);
 	}
 	if (fcntl(c.m_cgi_read_pipe[IN], F_SETFL, O_NONBLOCK) == -1)
-		std::cout << "Cgi::init : fcntl(m_cgi_read_pipe[IN]): " << strerror(errno)<<std::endl;
+		Logger::Log() << "Cgi::init : fcntl(m_cgi_read_pipe[IN]): " << strerror(errno)<<std::endl;
 	if (fcntl(c.m_cgi_read_pipe[OUT], F_SETFL, O_NONBLOCK) == -1)
-		std::cout << "Cgi::init : fcntl(m_cgi_read_pipe[OUT]): " << strerror(errno)<<std::endl;
+		Logger::Log() << "Cgi::init : fcntl(m_cgi_read_pipe[OUT]): " << strerror(errno)<<std::endl;
 	if (c.m_cgi_read_pipe[IN] > c.m_range_fd)
 		c.m_range_fd = c.m_cgi_read_pipe[IN];
 }
@@ -164,7 +165,7 @@ void	Cgi::exec(t_client &c) {
 }
 
 void	Cgi::run(t_client &c) {
-	std::cout<<"run cgi"<<std::endl;
+	Logger::Log()<<"run cgi"<<std::endl;
 	if (!c.m_cgi_running) {
 		c.m_cgi_running = true;
 		c.m_cgi_post = c.m_request_data.m_method == POST;
@@ -280,9 +281,9 @@ void	RequestHandler::handleCgiMetadata(t_request &request, std::string &file) {
 		request.m_path_info = request.m_file.substr(path_info_index, query_string_index - path_info_index);
 	request.m_file = file;
 	//checek permission for path_info
-	std::cout<<"file: "<<request.m_file<<std::endl;
-	std::cout<<"path_info: "<<request.m_path_info<<std::endl;
-	std::cout<<"query_string : "<<request.m_query_string<<std::endl;
+	Logger::Log()<<"file: "<<request.m_file<<std::endl;
+	Logger::Log()<<"path_info: "<<request.m_path_info<<std::endl;
+	Logger::Log()<<"query_string : "<<request.m_query_string<<std::endl;
 }
 
 bool	RequestHandler::validCgi(t_request &request, size_t extension_index) {
@@ -297,18 +298,18 @@ bool	RequestHandler::validCgi(t_request &request, size_t extension_index) {
 		if (file.compare(extension_index, extension_found->second.size(), extension_found->second))
 			return false; //uri is not to be treated as cgi
 		if (path_found == request.m_location->second.end()) {
-			std::cout<<"handleCgiMetadata: no path to cgi exec provided"<<std::endl;
+			Logger::Log()<<"handleCgiMetadata: no path to cgi exec provided"<<std::endl;
 			return false;
 		}
 		//check for existence of path here
 		if (stat(path_found->second.c_str(), &this->m_statbuf)) {
-			std::cout<<"handleCgiMetadata: invalid path to cgi executable"<<std::endl;
+			Logger::Log()<<"handleCgiMetadata: invalid path to cgi executable"<<std::endl;
 			return false;
 		}
 		return true;
 	}
 	else if (path_found != request.m_location->second.end()) {
-		std::cout<<"handleCgiMetadata: no cgi extension provided"<<std::endl;
+		Logger::Log()<<"handleCgiMetadata: no cgi extension provided"<<std::endl;
 	}
 	return false;
 }
@@ -326,10 +327,10 @@ void	Cgi::setCgiFd(fd_set *read_set, fd_set *write_set, t_client &c) {
 void	Cgi::kill(t_client &c)
 {
 	if (waitpid(c.m_cgi_pid, NULL, WNOHANG) == -1) {
-		std::cout << "Cgi::kill: waitpid: " << strerror(errno)<<std::endl;
+		Logger::Log() << "Cgi::kill: waitpid: " << strerror(errno)<<std::endl;
 	}
 	if (::kill(c.m_cgi_pid, SIGKILL) == -1) {
-		std::cout << "Cgi::kill: kill: " << strerror(errno)<<std::endl;
+		Logger::Log() << "Cgi::kill: kill: " << strerror(errno)<<std::endl;
 	}
 	c.m_cgi_running = false;
 }

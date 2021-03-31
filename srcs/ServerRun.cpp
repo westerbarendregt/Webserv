@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <exception>
 #include <fcntl.h>
+#include "Logger.hpp"
 
 
 
@@ -24,7 +25,7 @@ void	Server::run(){
 	struct timeval tv;
 	t_client 	*c;
 
-	std::cout<<"listening..."<<std::endl;
+	Logger::Log()<<"listening..."<<std::endl;
 	for (;;) {//run
 		this->m_read_fd = this->m_read_all;
 		this->m_write_fd = this->m_write_all;
@@ -34,7 +35,7 @@ void	Server::run(){
 			throw(serverError("select: ", strerror(errno)));
 		for (int i =0; i <= this->m_range_fd ; ++i){
 			if (FD_ISSET(i, &this->m_read_fd)) {
-				std::cout<<"found read connection fd: "<<i<<std::endl;
+				Logger::Log()<<"found read connection fd: "<<i<<std::endl;
 				if (this->accept(i) == SUCCESS)
 					continue ;
 				c = getClient(i);
@@ -45,14 +46,17 @@ void	Server::run(){
 				 		RequestParser::Parse(*c);
 						c->m_request_data.m_metadata_parsed = true;
 						RequestParser::Print(*c);
-				 		this->m_request_handler.handleMetadata(*c); 
+						if (c->m_request_data.m_status_code < 400)
+				 			this->m_request_handler.handleMetadata(*c); 
 				 	}
 					else if (!c->m_request_data.m_done){
+							// Logger::Log() << "GETTING BODY!!!!!!!!!!!!" << std::endl;
 				 		RequestParser::GetBody(*c);
 						RequestParser::Print(*c);
 					}
 				 	if (c->m_request_data.m_done)
 					{
+						// Logger::Log() <<"YES DONE!" << std::endl;
 				 		this->m_request_handler.handleRequest(*c);
 						FD_CLR(c->m_socket, &this->m_read_all);
 						FD_SET(c->m_socket, &this->m_write_all);
@@ -65,14 +69,14 @@ void	Server::run(){
 				else {
 					this->closeClientConnection(*c);
 				}
-				std::cout<<"listening..."<<std::endl;
+				Logger::Log()<<"listening..."<<std::endl;
 			} // FD_ISSET(this->read_fd)
 			else if (FD_ISSET(i, &this->m_write_fd)) {
 				c = getClient(i);
 				if (c->m_request_data.m_cgi && this->m_request_handler.handleCgi(*c) == CONTINUE)
 					continue ;
 				this->respond(*c);
-				std::cout<<"listening..."<<std::endl;
+				Logger::Log()<<"listening..."<<std::endl;
 				//can close connection if the response is an error
 			}
 		} // for (i in range_fd)

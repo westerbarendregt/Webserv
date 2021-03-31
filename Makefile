@@ -1,13 +1,17 @@
 NAME		:=	webserv
 FLAGS		=	-Wall -Wextra -Werror -std=c++98 -pedantic
 
-ifdef DEBUG
+DEBUG 		?=	0
+LOG			?=	1
+
+ifeq ($(DEBUG), 1)
 FLAGS+= -g -fsanitize=address
 endif
 
 LOG_FILE=
 
-ifdef LOG
+ifeq ($(LOG), 1)
+FLAGS+=	-DLOG
 LOG_FILE+=  2>&1 | tee webserv.log
 endif
 
@@ -22,6 +26,7 @@ OBJ +=	Authentication
 OBJ +=	base64
 OBJ +=	Cgi
 OBJ +=	Client
+OBJ +=	Logger
 OBJ +=	RequestHandler
 OBJ +=	RequestHandlerMimeTypes
 OBJ +=	RequestHandlerStatusCodes
@@ -47,7 +52,7 @@ all: $(NAME)
 
 $(NAME): $(OBJ)
 	@$(foreach obj, $?, echo Linking $(notdir $(obj))$(NL))
-	@$(CC) $(FLAGS) $(OBJ) -g -o $(NAME)
+	$(CC) $(FLAGS) $(OBJ) -g -o $(NAME)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HEADER)
 	@mkdir -p $(OBJ_DIR)/$(dir $*)
@@ -66,11 +71,11 @@ fclean:
 
 re:
 	$(MAKE) fclean
-	$(MAKE) all
+	$(MAKE) all config
 
 run: $(NAME) config
-		./$(NAME) $(LOG_FILE)
+	./$(NAME) $(LOG_FILE)
 config:
-	WWW=${PWD}/www ./generate_config.pl
+	WWW=${PWD}/www REPO=${PWD} ./generate_config.pl
 
 .PHONY: all clean fclean re

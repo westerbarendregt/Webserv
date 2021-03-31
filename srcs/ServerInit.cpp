@@ -4,6 +4,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include "Error.hpp"
+#include "Logger.hpp"
 
 
 void	Server::init(){
@@ -33,7 +34,7 @@ void	Server::connectVirtualServer(t_v_server &v_server) {
 	FD_SET(v_server.m_socket, &this->m_read_all);
 	if (v_server.m_socket > this->m_range_fd)
 		this->m_range_fd = v_server.m_socket;
-	std::cout<<v_server.m_configs.m_directives["listen"]<<" listens on socket "<<v_server.m_socket<<std::endl;
+	Logger::Log()<<v_server.m_configs.m_directives["listen"]<<" listens on socket "<<v_server.m_socket<<std::endl;
 }
 
 void	Server::close() {

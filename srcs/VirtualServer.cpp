@@ -8,6 +8,7 @@
 #include "Error.hpp"
 #include "utils.hpp"
 #include "Server.hpp"
+#include "Logger.hpp"
 
 VirtualServer::VirtualServer(t_v_server_conf conf)
 : m_host(conf.m_directives["listen"]),
@@ -27,7 +28,7 @@ void	VirtualServer::setAddr() {
 		throw serverError("server init", "invalid port");
 	this->m_sockaddr.sin_family = AF_INET;
 	this->m_sockaddr.sin_addr.s_addr = inet_addr(config_addr.substr(0, c).c_str());
-	//std::cout<<"ft::inet_ntoa()"<<ft::inet_ntoa(this->m_sockaddr.sin_addr)<<std::endl;
+	//Logger::Log()<<"ft::inet_ntoa()"<<ft::inet_ntoa(this->m_sockaddr.sin_addr)<<std::endl;
 	this->m_sockaddr.sin_port = ft::hostToNetworkShort(ft::Atoi(this->m_port.c_str()));
 	std::fill(this->m_sockaddr.sin_zero, this->m_sockaddr.sin_zero + sizeof(this->m_sockaddr.sin_zero), 0);
 }
@@ -48,12 +49,25 @@ VirtualServer::t_routes::iterator	VirtualServer::getLocation(t_request &request)
 	//compare against all route directives and find the longest one
 	//since they are stored in map, they are already sorted by number of prefixes
 	t_routes::iterator	it = this->m_configs.m_routes.begin();
+	size_t	found, len, location_len = 0;
+	size_t	const uri_len = request.m_path.length();
 	while (it != this->m_configs.m_routes.end()) {
-		if (!request.m_path.compare(0, it->first.size(), it->first))
-			break ;
+		location_len = it->first.length();
+		len = location_len < uri_len ? location_len : uri_len;
+		//len prevents location: dir/ uri: directory from matching since len characters has to match
+		//so if uri > location, the whole uri has to match
+		found = it->first.find(request.m_path.c_str(), 0, len);
+		if (found == 0) {
+			if (it->first == "/") 
+				return it; //fallback
+			if (location_len > uri_len && it->first[uri_len] == '/') 
+				return it; // location: directory/ uri: directory
+			if (uri_len == location_len)
+				return it; //strictly equal
+			if (location_len < uri_len)
+				return it; // location: directory/ uri: directory/file
+		}
 		++it;
 	}
-	if (it == this->m_configs.m_routes.end())
-		throw HTTPError("getLocation", "no location found", 404);
-	return it;
+	throw HTTPError("getLocation", "no location found", 500);
 }

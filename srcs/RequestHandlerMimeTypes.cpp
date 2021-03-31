@@ -1,4 +1,5 @@
 #include "RequestHandler.hpp"
+#include "Logger.hpp"
 
 void	RequestHandler::initMimeTypes() {
 
@@ -82,6 +83,6 @@ void	RequestHandler::printMimeTypes() {
 	std::map<std::string, std::string>::iterator	it;
 
 	for (it = m_mime_types.begin(); it != m_mime_types.end(); ++it) {
-		std::cout << it->first << " => " << m_mime_types[it->first] << std::endl;
+		Logger::Log() << it->first << " => " << m_mime_types[it->first] << std::endl;
 	}
 }

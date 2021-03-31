@@ -2,6 +2,7 @@
 #include "Server.hpp"
 #include "Error.hpp"
 #include "WebServer.hpp"
+#include "Logger.hpp"
 #include <unistd.h>
 
 Request::Request()
@@ -33,7 +34,7 @@ Request::Request(Request const & src)
 	 m_path(src.m_path),
 	 m_protocol(src.m_protocol),
 	 m_content_length(src.m_content_length),
-	m_headers(src.m_headers.begin(), src.m_headers.end()),
+	 m_headers(src.m_headers.begin(), src.m_headers.end()),
 	 m_if_body(src.m_if_body),
 	 m_body(src.m_body),
 	 m_metadata_parsed(src.m_metadata_parsed),
@@ -101,8 +102,7 @@ Response::Response()
 	 m_cgi_metadata_sent(false),
 	 m_content_type(""),
 	 m_body(""),
-	 m_location(""),
-	 m_response_headers()
+	 m_response_headers(0)
 {
 }
 
@@ -111,7 +111,6 @@ void	Response::reset() {
 	this->m_cgi_metadata_sent = false;
 	this->m_content_type = "";
 	this->m_body = "";
-	this->m_location = "";
 	this->m_response_headers.clear();
 }
 
@@ -192,15 +191,22 @@ Client &Client::operator=(Client const & rhs) {
 
 void	Client::updateServerConf()
 {
-	std::string host2 = this->m_request_data.m_headers[HOST];
-	if (host2.empty()) {
+	std::string const & host = this->m_request_data.m_headers[HOST];
+	size_t	len = 0;
+
+	if (host.empty()) {
 		throw HTTPError("updateServerConf", "empty host header." , 400);
 	}
-	host2.resize(host2.size() - 1); // remove when problem fixed in RequestParser
 	for (size_t i = 0; i < (*(this->m_v_server_blocks)).size(); ++i) {
-		if ((*(this->m_v_server_blocks))[i].m_configs.m_directives["server_name"] == host2) {
-			this->m_v_server = &(*(this->m_v_server_blocks))[i];//select server by server_name
-			return ;
+		t_v_server & v_server = (*(this->m_v_server_blocks))[i];
+		t_directives	const & directives = v_server.m_configs.m_directives;
+		t_directives::const_iterator	 const & it = directives.find("server_name");
+		if (directives.find("server_name") != directives.end()) {
+			len = host.find(':', 0);
+			if (it->second.compare(0, it->second.size(), host, 0, len) == 0) {
+				this->m_v_server = &v_server;
+				return ;
+			}
 		}
 	}
 	this->m_v_server = &((*(this->m_v_server_blocks))[0]);//if not found, return the first added,default one

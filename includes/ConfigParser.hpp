@@ -15,6 +15,7 @@
 # include "WebServer.hpp"
 # include "utils.hpp"
 # include "Error.hpp"
+# include "Logger.hpp"
 
 #define BLANKS "\t\v "
 
@@ -46,7 +47,7 @@ static size_t	const hash_len[] = {1, 4, 5};
 
 static const char *blocks[] = {"server", "location"};
 static const char *main_directives[] = {0};
-static const char *server_directives[] = {"listen", "server_name", "error_pages", "client_max_body_size", 0};
+static const char *server_directives[] = {"listen", "server_name", "error_page", "client_max_body_size", 0};
 static const char *route_directives[] = {"index", "limit_except", "root", "autoindex", "upload_store",  "allow_method", "auth_basic", "auth_basic_user_file", "location_max_body_size", 0}; //add cgi later
 static const char **directives_string[] = {main_directives, server_directives, route_directives};
 
@@ -54,6 +55,7 @@ class	ConfigParser
 {
 	public:
 		typedef Server::t_v_server_conf		t_v_server_conf;
+		typedef Server::t_directives		t_directives;
 		typedef Server::t_v_server			t_v_server;
 		typedef Server::t_v_server_blocks			t_v_server_blocks;
 		typedef Server::t_v_server_all		t_v_server_all;
@@ -71,12 +73,32 @@ class	ConfigParser
 
 	static	void	convertTokens(t_config_tokens &tokens, t_v_server_all &v_server_all) {
 		t_v_server_conf	conf;
+		bool	duplicate;
+
 		while (!tokens.empty()) {
 			conf = tokens.front();
+			duplicate = false;
 			std::string &listen = conf.m_directives["listen"];
+			std::string	const & server_name = conf.m_directives["server_name"];
+			duplicate = false;
+
 			formatIp(listen);
 			//add check for invalid ip:port
-			v_server_all[listen].push_back(t_v_server(conf));
+			t_v_server_blocks	& v_server_blocks = v_server_all[listen];
+			if (v_server_blocks.size() > 0) {
+				for (t_v_server_blocks::const_iterator v_server = v_server_blocks.begin(); v_server != v_server_blocks.end(); ++v_server) {
+					t_directives::const_iterator directive = v_server->m_configs.m_directives.find("server_name");
+					if (directive == v_server->m_configs.m_directives.end())
+						continue ;
+					if (server_name == directive->second) {
+						std::cerr << "duplicated server_name: "<< server_name <<", ignoring..."<<std::endl;
+						duplicate = true;
+						break ;
+					}
+				}
+			}
+			if (!duplicate)
+				v_server_all[listen].push_back(t_v_server(conf));
 			tokens.pop();
 		}
 	}
@@ -129,22 +151,22 @@ class	ConfigParser
 			for (std::map<t_ip_port, t_v_server_blocks>::iterator ip_port = v_server_all.begin()
 					; ip_port != v_server_all.end(); ++ip_port){
 
-				std::cout << "\t\t---"<<ip_port->first<<"---"<<std::endl;
+				Logger::Log() << "\t\t---"<<ip_port->first<<"---"<<std::endl;
 				for (size_t	i = 0; i < ip_port->second.size(); ++i)
 				{
 					t_v_server_conf &c = ip_port->second[i].m_configs;
-					std::cout << "\t\tSERVER"<<std::endl;
+					Logger::Log() << "\t\tSERVER"<<std::endl;
 					for (t_v_server_conf::t_directives::iterator it = c.m_directives.begin();
 							it != c.m_directives.end(); ++it) {
-						std::cout<<"\t\t\t"<<it->first<<" "<<it->second<<std::endl;
+						Logger::Log()<<"\t\t\t"<<it->first<<" "<<it->second<<std::endl;
 					}
 					for (t_v_server_conf::t_routes::iterator path = c.m_routes.begin();
 							path != c.m_routes.end(); path++) {
-						std::cout << "\t\t\tROUTE "<<path->first<<std::endl;
+						Logger::Log() << "\t\t\tROUTE "<<path->first<<std::endl;
 						for (t_v_server_conf::t_directives::iterator path_directives = path->second.begin()
 								; path_directives != path->second.end();
 								++path_directives)
-							std::cout<<"\t\t\t\t"<<path_directives->first<<" "<<path_directives->second<<std::endl;
+							Logger::Log()<<"\t\t\t\t"<<path_directives->first<<" "<<path_directives->second<<std::endl;
 					}
 				}
 		}
@@ -153,18 +175,18 @@ class	ConfigParser
 	static void	printServerTokens(t_config_tokens tokens) {
 		while (!tokens.empty()) {
 			t_v_server_conf &t = tokens.front();
-			std::cout << "SERVER"<<std::endl;
+			Logger::Log() << "SERVER"<<std::endl;
 			for (t_v_server_conf::t_directives::iterator it = t.m_directives.begin(); 
 					it != t.m_directives.end(); ++it) {
-				std::cout<<"\t"<<it->first<<" "<<it->second<<std::endl;
+				Logger::Log()<<"\t"<<it->first<<" "<<it->second<<std::endl;
 			}
 			for (t_v_server_conf::t_routes::iterator path = t.m_routes.begin(); 
 					path != t.m_routes.end(); path++) {
-				std::cout << "\tROUTE "<<path->first<<std::endl;
+				Logger::Log() << "\tROUTE "<<path->first<<std::endl;
 				for (t_v_server_conf::t_directives::iterator path_directives = path->second.begin()
 						; path_directives != path->second.end();
 						++path_directives)
-					std::cout<<"\t\t"<<path_directives->first<<" "<<path_directives->second<<std::endl;
+					Logger::Log()<<"\t\t"<<path_directives->first<<" "<<path_directives->second<<std::endl;
 			}
 			tokens.pop();
 		}

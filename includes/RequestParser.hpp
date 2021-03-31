@@ -11,6 +11,7 @@
 # include "Client.hpp"
 # include "utils.hpp"
 # include "WebServer.hpp"
+# include "Logger.hpp"
 
 #define BLANKS "\t\v\n "
 
@@ -96,11 +97,11 @@ class RequestParser
 		c.m_request_data.m_start = 0;
 		c.m_request_data.m_done = true;
 		if (line == 0)
-			std::cout <<  "Error on Request line 1" << std::endl;
+			Logger::Log() <<  "Error on Request line 1" << std::endl;
 		if (line == 1)
-			std::cout <<  "Error with Request headers" << std::endl;
+			Logger::Log() <<  "Error with Request headers" << std::endl;
 		if (line == 2)
-			std::cout <<  "Error with Body" << std::endl;
+			Logger::Log() <<  "Error with Body" << std::endl;
 		return ERROR;
 	}
 
@@ -139,15 +140,13 @@ class RequestParser
 		std::string line;
 		int ret = 1;
 
-			// std::cout << "line: " << c.m_request_str << std::endl;
-			// std::cout << "index: " << c.m_request_data.m_start << std::endl;
 		if (ft::getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start))
 		{
 			size_t current_chunk_size = ft::AtoiHex(line.c_str());
 			if (current_chunk_size == 0 && line == "0\r\n")
 			{
 				c.m_request_data.m_done = true;
-				if (c.m_request_data.m_body.size() != c.m_request_data.m_content_length)
+				if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
 					return SUCCESS;
 				return ERROR;
 			}
@@ -167,7 +166,8 @@ class RequestParser
 				}
 			}
 		}
-		return ERROR;
+
+		return SUCCESS;
 	}
 
   public:
@@ -196,15 +196,14 @@ class RequestParser
 		std::string line;
 		int ret = 1;
 
-		// std::cout << "start_body:::::: " << c.m_request_data.m_start << std::endl;
 		if (c.m_request_data.m_chunked == true)
 		{
-			std::cout << "TRUE"<< std::endl;
 			if (ChunkedData(c)){
 				c.m_request_data.m_start = 0;
 				return ERROR;
 			}
 			c.m_request_data.m_start = 0;
+			c.m_request_str.clear();
 			return SUCCESS;
 		}
 		else if (c.m_request_data.m_chunked == false){
@@ -215,12 +214,12 @@ class RequestParser
 		}
 		if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
 		{
-			// std::cout << "[DONE]" << std::endl;
 			c.m_request_data.m_done = true;
 			c.m_request_data.m_start = 0;
 		}
 		else 
 			c.m_request_data.m_done = false;
+		c.m_request_str.clear();
 		return SUCCESS;
 	}
 
@@ -228,37 +227,37 @@ class RequestParser
 	{
 		switch (c.m_request_data.m_method)
 		{
-			case GET : std::cout << "method: " << "GET" << std::endl; 
+			case GET : Logger::Log() << "method: " << "GET" << std::endl;
 				break ;
-			case HEAD : std::cout << "method: " << "HEAD" << std::endl; 
+			case HEAD : Logger::Log() << "method: " << "HEAD" << std::endl;
 				break ;
-			case POST : std::cout << "method: " << "POST" << std::endl; 
+			case POST : Logger::Log() << "method: " << "POST" << std::endl;
 				break ;
-			case PUT : std::cout << "method: " << "PUT" << std::endl; 
+			case PUT : Logger::Log() << "method: " << "PUT" << std::endl;
 				break ;
-			case DELETE : std::cout << "method: " << "DELETE" << std::endl;
+			case DELETE : Logger::Log() << "method: " << "DELETE" << std::endl;
 				break ;
 		}
-		std::cout << "path: " << c.m_request_data.m_path << std::endl;
+		Logger::Log() << "path: " << c.m_request_data.m_path << std::endl;
 		switch (c.m_request_data.m_protocol)
 		{
-			case HTTP1 : std::cout << "protocol: " << "HTTP/1.1" << std::endl;
+			case HTTP1 : Logger::Log() << "protocol: " << "HTTP/1.1" << std::endl;
 				break ;
 		}
 		for (int i = 0; i < 18; ++i)
-			std::cout << headers[i] << ":" << c.m_request_data.m_headers[i] << std::endl;//"---" << c.m_request_data.m_headers[i].size() << std::endl;
+			Logger::Log() << headers[i] << ":" << c.m_request_data.m_headers[i] << std::endl;//"---" << c.m_request_data.m_headers[i].size() << std::endl;
 		if (c.m_request_data.m_chunked)
-			std::cout << std::endl << "The body is chunked!" << std::endl;
-		std::cout << "BODY-length: " << c.m_request_data.m_content_length << std::endl;
-		std::cout << "BODY:" << c.m_request_data.m_body << std::endl << std::endl;
+			Logger::Log() << std::endl << "The body is chunked!" << std::endl;
+		Logger::Log() << "BODY-length: " << c.m_request_data.m_content_length << std::endl;
+		Logger::Log() << "BODY:" << c.m_request_data.m_body << std::endl << std::endl;
 		if (c.m_request_data.m_status_code)
-			std::cout << "While parsing found error NR: " << c.m_request_data.m_status_code << std::endl;
+			Logger::Log() << "While parsing found error NR: " << c.m_request_data.m_status_code << std::endl;
 		if (c.m_request_data.m_metadata_parsed && c.m_request_data.m_done)
-			std::cout << "METADATA IS PARSED AND BODY PARSING IS DONE" << std::endl << std::endl;
+			Logger::Log() << "METADATA IS PARSED AND BODY PARSING IS DONE" << std::endl << std::endl;
 		else if (c.m_request_data.m_metadata_parsed)
-			std::cout << "METADATA PARSED BUT BODY PARSING IS NOT FINISHED" << std::endl << std::endl; 
-		else 
-			std::cout << "REQUEST DATA NOT PARSED" << std::endl << std::endl;
+			Logger::Log() << "METADATA PARSED BUT BODY PARSING IS NOT FINISHED" << std::endl << std::endl;
+		else
+			Logger::Log() << "REQUEST DATA NOT PARSED" << std::endl << std::endl;
 		
 	}
 	
@@ -277,19 +276,9 @@ class RequestParser
 				return ErrorRequest(c, 2);
 		}
 		else
-		{ 
 			c.m_request_data.m_done = true;
-			c.m_request_data.m_start = 0;
-		}
-		// std::cout << "start:parse:::: " << c.m_request_data.m_start << std::endl;
+		c.m_request_data.m_start = 0;
 		return SUCCESS;
-	}
-
-	static	void	HandleBody(Client &) {
- 			// adds to body, updates necessary information, compares lenght of body with Content-Length header field
-			// if chunk, appends to body and searches for end chunk
-			//updates c->m_request.done when detects end of body
-			// it would also mark the request as done if body is complete
 	}
 };
 
