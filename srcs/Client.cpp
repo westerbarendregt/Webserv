@@ -14,6 +14,7 @@ Request::Request()
 	m_headers(18, ""),
 	m_if_body(false),
 	m_body(""),
+	m_tmp_body(""),
 	m_metadata_parsed(false),
 	m_done(false),
 	m_chunked(false),
@@ -39,6 +40,7 @@ Request::Request(Request const & src)
 	 m_headers(src.m_headers.begin(), src.m_headers.end()),
 	 m_if_body(src.m_if_body),
 	 m_body(src.m_body),
+	 m_tmp_body(src.m_tmp_body),
 	 m_metadata_parsed(src.m_metadata_parsed),
 	 m_done(src.m_done),
 	 m_chunked(src.m_chunked),
@@ -64,6 +66,7 @@ Request &Request::operator=(Request const & rhs) {
 	 this->m_headers.assign(rhs.m_headers.begin(), rhs.m_headers.end());
 	 this->m_if_body        = rhs.m_if_body;
 	 this->m_body           = rhs.m_body;
+	 this->m_tmp_body       = rhs.m_tmp_body;
 	 this->m_metadata_parsed= rhs.m_metadata_parsed;
 	 this->m_done           = rhs.m_done;
 	 this->m_chunked        = rhs.m_chunked;
@@ -89,6 +92,7 @@ void	Request::reset() {
 	this->m_headers.assign(18, "");
 	this->m_if_body = false;
 	this->m_body.clear();
+	this->m_tmp_body.clear();
 	this->m_metadata_parsed = false;
 	this->m_done = false;
 	this->m_chunked = false;

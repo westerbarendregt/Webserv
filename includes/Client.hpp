@@ -20,6 +20,7 @@ struct	Request
 		std::vector<std::string> 			m_headers;
 		bool								m_if_body;
 		std::string							m_body;
+		std::string							m_tmp_body;
 		bool								m_metadata_parsed;
 		bool								m_done;
 		bool								m_chunked;

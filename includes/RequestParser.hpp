@@ -139,46 +139,67 @@ class RequestParser
 	{
 		std::string line;
 		int ret = 1;
-	
+
+		c.m_request_str = c.m_request_str.substr(c.m_request_data.m_start);
+		c.m_request_data.m_tmp_body.append(c.m_request_str);
+		if (c.m_request_data.m_tmp_body.find("0\r\n\r\n") == std::string::npos)
+			return SUCCESS;
+		// std::cout << "2body:" << c.m_request_data.m_body << std::endl;
+		c.m_request_data.m_start = 0;
 		while (ret)
 		{
-			ret = ft::getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start);
-			for (int i = 0; line[i]; ++i){
-				if (line[i] == 13 || line[i] == 10)
-					printf("%d-", line[i]);
-			}
-			if ((line == "\r\n"  || line == "\n") && c.m_request_data.m_last_chunk == true)
+			ret = ft::getline_crlf(c.m_request_data.m_tmp_body, line, 1, c.m_request_data.m_start);
+			// std::cout << "line:" << line << std::endl;
+			// for (int i = 0; line[i]; ++i){
+			// 	if (line[i] == 13 || line[i] == 10)
+			// 		printf("%d-", line[i]);
+			// }
+			if ((line == "\r\n"  || line == "\r") && c.m_request_data.m_last_chunk == true)
 			{
 					c.m_request_data.m_done = true;
-					std::cout << "size: " << c.m_request_data.m_body.size() << " length: " << c.m_request_data.m_content_length << std::endl;
+					// std::cout << "size: " << c.m_request_data.m_body.size() << " length: " << c.m_request_data.m_content_length << std::endl;
 					if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length){
-						std::cout << "exitt here2" << std::endl;
+						// std::cout << "exitt here2" << std::endl;
 						return SUCCESS;
 					}
-					std::cout << "exitt here3" << std::endl;
+					// std::cout << "exitt here3" << std::endl;
+					c.m_request_data.m_status_code = 400;
+					c.m_request_data.m_done = true;
 					return ERROR;
 			}
+			// if ((line == "\r\n") && )
 			if (!ret){
 				c.m_request_data.m_body.append(line);
-				std::cout << "exitt here" << std::endl;
+				// std::cout << "size: " << c.m_request_data.m_body.size() << " length: " << c.m_request_data.m_content_length << std::endl;
+				// std::cout << "exitt here" << std::endl;
 				return SUCCESS;
 			}
 			if (c.m_request_data.m_looking_for_size == true){
-				std::cout << "hi1" << std::endl;
+				// std::cout << "hi1" << std::endl;
 				c.m_request_data.m_looking_for_size = false;
 				size_t current_chunk_size = ft::AtoiHex(line.c_str());	
 				if (current_chunk_size == 0 && line == "0\r\n")
 				{
-					std::cout << "important hit" << std::endl;
+					// std::cout << "important hit" << std::endl;
 					c.m_request_data.m_last_chunk = true;
+				}
+				if (c.m_request_data.m_body.size() != c.m_request_data.m_content_length){
+					// std::cout << "body:" << c.m_request_data.m_body << std::endl;
+					std::cout << "something in body size is fu" << std::endl;
+					std::cout << "size: " << c.m_request_data.m_body.size() << " length: " << c.m_request_data.m_content_length << std::endl;
+					c.m_request_data.m_status_code = 400;
+					c.m_request_data.m_done = true;
+					return ERROR;
 				}
 				c.m_request_data.m_content_length += current_chunk_size;
 			}
 			else {
-				std::cout << "hi2" << std::endl;
+				// std::cout << "hi2" << std::endl;
 				c.m_request_data.m_looking_for_size = true;
-				c.m_request_data.m_body.append(line.substr(0, line.size() - 2));
+				// std::cout << "3body:" << c.m_request_data.m_body << std::endl;
 
+				c.m_request_data.m_body.append(line.substr(0, line.size() - 2));
+				// std::cout << "4body:" << c.m_request_data.m_body << std::endl;
 			}
 		}
 
