@@ -62,14 +62,16 @@ class RequestHandler
 		std::string GetTransferEncoding();
 		std::string GetWWWAuthenticate();
 
+		struct stat getStatbuf();
+
 	private:
 		Cgi				m_cgi;
 		void	setCgiFd(fd_set *read_set, fd_set *write_set, t_client &c);
-		struct	stat	m_statbuf;
 		std::string handleGET();
 		std::string handleHEAD();
 		std::string handlePOST();
 		std::string handlePUT();
+		struct	stat	m_statbuf;
 		// std::string handleDELETE();
 
 

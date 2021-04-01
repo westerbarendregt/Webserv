@@ -13,6 +13,7 @@
 std::string         EncodePassword(std::string& password);
 void                Authenticated(Client& c, RequestHandler& req);
 void                AllowedMethods(Client& c, RequestHandler& req);
+void                GetLanguage(Client& c, RequestHandler& req);
 
 
 

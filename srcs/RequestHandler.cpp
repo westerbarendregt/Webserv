@@ -101,6 +101,10 @@ void	RequestHandler::handleAutoIndex() {
 	this->m_client->m_response_data.m_content_type = "text/html";
 }
 
+struct stat RequestHandler::getStatbuf(){
+	return m_statbuf;
+}
+
 std::string RequestHandler::GetAllow() {
 	std::string allowed = "Allow: "; // get this resource from allowed methods from the location
 	allowed += this->m_client->m_request_data.m_location->second["allow_method"];
@@ -499,6 +503,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		}
 		AllowedMethods(c, *this);
 		Authenticated(c, *this);
+		GetLanguage(c, *this);
 		// Logger::Log()<<"stat file: "<<stat_file<<std::endl;
 		if (m_client->m_request_data.m_method == PUT)
 			if (real_path[real_path.size() - 1] == '/' || (stat(real_path.c_str(), &this->m_statbuf) && S_ISDIR(this->m_statbuf.st_mode)))
