@@ -1,18 +1,26 @@
 NAME		:=	webserv
 FLAGS		=	-Wall -Wextra -Werror -std=c++98 -pedantic
 
-DEBUG 		?=	0
+SANITIZE	?=	0
 LOG			?=	1
+LOG_FILE	?=	0
 
-ifeq ($(DEBUG), 1)
+ifeq ($(SANITIZE), 1)
 FLAGS+= -g -fsanitize=address
 endif
 
-LOG_FILE=
+ifeq ($(DEBUG), 1)
+FLAGS+= -g
+endif
+
+OUT_LOG=
 
 ifeq ($(LOG), 1)
 FLAGS+=	-DLOG
-LOG_FILE+=  2>&1 | tee webserv.log
+endif
+
+ifeq ($(LOG_FILE), 1)
+OUT_LOG+=  2>&1 | tee webserv.log
 endif
 
 INCLUDES	:=	-Iincludes
@@ -74,7 +82,7 @@ re:
 	$(MAKE) all config
 
 run: $(NAME) config
-	./$(NAME) $(LOG_FILE)
+	@./$(NAME) $(OUT_LOG) || true
 config:
 	WWW=${PWD}/www REPO=${PWD} ./generate_config.pl
 
