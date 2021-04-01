@@ -62,7 +62,7 @@ class RequestHandler
 		std::string GetTransferEncoding();
 		std::string GetWWWAuthenticate();
 
-		struct stat getStatbuf();
+		struct stat& getStatbuf();
 
 	private:
 		Cgi				m_cgi;

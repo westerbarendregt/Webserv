@@ -101,7 +101,7 @@ void	RequestHandler::handleAutoIndex() {
 	this->m_client->m_response_data.m_content_type = "text/html";
 }
 
-struct stat RequestHandler::getStatbuf(){
+struct stat& RequestHandler::getStatbuf(){
 	return m_statbuf;
 }
 

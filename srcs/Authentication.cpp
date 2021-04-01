@@ -67,12 +67,15 @@ void                GetLanguage(Client& c, RequestHandler& req)
     if (content_language[0] == 0){
 		Logger::Log() << "[NO LANGUAGE SPECIFIED]" << std::endl; // checking if content-language header is sent with request
         return ;
+    }
     std::string real_path = c.getRequest().m_real_path;
     std::vector<std::string> languages = ft::split(content_language, ',');
     for (std::vector<std::string>::iterator it = languages.begin(); it != languages.end(); ++it){
-        (*it).erase(std::remove((*it).begin(), (*it).end(), " CRLF"), (*it).end()); // stripping white spaces
-        if (stat((real_path + *it).c_str(), &(req.getStatbuf()))){
-            c.getRequest().m_real_path = real_path + *it;
+        (*it).erase(std::remove((*it).begin(), (*it).end(), ' '), (*it).end()); // stripping spaces
+        (*it) = (*it).substr(0, 2);
+        std::cout << "extension:[" << *it << "]" << std::endl;
+        if (stat((real_path + '.' + *it).c_str(), &(req.getStatbuf())) == 0){
+            c.getRequest().m_real_path = real_path + '.' + *it;
 		    Logger::Log() << "[FOUND LANGUAGE SPECIFIED]" << std::endl;
             return ;
         }
