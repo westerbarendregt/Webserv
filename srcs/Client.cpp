@@ -25,7 +25,9 @@ Request::Request()
 	m_query_string(""),
 	m_path_info(""),
 	m_real_path(""),
-	m_file("")
+	m_file(""),
+	m_looking_for_size(true),
+	m_last_chunk(false)
 {
 }
 
@@ -48,7 +50,9 @@ Request::Request(Request const & src)
 	 m_query_string(src.m_query_string),
 	 m_path_info(src.m_path_info),
 	 m_real_path(src.m_real_path),
-	 m_file(src.m_file)
+	 m_file(src.m_file),
+	 m_looking_for_size(src.m_looking_for_size),
+	 m_last_chunk(src.m_last_chunk)
 {
 }
 
@@ -67,12 +71,14 @@ Request &Request::operator=(Request const & rhs) {
 	 this->m_autoindex      = rhs.m_autoindex;
 	 this->m_status_code    = rhs.m_status_code;
 	 this->m_start          = rhs.m_start;
-	 this->m_location       = rhs.m_location;
-	 this->m_query_string   = rhs.m_query_string;
-	 this->m_path_info      = rhs.m_path_info;
-	 this->m_real_path      = rhs.m_real_path;
-	 this->m_file           = rhs.m_file;
-	return *this;
+	 this->m_location       	= rhs.m_location;
+	 this->m_query_string   	= rhs.m_query_string;
+	 this->m_path_info      	= rhs.m_path_info;
+	 this->m_real_path      	= rhs.m_real_path;
+	 this->m_file           	= rhs.m_file;
+	 this->m_looking_for_size 	= rhs.m_looking_for_size;
+	 this->m_last_chunk 		= rhs.m_last_chunk;
+	 return *this;
 }
 
 void	Request::reset() {
@@ -95,6 +101,8 @@ void	Request::reset() {
 	this->m_path_info.clear();
 	this->m_real_path.clear();
 	this->m_file.clear();
+	this->m_looking_for_size = true;
+	this->m_last_chunk = false;
 }
 
 Response::Response()

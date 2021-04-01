@@ -139,34 +139,69 @@ class RequestParser
 	{
 		std::string line;
 		int ret = 1;
-
-		if (ft::getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start))
+	
+		while (ret)
 		{
-			size_t current_chunk_size = ft::AtoiHex(line.c_str());
-			if (current_chunk_size == 0 && line == "0\r\n")
-			{
-				c.m_request_data.m_done = true;
-				if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
-					return SUCCESS;
-				return ERROR;
+			ret = ft::getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start);
+			if (!ret){
+				c.m_request_data.m_body.append(line);
+				return SUCCESS;
 			}
-			if (line.find(CRLF) != std::string::npos)
+			if (line == "\r\n" && c.m_request_data.m_last_chunk == true)
 			{
+					c.m_request_data.m_done = true;
+					if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
+						return SUCCESS;
+					return ERROR;
+			}
+			if (c.m_request_data.m_looking_for_size == true){
+				c.m_request_data.m_looking_for_size = false;
+				size_t current_chunk_size = ft::AtoiHex(line.c_str());	
+				if (current_chunk_size == 0 && line == "0\r\n")
+					c.m_request_data.m_last_chunk = true;
 				c.m_request_data.m_content_length += current_chunk_size;
-				while (ret)
-				{
-					ret = ft::getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start);
-					if (line.find(CRLF) != std::string::npos){
-						c.m_request_data.m_body.append(line.substr(0, line.size() - 2));
-						if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
-							return SUCCESS;
-						return ERROR;
-					}
-					c.m_request_data.m_body.append(line);
-				}
+			}
+			else {
+				c.m_request_data.m_looking_for_size = true;
+				c.m_request_data.m_body.append(line.substr(0, line.size() - 2));
+
 			}
 		}
 
+
+		// if (ft::getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start))
+		// {
+		// 	size_t current_chunk_size = ft::AtoiHex(line.c_str());
+		// 	if (current_chunk_size == 0 && line == "0\r\n")
+		// 	{
+		// 		c.m_request_data.m_done = true;
+		// 		if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length){
+		// 			Logger::Log() << "here succes" << std::endl;
+		// 			return SUCCESS;
+		// 		}
+		// 			Logger::Log() << "here error" << std::endl;
+		// 		return ERROR;
+		// 	}
+		// 	if (line.find(CRLF) != std::string::npos)
+		// 	{
+		// 		c.m_request_data.m_content_length += current_chunk_size;
+		// 		while (ret)
+		// 		{
+		// 			ret = ft::getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start);
+		// 			if (line.find(CRLF) != std::string::npos){
+		// 				c.m_request_data.m_body.append(line.substr(0, line.size() - 2));
+		// 				if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length){
+		// 					Logger::Log() << "here succes2" << std::endl;
+		// 					return SUCCESS;
+		// 				}
+		// 					Logger::Log() << "here error2" << std::endl;
+		// 				return ERROR;
+		// 			}
+		// 			c.m_request_data.m_body.append(line);
+		// 		}
+		// 	}
+		// }
+		Logger::Log() << "this should not happen" << std::endl;
 		return SUCCESS;
 	}
 
@@ -200,6 +235,7 @@ class RequestParser
 		{
 			if (ChunkedData(c)){
 				c.m_request_data.m_start = 0;
+				c.m_request_str.clear();
 				return ERROR;
 			}
 			c.m_request_data.m_start = 0;
@@ -249,7 +285,7 @@ class RequestParser
 		if (c.m_request_data.m_chunked)
 			Logger::Log() << std::endl << "The body is chunked!" << std::endl;
 		Logger::Log() << "BODY-length: " << c.m_request_data.m_content_length << std::endl;
-		Logger::Log() << "BODY:" << c.m_request_data.m_body << std::endl << std::endl;
+		// Logger::Log() << "BODY:" << c.m_request_data.m_body << std::endl << std::endl;
 		if (c.m_request_data.m_status_code)
 			Logger::Log() << "While parsing found error NR: " << c.m_request_data.m_status_code << std::endl;
 		if (c.m_request_data.m_metadata_parsed && c.m_request_data.m_done)

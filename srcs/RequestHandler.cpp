@@ -526,7 +526,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 std::string		RequestHandler::handlePUT()
 {
 	std::string m_file = this->m_request_data->m_real_path.substr(this->m_request_data->m_real_path.find_last_of('/') + 1);
-	const char *upload_store = this->m_request_data->m_location->second["upload_store"].c_str();
+	std::string upload_store = this->m_request_data->m_location->second["upload_store"];
 	std::string path_to_file = std::string(upload_store) + m_file;
 
 	if (stat(path_to_file.c_str(), &this->m_statbuf) == 0){
@@ -537,8 +537,8 @@ std::string		RequestHandler::handlePUT()
 	else 
 		this->m_request_data->m_status_code = 201;
 	char* current_dir = getcwd(NULL, 0);
-	
-	if (chdir(upload_store))
+	upload_store = upload_store.substr(0, upload_store.size() - 1); // getting an extra space.
+	if (chdir(upload_store.c_str()))
 		throw HTTPError("RequestHandler::PUT", "Upload store directory doesn't exist", 500);
 	int fd  = open(m_file.c_str(), O_TRUNC | O_CREAT | O_WRONLY,  0600); // S_IRWXU = owner having all persmissions 
 	if (fd == -1)

@@ -23,7 +23,7 @@ ssize_t	Server::receive(t_client *c) {
 	char buf[1000];
 	std::fill(buf, buf + sizeof(buf), 0);
 	ssize_t nbytes = recv(c->m_socket, buf, sizeof(buf), 0);
-	Logger::Log() << std::endl <<  "      RECV:    " << std::endl << buf << std::endl;
+	// Logger::Log() << std::endl <<  "      RECV:    " << std::endl << buf << std::endl;
 	const char *to_append = buf;
 	c->m_request_str.append(to_append);
 	if (nbytes == -1)

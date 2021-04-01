@@ -32,6 +32,9 @@ struct	Request
 		std::string							m_path_info;
 		std::string							m_real_path;
 		std::string							m_file;
+		bool								m_looking_for_size;
+		bool								m_last_chunk;
+
 };
 
 struct	Response
