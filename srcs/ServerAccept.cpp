@@ -24,7 +24,7 @@ int	Server::accept(int socket) {
 	if (fcntl(c.m_socket, F_SETFL, O_NONBLOCK)  == -1)
 		throw(serverError("fcntl: ", strerror(errno)));
 	Logger::Log()<<"adding client socket "<<c.m_socket<<std::endl;
-	this->m_client_map[c.m_socket] = c;
+	this->m_client_all[c.m_socket] = c;
 	FD_SET(c.m_socket, &this->m_read_all);
 	if (c.m_socket > this->m_range_fd)
 		this->m_range_fd = c.m_socket;

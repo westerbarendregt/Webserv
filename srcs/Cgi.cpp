@@ -159,6 +159,7 @@ void	Cgi::exec(t_client &c) {
 			throw HTTPError("Cgi::exec: execve", strerror(errno), 500);
 		}
 	}
+	this->reset();
 	if (close(c.m_cgi_read_pipe[OUT]) == -1)
 		throw HTTPError("Cgi::exec: close(m_cgi_read_pipe[OUT])", strerror(errno), 500);
 	c.m_cgi_read_pipe[OUT] = -1;
@@ -326,11 +327,14 @@ void	Cgi::setCgiFd(fd_set *read_set, fd_set *write_set, t_client &c) {
 
 void	Cgi::kill(t_client &c)
 {
-	if (waitpid(c.m_cgi_pid, NULL, WNOHANG) == -1) {
-		Logger::Log() << "Cgi::kill: waitpid: " << strerror(errno)<<std::endl;
-	}
-	if (::kill(c.m_cgi_pid, SIGKILL) == -1) {
-		Logger::Log() << "Cgi::kill: kill: " << strerror(errno)<<std::endl;
+	if (c.m_cgi_pid > 0) {
+		if (waitpid(c.m_cgi_pid, NULL, WNOHANG) == -1) {
+			Logger::Log() << "Cgi::kill: waitpid: " << strerror(errno)<<std::endl;
+		}
+		if (::kill(c.m_cgi_pid, 0) != -1 && ::kill(c.m_cgi_pid, SIGKILL) == -1) {
+			Logger::Log() << "Cgi::kill: kill: " << strerror(errno)<<std::endl;
+		}
+		c.m_cgi_pid = -1;
 	}
 	c.m_cgi_running = false;
 }
