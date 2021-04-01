@@ -442,19 +442,27 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			prefix = next_prefix;
 		}
 
-		if ((this->m_statbuf.st_mode & S_IFMT) == S_IFDIR) {
-			if (stat_file[stat_file.size() - 1] != '/')
-				stat_file.append("/");
-			std::string const &	index = this->m_client->m_request_data.m_location->second["index"];
-			std::vector<std::string>	v = ft::split(index);
-			for (std::vector<std::string>::iterator it = v.begin(); it != v.end(); ++it) {
+		if (this->m_request_data->m_location->second.count("index") == 1) {
+			if ((this->m_statbuf.st_mode & S_IFMT) == S_IFDIR) {
+				if (stat_file[stat_file.size() - 1] != '/')
+					stat_file.append("/");
+				std::string const &index = this->m_request_data->m_location->second["index"];
+				std::vector <std::string> v = ft::split(index);
+				bool index_exist = false;
+				for (std::vector<std::string>::iterator it = v.begin(); it != v.end(); ++it) {
 
-				std::string	path_index = stat_file + *it;
-				Logger::Log() << "path_index: " << path_index << std::endl;
-				if (stat(path_index.c_str(), &this->m_statbuf) == 0 && (this->m_statbuf.st_mode & S_IFMT) == S_IFREG) {
-					real_path = path_index;
-					Logger::Log() << "real_path: " << real_path << std::endl;
-					break;
+					std::string path_index = stat_file + *it;
+					Logger::Log() << "path_index: " << path_index << std::endl;
+					if (stat(path_index.c_str(), &this->m_statbuf) == 0 &&
+						(this->m_statbuf.st_mode & S_IFMT) == S_IFREG) {
+						index_exist = true;
+						real_path = path_index;
+						Logger::Log() << "real_path: " << real_path << std::endl;
+						break;
+					}
+				}
+				if (!index_exist) {
+					throw HTTPError("RequestHandler::handleMetadata", "index not found", 404);
 				}
 			}
 		}
