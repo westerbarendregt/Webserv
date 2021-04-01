@@ -143,25 +143,39 @@ class RequestParser
 		while (ret)
 		{
 			ret = ft::getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start);
-			if (!ret){
-				c.m_request_data.m_body.append(line);
-				return SUCCESS;
+			for (int i = 0; line[i]; ++i){
+				if (line[i] == 13 || line[i] == 10)
+					printf("%d-", line[i]);
 			}
-			if (line == "\r\n" && c.m_request_data.m_last_chunk == true)
+			if ((line == "\r\n"  || line == "\n") && c.m_request_data.m_last_chunk == true)
 			{
 					c.m_request_data.m_done = true;
-					if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
+					std::cout << "size: " << c.m_request_data.m_body.size() << " length: " << c.m_request_data.m_content_length << std::endl;
+					if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length){
+						std::cout << "exitt here2" << std::endl;
 						return SUCCESS;
+					}
+					std::cout << "exitt here3" << std::endl;
 					return ERROR;
 			}
+			if (!ret){
+				c.m_request_data.m_body.append(line);
+				std::cout << "exitt here" << std::endl;
+				return SUCCESS;
+			}
 			if (c.m_request_data.m_looking_for_size == true){
+				std::cout << "hi1" << std::endl;
 				c.m_request_data.m_looking_for_size = false;
 				size_t current_chunk_size = ft::AtoiHex(line.c_str());	
 				if (current_chunk_size == 0 && line == "0\r\n")
+				{
+					std::cout << "important hit" << std::endl;
 					c.m_request_data.m_last_chunk = true;
+				}
 				c.m_request_data.m_content_length += current_chunk_size;
 			}
 			else {
+				std::cout << "hi2" << std::endl;
 				c.m_request_data.m_looking_for_size = true;
 				c.m_request_data.m_body.append(line.substr(0, line.size() - 2));
 
@@ -236,6 +250,7 @@ class RequestParser
 			if (ChunkedData(c)){
 				c.m_request_data.m_start = 0;
 				c.m_request_str.clear();
+				c.m_request_data.m_status_code = 400;
 				return ERROR;
 			}
 			c.m_request_data.m_start = 0;
