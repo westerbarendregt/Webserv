@@ -52,7 +52,7 @@ all: $(NAME)
 
 $(NAME): $(OBJ)
 	@$(foreach obj, $?, echo Linking $(notdir $(obj))$(NL))
-	$(CC) $(FLAGS) $(OBJ) -g -o $(NAME)
+	@$(CC) $(FLAGS) $(OBJ) -g -o $(NAME)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HEADER)
 	@mkdir -p $(OBJ_DIR)/$(dir $*)
