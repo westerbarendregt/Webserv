@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<h1>Welcome to webserv!</h1>
+<h1>Bienvenidos amigo!</h1>
 
 <p><em>Thank you for using webserv.</em></p>
 </body>
