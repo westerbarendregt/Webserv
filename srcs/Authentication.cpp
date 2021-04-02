@@ -64,7 +64,7 @@ void                Authenticated(Client& c, RequestHandler& req)
 void                GetLanguage(Client& c, RequestHandler& req)
 {
     std::string content_language = c.getRequest().m_headers[CONTENTLANGUAGE];
-    if (content_language[0] == 0){
+    if (content_language.empty()){
 		Logger::Log() << "[NO LANGUAGE SPECIFIED]" << std::endl; // checking if content-language header is sent with request
         return ;
     }
