@@ -72,7 +72,7 @@ void                GetLanguage(Client& c, RequestHandler& req)
     std::vector<std::string> languages = ft::split(content_language, ',');
     for (std::vector<std::string>::iterator it = languages.begin(); it != languages.end(); ++it){
         (*it).erase(std::remove((*it).begin(), (*it).end(), ' '), (*it).end()); // stripping spaces
-        if ((*it)[2] == '-' || (*it).size() == 2){
+        if (((*it)[2] == '-' && (*it).size() == 5) || (*it).size() == 2){
             (*it) = (*it).substr(0, 2);
             // Logger::Log() << "extension:[" << *it << "]" << std::endl;
             if (stat((real_path + '.' + *it).c_str(), &(req.getStatbuf())) == 0){

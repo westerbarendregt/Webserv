@@ -52,7 +52,7 @@ def runCommand(port):
     runBoth("GET", ["Content-Language: de-DE"], "", "/language", port)
     runBoth("GET", ["Content-Language: es-SP"], "", "/language", port)
     runBoth("GET", ["Content-Language: fr-FR, tu-TU, nl-NL"], "", "/language", port)
-    runBoth("GET", ["Content-Language: nl-rubbishhhh"], "", "/language", port)
+    runBoth("GET", ["Content-Language: nl-ru"], "", "/language", port)
     runBoth("POST", ["User-agent: Go-http-client/1.1", "Accept-Encoding: chunked", "Content-Type: test/file"], "", "/", port)
     # runBoth("HEAD", ["User-agent: Go-http-client/1.1"], "", "/", port)
     runBoth("PUT", ["'AUTHORIZATION: Basic d2Vic2VydjpjaGVlc2U='", "Connection: keep-alive"], "", 
