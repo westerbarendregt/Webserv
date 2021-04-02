@@ -527,8 +527,10 @@ std::string		RequestHandler::handlePUT()
 {
 	std::string m_file = this->m_request_data->m_real_path.substr(this->m_request_data->m_real_path.find_last_of('/') + 1);
 	std::string upload_store = this->m_request_data->m_location->second["upload_store"];
-	std::string path_to_file = std::string(upload_store) + m_file;
+	upload_store.erase(upload_store.find_last_of(' '));
+	std::string path_to_file = std::string(upload_store) + '/' + m_file;
 
+	std::cout << "path: " << path_to_file << std::endl;
 	if (stat(path_to_file.c_str(), &this->m_statbuf) == 0){
 		this->m_request_data->m_status_code = 204;
 		if ((this->m_statbuf.st_uid != getuid())) // checking if owner id of file is the same as the webserver id.
@@ -537,7 +539,6 @@ std::string		RequestHandler::handlePUT()
 	else 
 		this->m_request_data->m_status_code = 201;
 	char* current_dir = getcwd(NULL, 0);
-	upload_store.erase(upload_store.find_last_of(' '));
 	if (chdir(upload_store.c_str()))
 		throw HTTPError("RequestHandler::PUT", "Upload store directory doesn't exist", 500);
 	int fd  = open(m_file.c_str(), O_TRUNC | O_CREAT | O_WRONLY,  0600); // S_IRWXU = owner having all persmissions 
