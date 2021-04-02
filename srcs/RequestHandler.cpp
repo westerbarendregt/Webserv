@@ -530,7 +530,6 @@ std::string		RequestHandler::handlePUT()
 	upload_store.erase(upload_store.find_last_of(' '));
 	std::string path_to_file = std::string(upload_store) + '/' + m_file;
 
-	std::cout << "path: " << path_to_file << std::endl;
 	if (stat(path_to_file.c_str(), &this->m_statbuf) == 0){
 		this->m_request_data->m_status_code = 204;
 		if ((this->m_statbuf.st_uid != getuid())) // checking if owner id of file is the same as the webserver id.
