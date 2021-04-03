@@ -18,7 +18,7 @@ void	Server::respond(t_client &c) {
 	ssize_t	sent = 0;
 	size_t	len = c.m_response_str.size();
 	 if ((sent = send(c.m_socket, c.m_response_str.c_str(), len, 0)) == -1) {  //MSG_NOSIGNAL is not portable on MACOS, see main for global signal(SIGPIPE)
-		 return closeClientConnection(c);
+		 return removeClient(c);
 	 }
 	 c.m_response_data.m_response_headers.clear();
 	 c.m_response_str.erase(0, sent);
@@ -27,7 +27,7 @@ void	Server::respond(t_client &c) {
 		 if (c.m_request_data.m_cgi && !c.m_cgi_end_chunk)
 			 return ;
 		if (c.m_request_data.m_status_code >= 400){
-			this->closeClientConnection(c);
+			this->removeClient(c);
 			return ;
 		}
 	 	FD_CLR(c.m_socket, &this->m_write_all);

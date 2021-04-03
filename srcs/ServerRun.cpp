@@ -67,7 +67,7 @@ void	Server::run(){
 					}
 				}
 				else {
-					this->closeClientConnection(*c);
+					this->removeClient(*c);
 				}
 				Logger::Log()<<"listening..."<<std::endl;
 			} // FD_ISSET(this->read_fd)
