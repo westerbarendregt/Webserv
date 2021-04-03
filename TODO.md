@@ -21,3 +21,4 @@ Monday 29-03
 - [ ] Running the tester
 - [ ] Handling POST better on none CGI requests
 - [ ] fix test GET Expected 404 on http://localhost:8080/directory/Yeah
+- [ ] add variable MACOS/LINUX portability for tester variable

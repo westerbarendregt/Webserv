@@ -1,3 +1,4 @@
+OS 			:= $(shell uname)
 NAME		:=	webserv
 FLAGS		=	-Wall -Wextra -Werror -std=c++98 -pedantic
 
@@ -28,6 +29,16 @@ INCLUDES	:=	-Iincludes
 SRC_DIR		:= 	srcs
 OBJ_DIR		:=	objs
 CONF_DIR 		:=	conf
+TEST_DIR	:= ${PWD}/tests
+
+WWW			:= ${PWD}/www
+REPO		:= ${PWD}
+
+ifeq ($(OS), Linux)
+CGI_TESTER := $(TEST_DIR)/ubuntu_cgi_tester
+else
+CGI_TESTER := $(TEST_DIR)/cgi_tester
+endif
 
 OBJ =	main
 OBJ +=	Authentication
@@ -84,6 +95,10 @@ re:
 run: $(NAME) config
 	@./$(NAME) $(OUT_LOG) || true
 config:
-	WWW=${PWD}/www REPO=${PWD} ./generate_config.pl
+	WWW=$(WWW) \
+		REPO=$(REPO) \
+		TEST_DIR=$(TEST_DIR) \
+		CGI_TESTER=$(CGI_TESTER) \
+		./generate_config.pl
 
 .PHONY: all clean fclean re
