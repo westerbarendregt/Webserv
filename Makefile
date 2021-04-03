@@ -35,9 +35,9 @@ WWW			:= ${PWD}/www
 REPO		:= ${PWD}
 
 ifeq ($(OS), Linux)
-CGI_TESTER := $(TEST_DIR)/ubuntu_cgi_tester
+CGI_TESTER := ubuntu_cgi_tester
 else
-CGI_TESTER := $(TEST_DIR)/cgi_tester
+CGI_TESTER := cgi_tester
 endif
 
 OBJ =	main
