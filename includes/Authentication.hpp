@@ -10,10 +10,12 @@
 # include <fcntl.h>
 # include <unistd.h>
 
+//why not make them member function of RequestHandler?
+//
 std::string         EncodePassword(std::string& password);
 void                Authenticated(Client& c, RequestHandler& req);
 void                AllowedMethods(Client& c, RequestHandler& req);
-void                GetLanguage(Client& c, RequestHandler& req);
+void                GetLanguage(Client& c);
 
 
 

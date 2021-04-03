@@ -35,9 +35,9 @@ WWW			:= ${PWD}/www
 REPO		:= ${PWD}
 
 ifeq ($(OS), Linux)
-CGI_TESTER := $(TEST_DIR)/ubuntu_cgi_tester
+CGI_TESTER := ubuntu_cgi_tester
 else
-CGI_TESTER := $(TEST_DIR)/cgi_tester
+CGI_TESTER := cgi_tester
 endif
 
 OBJ =	main
@@ -79,7 +79,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HEADER)
 	@$(CC) $(FLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
-	@$(RM) -r $(wildcard $(OBJ_DIR))
+	@$(RM) -r $(wildcard $(OBJ_DIR)) $(WWW)/upload_store/file_should_exist_after
 
 clean_config:
 	@$(RM) -r $(wildcard $(CONF_DIR)/*.conf)

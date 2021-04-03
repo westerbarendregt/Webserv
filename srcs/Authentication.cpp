@@ -61,8 +61,10 @@ void                Authenticated(Client& c, RequestHandler& req)
 	Logger::Log() << "[USER-AGENT = AUTHENTICATED]" << std::endl;
 }
 
-void                GetLanguage(Client& c, RequestHandler& req)
+void                GetLanguage(Client& c)
 {
+	struct	stat	statbuf;
+
     std::string content_language = c.getRequest().m_headers[CONTENTLANGUAGE];
     if (content_language.empty()){
 		Logger::Log() << "[NO LANGUAGE SPECIFIED]" << std::endl; // checking if content-language header is sent with request
@@ -75,7 +77,7 @@ void                GetLanguage(Client& c, RequestHandler& req)
         if (((*it)[2] == '-' && (*it).size() == 5) || (*it).size() == 2){
             (*it) = (*it).substr(0, 2);
             // Logger::Log() << "extension:[" << *it << "]" << std::endl;
-            if (stat((real_path + '.' + *it).c_str(), &(req.getStatbuf())) == 0){
+            if (stat((real_path + '.' + *it).c_str(), &statbuf) == 0){
                 c.getRequest().m_real_path = real_path + '.' + *it;
 		        Logger::Log() << "[FOUND LANGUAGE SPECIFIED]" << std::endl;
                 return ;

@@ -18,6 +18,7 @@ class RequestHandler
 	public:
 		typedef	Client			t_client;
 		typedef	Request			t_request;
+		typedef	Response		t_response;
 		typedef	VirtualServer	t_v_server;
 		typedef	s_v_server_conf::t_directives t_directives;
 		typedef	s_v_server_conf::t_routes	t_routes;
@@ -27,11 +28,15 @@ class RequestHandler
 		RequestHandler();
 		~RequestHandler();
 		void	handleMetadata(t_client &c);
+		std::string	statFile();
+		void	formatIndex(std::string &stat_file);
+		void	interpretUri(std::string & stat_file);
 		void	handleCgiMetadata(t_request &request, std::string &file);
 		void	handleCgiResponse(t_client &c);
 		int		handleCgi(t_client &c);
 		void	handleRequest(t_client &c);
 		bool	validCgi(t_request &request, size_t extension_index);
+
 
 		void printStatusCodes();
 		void printMimeTypes();
@@ -62,8 +67,6 @@ class RequestHandler
 		std::string GetTransferEncoding();
 		std::string GetWWWAuthenticate();
 
-		struct stat& getStatbuf();
-
 	private:
 		Cgi				m_cgi;
 		void	setCgiFd(fd_set *read_set, fd_set *write_set, t_client &c);
@@ -92,7 +95,7 @@ class RequestHandler
 		void	initMimeTypes();
 
 		t_client	*m_client;
-		Request		*m_request_data;
+		t_request	*m_request_data;
 		Response	*m_response_data;
 };
 

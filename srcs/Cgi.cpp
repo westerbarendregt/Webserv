@@ -125,6 +125,8 @@ void	Cgi::setParentIo(t_client &c) {
 		Logger::Log() << "Cgi::init : fcntl(m_cgi_read_pipe[IN]): " << strerror(errno)<<std::endl;
 	if (fcntl(c.m_cgi_read_pipe[OUT], F_SETFL, O_NONBLOCK) == -1)
 		Logger::Log() << "Cgi::init : fcntl(m_cgi_read_pipe[OUT]): " << strerror(errno)<<std::endl;
+	if (c.m_cgi_post && fcntl(c.m_cgi_write_pipe[OUT], F_SETFL, O_NONBLOCK) == -1)
+		Logger::Log() << "Cgi::init : fcntl(m_cgi_write_pipe[OUT]): " << strerror(errno)<<std::endl;
 	if (c.m_cgi_read_pipe[IN] > c.m_range_fd)
 		c.m_range_fd = c.m_cgi_read_pipe[IN];
 }
@@ -185,7 +187,10 @@ void	Cgi::fillEnv(t_request_data &request) {
 	this->m_env_map["CONTENT_LENGTH"]=ft::intToString(request.m_body.size());
 	this->m_env_map["CONTENT_TYPE"]=std::string(request.m_headers[CONTENTTYPE]);
 	this->m_env_map["GATEWAY_INTERFACE"]="CGI/1.1";
-	this->m_env_map["PATH_INFO"]=request.m_path_info; //  used to specify the name of the file to be opened and interpreted  by the cgi program
+	if (request.m_owner->m_cgi_post)
+		this->m_env_map["PATH_INFO"]=request.m_path; //need opti
+	else
+		this->m_env_map["PATH_INFO"]="/";
 	this->m_env_map["PATH_TRANSLATED"]= getcwd(buf, PATH_MAX) + this->m_env_map["PATH_INFO"]; //or htdocs
 	this->m_env_map["QUERY_STRING"] = request.m_query_string;
 	struct	sockaddr_in	*tmp = reinterpret_cast<struct sockaddr_in*>(&request.m_owner->m_sockaddr);
@@ -258,7 +263,7 @@ void	RequestHandler::handleCgiResponse(t_client &c) {
 		//
 		c.m_response_str.append(CRLF);
 		c.m_response_data.m_cgi_metadata_parsed = true;
-		c.m_cgi_out_buf.erase(0, metadata_index + CRLF_LEN);
+		c.m_cgi_out_buf.erase(0, metadata_index + CRLF_LEN + CRLF_LEN);
 	}
 	if (c.m_response_data.m_cgi_metadata_sent) {
 		if (c.m_cgi_out_buf.size() == 0)
