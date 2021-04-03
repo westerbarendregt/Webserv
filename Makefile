@@ -95,7 +95,7 @@ re:
 run: $(NAME) config
 	@./$(NAME) $(OUT_LOG) || true
 config:
-	WWW=$(WWW) \
+	@WWW=$(WWW) \
 		REPO=$(REPO) \
 		TEST_DIR=$(TEST_DIR) \
 		CGI_TESTER=$(CGI_TESTER) \
