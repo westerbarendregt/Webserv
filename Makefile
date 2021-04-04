@@ -79,7 +79,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HEADER)
 	@$(CC) $(FLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
-	@$(RM) -r $(wildcard $(OBJ_DIR)) $(WWW)/upload_store/file_should_exist_after
+	@$(RM) -r $(wildcard $(OBJ_DIR)) $(subst $(WWW)/upload_store/empty.txt,, $(wildcard $(WWW)/upload_store/*))
 
 clean_config:
 	@$(RM) -r $(wildcard $(CONF_DIR)/*.conf)

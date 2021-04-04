@@ -14,13 +14,14 @@
 #include <exception>
 #include <fcntl.h>
 #include "Error.hpp"
+#include "WebServer.hpp"
 #include "Logger.hpp"
 
 ssize_t	Server::receive(t_client *c) {
 	if (!c)
 		throw(serverError("getClient ", "client not registered"));
 
-	char buf[10001];
+	char buf[RECV_BUF_SIZE];
 	std::fill(buf, buf + sizeof(buf), 0);
 	ssize_t nbytes = recv(c->m_socket, buf, sizeof(buf) - 1, 0);
 	buf[nbytes] = 0;

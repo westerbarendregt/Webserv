@@ -307,7 +307,7 @@ std::string RequestHandler::handleGET() {
  }
 
  std::string RequestHandler::handlePOST() {
-	std::string status_line = statusLine(405);
+	std::string status_line = statusLine(200);
  	SetContentLength();
 	SetContentType();
 	SetDate();
@@ -435,9 +435,9 @@ void	RequestHandler::interpretUri(std::string &stat_file) {
 			Logger::Log()<<"cgi detected"<<std::endl;
 			this->handleCgiMetadata(request, stat_file);
 		}
-		else if (method == POST) {
-			throw HTTPError("RequestHandler::handleMetadata", "post on regular file", 405);
-		}
+	//	else if (method == POST) {
+	//		throw HTTPError("RequestHandler::handleMetadata", "post on regular file", 405);
+	//	}
 		else {
 			response.m_content_type = this->m_mime_types[file.substr(file.rfind('.') + 1)];
 			Logger::Log() << "content-type: "<<this->m_client->m_response_data.m_content_type<<std::endl;
@@ -638,6 +638,9 @@ void	RequestHandler::handleRequest(t_client &c) {
 				 	break;
 				case PUT:
 					m_client->m_response_str = handlePUT();
+					break;
+				case POST:
+					m_client->m_response_str = handlePOST();
 					break;
 				// case DELETE:
 				// 	m_client->m_response_str = handleDELETE();

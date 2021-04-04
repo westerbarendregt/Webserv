@@ -57,10 +57,10 @@ void	Cgi::convertEnv(t_client &c) {
 }
 
 void	Cgi::read(t_client &c) {
-	char buf[5000];
+	char buf[CGI_BUF_SIZE];
 
 	std::fill(buf, buf + sizeof(buf), 0);
-	ssize_t	nbytes = ::read(c.getReadFd(), buf, 4096);
+	ssize_t	nbytes = ::read(c.getReadFd(), buf, CGI_BUF_SIZE - 1);
 	if (nbytes <= 0) {
 		if (nbytes == -1)
 			throw HTTPError("Cgi::read", strerror(errno), 500);
@@ -205,6 +205,7 @@ void	Cgi::fillEnv(t_request_data &request) {
 	this->m_env_map["SERVER_PROTOCOL"]="HTTP/1.1";
 	this->m_env_map["SERVER_SOFTWARE"]="HTTP 1.1";
 	this->m_env_map["REDIRECT_STATUS"]="true"; // see if need to be disabled
+	this->m_env_map["HTTP_X_SECRET_HEADER_FOR_TEST"]="1"; // see if need to be disabled
 }
 
 void	Cgi::reset() {
@@ -369,7 +370,11 @@ int RequestHandler::handleCgi(t_client &c) {
 		}
 		//select
 		this->m_cgi.setCgiFd(&read_set, &write_set, c);
-		if (select(c.m_range_fd + 1, &read_set, &write_set, NULL, 0) == -1)
+
+		struct timeval	tv;
+		tv.tv_sec = 0;
+		tv.tv_usec = 0;
+		if (select(c.m_range_fd + 1, &read_set, &write_set, NULL, &tv) == -1)
 			throw HTTPError("RequestHandler::handleCgi: select", strerror(errno), 500);
 		//write
 		if (c.m_cgi_post && write_fd != -1 &&  FD_ISSET(write_fd, &write_set)) {
