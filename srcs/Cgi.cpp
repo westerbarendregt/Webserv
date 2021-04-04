@@ -324,10 +324,17 @@ bool	RequestHandler::validCgi(t_request &request, size_t extension_index) {
 void	Cgi::setCgiFd(fd_set *read_set, fd_set *write_set, t_client &c) {
 	FD_ZERO(read_set);
 	FD_ZERO(write_set);
-	if (!c.m_cgi_end_chunk)
+	c.m_range_fd = 0;
+	if (!c.m_cgi_end_chunk) {
 		FD_SET(c.m_cgi_read_pipe[IN], read_set);
-	if (c.m_cgi_post && c.m_cgi_write_pipe[OUT] != -1)
+		if (c.m_cgi_read_pipe[IN] > c.m_range_fd)
+			c.m_range_fd = c.m_cgi_read_pipe[IN];
+	}
+	if (c.m_cgi_post && c.m_cgi_write_pipe[OUT] != -1) {
 		FD_SET(c.m_cgi_write_pipe[OUT], write_set);
+		if (c.m_cgi_write_pipe[OUT] > c.m_range_fd)
+			c.m_range_fd = c.m_cgi_write_pipe[OUT];
+	}
 }
 
 void	Cgi::kill(t_client &c)
@@ -365,7 +372,7 @@ int RequestHandler::handleCgi(t_client &c) {
 		if (select(c.m_range_fd + 1, &read_set, &write_set, NULL, 0) == -1)
 			throw HTTPError("RequestHandler::handleCgi: select", strerror(errno), 500);
 		//write
-		if (c.m_cgi_post && FD_ISSET(write_fd, &write_set)) {
+		if (c.m_cgi_post && write_fd != -1 &&  FD_ISSET(write_fd, &write_set)) {
 			this->m_cgi.write(c);
 		}
 		//read
