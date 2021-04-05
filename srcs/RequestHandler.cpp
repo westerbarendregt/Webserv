@@ -326,10 +326,15 @@ std::string RequestHandler::handleGET() {
 
 std::string	RequestHandler::generateErrorPage(int error) {
 	std::string ret, error_path;
+	std::vector<std::string>	v;
 
-	std::string	default_error_page = this->m_request_data->m_location->second["error_page"];
-	std::vector<std::string>	v = ft::split(default_error_page);
-	Logger::Log() << "ERROR" << std::endl;
+	if (this->m_client->m_v_server) {
+		t_directives const &	directives = this->m_client->m_v_server->m_configs.m_directives;
+		t_directives::const_iterator	it = directives.find("error_page");
+		if (it !=  directives.end()) {
+			v = ft::split(it->second);
+		}
+	}
 	if (!v.empty()) {
 		error_path = v.back();
 		v.pop_back();
@@ -520,15 +525,28 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		std::string &real_path =  c.m_request_data.m_real_path;
 		real_path = c.m_request_data.m_path; // a bit confusing
 		std::string const & location = c.m_request_data.m_location->first;
-		std::string & alias = c.m_request_data.m_location->second["alias"];
-		std::string stat_file;
+		std::string alias, index, stat_file;
 
-		/*replacing location path by alias path (what if alias empty?)*/
+		t_directives const &	location_directives = this->m_request_data->m_location->second;
+		t_directives::const_iterator	it = location_directives.find("alias");
+		if (it != location_directives.end()) {
+			alias = it->second;
+			Logger::Log() << "alias: " << it->second << std::endl;
+		}
+
+		it = location_directives.find("index");
+		if (it != location_directives.end()) {
+			Logger::Log()  << "index: "  << it->second << std::endl;
+		}
+
+		/*replacing location path by alias path*/
+		char buf[PATH_MAX];
+		if (alias.empty())
+			alias = getcwd(buf,  PATH_MAX);
 		if (alias[alias.size() - 1] != '/')
 			alias.append("/");
 		size_t	const replace_len = location.size() > real_path.size() ? real_path.size() : location.size();
 		real_path.replace(0, replace_len, alias);
-
 
 		//parse URI
 		stat_file = this->statFile();
@@ -538,8 +556,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 
 		//Log
 		Logger::Log() << "location: " << location << std::endl;
-		Logger::Log() << "alias: " << alias << std::endl;
-		Logger::Log() << "index: " << this->m_client->m_request_data.m_location->second["index"] << std::endl;
+
 		Logger::Log()<<"m_path: "<<this->m_client->m_request_data.m_path<<std::endl;
 		Logger::Log()<<"m_real_path: "<<c.m_request_data.m_real_path<<std::endl;
 		Logger::Log()<<"m_file: "<<c.m_request_data.m_file<<std::endl;
