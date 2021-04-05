@@ -18,6 +18,7 @@ struct	Request
 		int                  	    		m_protocol;
 		size_t								m_content_length;
 		std::vector<std::string> 			m_headers;
+		std::map<std::string, std::string> 		x_headers;
 		bool								m_if_body;
 		std::string							m_body;
 		std::string							m_tmp_body;

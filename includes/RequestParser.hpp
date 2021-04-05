@@ -58,6 +58,14 @@ class RequestParser
 		return ERROR;
 	}
 	
+	static std::string				getValueHeader(std::string& line)
+	{
+		std::string header = line.substr(line.find(':') + 1, line.size() - (line.find(":") + 1));
+		size_t start = header.find_first_not_of(BLANKS);
+		size_t len = header.find_last_not_of(BLANKS) - start + 1;
+		return header.substr(start, len); //trimming start and end of whitespaces
+	}
+
 	static int				GetHeaders(Client& c)
 	{
 		std::string line;
@@ -80,12 +88,13 @@ class RequestParser
 				}
 			}
 			for (int i = 0; headers[i]; ++i){
-				if (line.find(headers[i]) != std::string::npos){
-					std::string header = line.substr(line.find(':') + 1, line.size() - (line.find(":") + 1));
-					size_t start = header.find_first_not_of(BLANKS);
-					size_t len = header.find_last_not_of(BLANKS) - start + 1;
-					c.m_request_data.m_headers[i] = header.substr(start, len); //trimming start and end of whitespaces
-				}
+				if (line.find(headers[i]) != std::string::npos)
+					c.m_request_data.m_headers[i] = getValueHeader(line);
+			}
+			if (line[0] == 'X'&& line[1] == '-' && line.find(":") != std::string::npos){
+				std::string key = line.substr(0, line.find(":"));
+				std::string value = getValueHeader(line);
+    			c.m_request_data.x_headers[key] = value;
 			}
 		}
 		return SUCCESS;
@@ -264,6 +273,8 @@ class RequestParser
 		}
 		for (int i = 0; i < 18; ++i)
 			Logger::Log() << headers[i] << ":" << c.m_request_data.m_headers[i] << std::endl;//"---" << c.m_request_data.m_headers[i].size() << std::endl;
+		for(std::map<std::string, std::string>::iterator it = c.m_request_data.x_headers.begin(); it != c.m_request_data.x_headers.end(); ++it)
+			std::cout << "key = [" << it->first << "] value = [" << it->second << "]" << std::endl;
 		if (c.m_request_data.m_chunked)
 			Logger::Log() << std::endl << "The body is chunked!" << std::endl;
 		Logger::Log() << "BODY-length: " << c.m_request_data.m_content_length << std::endl;

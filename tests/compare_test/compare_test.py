@@ -57,6 +57,9 @@ def runCommand(port):
     # runBoth("HEAD", ["User-agent: Go-http-client/1.1"], "", "/", port)
     runBoth("PUT", ["'AUTHORIZATION: Basic d2Vic2VydjpjaGVlc2U='", "Connection: keep-alive"], "", 
             "/put_test/111.txt", port)
+    runBoth("PUT", ["'AUTHORIZATION: Basic d2Vic2VydjpjaGVlc2U='", "Connection: keep-alive", 
+            "X-secrets: chips", "X-other_secret: cake", "X-final_secret: maple syrup", "-X-Not-a-Secret: nothing"], "", 
+            "/put_test/111.txt", port)
     # runBoth("POST", "", "hellos", "/directory/", port)
     print(bcolors.WARNING + "-----------------------------------------------"+ bcolors.ENDC)
 
