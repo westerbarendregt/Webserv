@@ -274,7 +274,7 @@ class RequestParser
 		for (int i = 0; i < 18; ++i)
 			Logger::Log() << headers[i] << ":" << c.m_request_data.m_headers[i] << std::endl;//"---" << c.m_request_data.m_headers[i].size() << std::endl;
 		for(std::map<std::string, std::string>::iterator it = c.m_request_data.x_headers.begin(); it != c.m_request_data.x_headers.end(); ++it)
-			std::cout << "key = [" << it->first << "] value = [" << it->second << "]" << std::endl;
+			Logger::Log() << "key = [" << it->first << "] value = [" << it->second << "]" << std::endl;
 		if (c.m_request_data.m_chunked)
 			Logger::Log() << std::endl << "The body is chunked!" << std::endl;
 		Logger::Log() << "BODY-length: " << c.m_request_data.m_content_length << std::endl;

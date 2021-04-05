@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 
-#include "Authentication.hpp"
 #include "Conf.hpp"
 #include "Error.hpp"
 #include "RequestHandler.hpp"
@@ -112,7 +111,7 @@ void		RequestHandler::SetAllow(){
 }
 
 std::string RequestHandler::GetContentLanguage(){
-	return "";
+	return "Content-Language: " + this->m_response_data->m_content_language + CRLF;
 }
 
 void		RequestHandler::SetContentLanguage(){
@@ -130,7 +129,7 @@ void		RequestHandler::SetContentLength(){
 }
 
 std::string RequestHandler::GetContentLocation(){
-	return "";
+	return "Content-Location: " + this->m_response_data->m_content_location + CRLF;
 }
 
 void		RequestHandler::SetContentLocation(){
@@ -566,9 +565,9 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		this->interpretUri(stat_file);
 
 		//handle headers
-		AllowedMethods(c, *this);
-		Authenticated(c, *this);
-		GetLanguage(c);
+		AllowedMethods();
+		Authenticated();
+		GetLanguage();
 		//could be member of RequestHandler and called like this->AllowedMethods()
 	} 
 	catch (HTTPError & e)

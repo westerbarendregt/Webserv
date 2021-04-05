@@ -41,7 +41,6 @@ CGI_TESTER := cgi_tester
 endif
 
 OBJ =	main
-OBJ +=	Authentication
 OBJ +=	base64
 OBJ +=	Cgi
 OBJ +=	Client
@@ -49,6 +48,7 @@ OBJ +=	Logger
 OBJ +=	RequestHandler
 OBJ +=	RequestHandlerMimeTypes
 OBJ +=	RequestHandlerStatusCodes
+OBJ +=	ResponseHeaders
 OBJ +=	Server
 OBJ +=	ServerAccept
 OBJ +=	ServerInit

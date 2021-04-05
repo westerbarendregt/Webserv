@@ -9,8 +9,9 @@
 # include "Conf.hpp"
 # include <sys/stat.h>
 # include <limits.h>
-
 class Client;
+
+std::string         EncodePassword(std::string& password);
 
 //do we need a class for Request Handler and a class Cgi, or simply a cgi section in the requesthandler class
 class RequestHandler
@@ -27,72 +28,76 @@ class RequestHandler
 
 		RequestHandler();
 		~RequestHandler();
-		void	handleMetadata(t_client &c);
-		std::string	statFile();
-		void	formatIndex(std::string &stat_file);
-		void	interpretUri(std::string & stat_file);
-		void	handleCgiMetadata(t_request &request, std::string &file);
-		void	handleCgiResponse(t_client &c);
-		int		handleCgi(t_client &c);
-		void	handleRequest(t_client &c);
-		bool	validCgi(t_request &request, size_t extension_index);
+		void				handleMetadata(t_client &c);
+		std::string			statFile();
+		void				formatIndex(std::string &stat_file);
+		void				interpretUri(std::string & stat_file);
+		void				handleCgiMetadata(t_request &request, std::string &file);
+		void				handleCgiResponse(t_client &c);
+		int					handleCgi(t_client &c);
+		void				handleRequest(t_client &c);
+		bool				validCgi(t_request &request, size_t extension_index);
+		void                Authenticated();
+		void                AllowedMethods();
+		void                GetLanguage();
+		void				languageHeaders(std::string extension);
 
 
-		void printStatusCodes();
-		void printMimeTypes();
+		void 				printStatusCodes();
+		void 				printMimeTypes();
 
-		void 		SetAllow();
-		void 		SetContentLanguage();
-		void 		SetContentLength();
-		void		SetContentLocation();
-		void		SetContentType();
-		void		SetDate();
-		void		SetLastModified();
-		void		SetRetryAfter();
-		void		SetServer();
-		void		SetLocation();
-		void		SetTransferEncoding();
-		void		SetWWWAuthenticate();
+		void 				SetAllow();
+		void 				SetContentLanguage();
+		void 				SetContentLength();
+		void				SetContentLocation();
+		void				SetContentType();
+		void				SetDate();
+		void				SetLastModified();
+		void				SetRetryAfter();
+		void				SetServer();
+		void				SetLocation();
+		void				SetTransferEncoding();
+		void				SetWWWAuthenticate();
 
-		std::string GetAllow();
-		std::string GetContentLanguage();
-		std::string GetContentLength();
-		std::string GetContentLocation();
-		std::string GetContentType();
-		std::string GetDate();
-		std::string GetLastModified();
-		std::string GetLocation();
-		std::string GetRetryAfter();
-		std::string GetServer();
-		std::string GetTransferEncoding();
-		std::string GetWWWAuthenticate();
+		std::string			GetAllow();
+		std::string 		GetContentLanguage();
+		std::string 		GetContentLength();
+		std::string 		GetContentLocation();
+		std::string 		GetContentType();
+		std::string 		GetDate();
+		std::string 		GetLastModified();
+		std::string 		GetLocation();
+		std::string 		GetRetryAfter();
+		std::string 		GetServer();
+		std::string 		GetTransferEncoding();
+		std::string 		GetWWWAuthenticate();
 
 	private:
-		Cgi				m_cgi;
-		void	setCgiFd(fd_set *read_set, fd_set *write_set, t_client &c);
-		std::string handleGET();
-		std::string handleHEAD();
-		std::string handlePOST();
-		std::string handlePUT();
-		struct	stat	m_statbuf;
+		Cgi					m_cgi;
+		void				setCgiFd(fd_set *read_set, fd_set *write_set, t_client &c);
+		std::string 		handleGET();
+		std::string 		handleHEAD();
+		std::string 		handlePOST();
+		std::string 		handlePUT();
+		struct stat			m_statbuf;
 		// std::string handleDELETE();
 
 
 		void	handleAutoIndex();
 
 
-		std::string statusLine(int status_code = 0);
-		void		responseBody();
-		std::string responseHeaders();
-		void		CheckBodyLimits();
+		std::string 		statusLine(int status_code = 0);
+		void				responseBody();
+		std::string 		responseHeaders();
+		void				CheckBodyLimits();
 
-		std::string	generateErrorPage(int error);
+		std::string			generateErrorPage(int error);
 
 		std::map<int, std::string>	m_status_codes;
-		void	initStatusCodes();
+		void				initStatusCodes();
 
 		std::map<std::string, std::string>	m_mime_types;
-		void	initMimeTypes();
+		void				initMimeTypes();
 
 		t_client	*m_client;
 		t_request	*m_request_data;

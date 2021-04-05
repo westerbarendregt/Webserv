@@ -122,7 +122,9 @@ Response::Response()
 	 m_cgi_metadata_sent(false),
 	 m_content_type(""),
 	 m_body(""),
-	 m_response_headers(0)
+	 m_response_headers(0),
+	 m_content_language(""),
+	 m_content_location("")
 {
 }
 
@@ -132,6 +134,8 @@ void	Response::reset() {
 	this->m_content_type = "";
 	this->m_body = "";
 	this->m_response_headers.clear();
+	this->m_content_language = "";
+	this->m_content_location = "";
 }
 
 Client::Client() 

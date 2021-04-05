@@ -49,12 +49,14 @@ def runPort(port, file, method, headers, body, url_file_name, print_out):
 def runCommand(port):
     print(bcolors.WARNING + "-----------------------------------------------"+ bcolors.ENDC)
     runBoth("GET", ["User-agent: Go-http-client/1.1", "Accept-Encoding: gzip"], "", "/", port)
-    runBoth("GET", ["Content-Language: de-DE"], "", "/language", port)
-    runBoth("GET", ["Content-Language: es-SP"], "", "/language", port)
-    runBoth("GET", ["Content-Language: fr-FR, tu-TU, nl-NL"], "", "/language", port)
-    runBoth("GET", ["Content-Language: nl-ru"], "", "/language", port)
-    runBoth("POST", ["User-agent: Go-http-client/1.1", "Accept-Encoding: chunked", "Content-Type: test/file"], "", "/", port)
-    # runBoth("HEAD", ["User-agent: Go-http-client/1.1"], "", "/", port)
+    runBoth("GET", ["Accept-Language: de-DE"], "", "/language/", port)
+    runBoth("GET", ["Accept-Language: es-SP"], "", "/language/", port)
+    runBoth("GET", ["Accept-Language: fr-FR, tu-TU, nl-NL"], "", "/language/", port)
+    runBoth("GET", ["Accept-Language: nl;q=-ru"], "", "/language/", port)
+    runBoth("GET", ["Accept-Language: es-ES, nl;q=-ru"], "", "/language/", port)
+    runBoth("GET", ["Accept-Language: *"], "", "/language/", port)
+    runBoth("POST", ["User-agent: Go-http-client/1.1", "Accept-Encoding: chunked", "Accept-Type: test/file"], "", "/", port)
+    # # runBoth("HEAD", ["User-agent: Go-http-client/1.1"], "", "/", port)
     runBoth("PUT", ["'AUTHORIZATION: Basic d2Vic2VydjpjaGVlc2U='", "Connection: keep-alive"], "", 
             "/put_test/111.txt", port)
     runBoth("PUT", ["'AUTHORIZATION: Basic d2Vic2VydjpjaGVlc2U='", "Connection: keep-alive", 

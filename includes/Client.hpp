@@ -49,6 +49,8 @@ struct	Response
 		std::string					m_content_type;
 		std::string					m_body;
 		std::vector<std::string>	m_response_headers;
+		std::string					m_content_language;
+		std::string					m_content_location;
 };
 
 class	Client
