@@ -13,7 +13,7 @@ void	Server::init(){
 	FD_ZERO(&this->m_write_fd);
 	FD_ZERO(&this->m_read_fd);
 	this->m_range_fd = 0;
-	for (t_v_server_all::iterator v_server = this->m_v_server_all.begin(); 
+	for (t_v_server_map::iterator v_server = this->m_v_server_all.begin(); 
 			v_server != this->m_v_server_all.end(); ++v_server) {
 		v_server->second[0].init();
 		this->connectVirtualServer(v_server->second[0]);
@@ -38,9 +38,11 @@ void	Server::connectVirtualServer(t_v_server &v_server) {
 }
 
 void	Server::close() {
-	for (t_v_server_all::iterator v_server = this->m_v_server_all.begin(); 
-			v_server != this->m_v_server_all.end(); ++v_server)
-		::close(v_server->second[0].m_socket);
+	for (t_v_server_map::iterator it = this->m_v_server_all.begin(); 
+			it != this->m_v_server_all.end(); ++it)
+		::close(it->second[0].m_socket);
+	for (t_client_map::iterator it = this->m_client_all.begin(); it != this->m_client_all.end(); ++it)
+		this->closeClientConnection(it->second);
 	FD_ZERO(&this->m_write_all);
 	FD_ZERO(&this->m_read_all);
 	FD_ZERO(&this->m_write_fd);

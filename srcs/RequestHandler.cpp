@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 
-#include "Authentication.hpp"
 #include "Conf.hpp"
 #include "Error.hpp"
 #include "RequestHandler.hpp"
@@ -112,7 +111,7 @@ void		RequestHandler::SetAllow(){
 }
 
 std::string RequestHandler::GetContentLanguage(){
-	return "";
+	return "Content-Language: " + this->m_response_data->m_content_language + CRLF;
 }
 
 void		RequestHandler::SetContentLanguage(){
@@ -130,7 +129,7 @@ void		RequestHandler::SetContentLength(){
 }
 
 std::string RequestHandler::GetContentLocation(){
-	return "";
+	return "Content-Location: " + this->m_response_data->m_content_location + CRLF;
 }
 
 void		RequestHandler::SetContentLocation(){
@@ -259,11 +258,11 @@ void 		RequestHandler::responseBody() {
 	char 	buf[1025];
 	ssize_t ret;
 	do {
-		std::fill_n(buf, 1025, 0);
 		ret = read(fd, buf, 1024);
 		if (ret == -1) {
 			throw HTTPError("RequestHandler::responseBody", "error reading file", 500);
 		}
+		buf[ret] = '\0';
 		this->m_response_data->m_body.append(buf);
 	} while (ret > 0);
 
@@ -307,7 +306,7 @@ std::string RequestHandler::handleGET() {
  }
 
  std::string RequestHandler::handlePOST() {
-	std::string status_line = statusLine(405);
+	std::string status_line = statusLine(200);
  	SetContentLength();
 	SetContentType();
 	SetDate();
@@ -326,10 +325,15 @@ std::string RequestHandler::handleGET() {
 
 std::string	RequestHandler::generateErrorPage(int error) {
 	std::string ret, error_path;
+	std::vector<std::string>	v;
 
-	std::string	default_error_page = this->m_request_data->m_location->second["error_page"];
-	std::vector<std::string>	v = ft::split(default_error_page);
-	Logger::Log() << "ERROR" << std::endl;
+	if (this->m_client->m_v_server) {
+		t_directives const &	directives = this->m_client->m_v_server->m_configs.m_directives;
+		t_directives::const_iterator	it = directives.find("error_page");
+		if (it !=  directives.end()) {
+			v = ft::split(it->second);
+		}
+	}
 	if (!v.empty()) {
 		error_path = v.back();
 		v.pop_back();
@@ -374,9 +378,129 @@ std::string	RequestHandler::generateErrorPage(int error) {
 	ret = status_line + response_headers + CRLF;
 	if (m_request_data->m_method != HEAD)
 		ret.append(this->m_response_data->m_body);
-
 	return ret;
 }
+
+//appends index and updates m_real_path in member request
+void	RequestHandler::formatIndex(std::string &stat_file) {
+	if (!this->m_request_data)
+		return ;
+
+	struct	stat statbuf;
+	t_request	& request = *this->m_request_data;
+	std::string & real_path = request.m_real_path;
+
+	if (request.m_location->second.count("index") == 1) {
+		if ((request.m_file_type & S_IFMT) == S_IFDIR) {
+			if (stat_file[stat_file.size() - 1] != '/')
+				stat_file.append("/");
+			std::string const &index = request.m_location->second["index"];
+			std::vector <std::string> v = ft::split(index);
+			bool index_exist = false;
+			for (std::vector<std::string>::iterator it = v.begin(); it != v.end(); ++it) {
+
+				std::string path_index = stat_file + *it;
+				Logger::Log() << "path_index: " << path_index << std::endl;
+				if (stat(path_index.c_str(), &statbuf) == 0 &&
+					(statbuf.st_mode & S_IFMT) == S_IFREG) {
+					request.m_file_type = statbuf.st_mode;
+					index_exist = true;
+					real_path = path_index;
+					Logger::Log() << "real_path: " << real_path << std::endl;
+					break;
+				}
+			}
+			if (!index_exist) {
+				throw HTTPError("RequestHandler::handleMetadata", "index not found", 404);
+			}
+		}
+	}
+
+}
+
+//if file, gets extension, then detects cgi or sets mime types
+//if directory, 
+void	RequestHandler::interpretUri(std::string &stat_file) {
+	if (!this->m_request_data || !this->m_client)
+		return ;
+
+	t_request & request = *this->m_request_data;
+	t_response & response = this->m_client->m_response_data;
+	std::string const & file = request.m_file;
+	std::string const & real_path = request.m_real_path;
+	int	method = request.m_method;
+
+	if (method == POST || (request.m_file_type & S_IFMT) == S_IFREG) { //file
+		// 	extract extension
+		size_t	extension = request.m_file.find_last_of('.', request.m_file.size());
+		Logger::Log()<<"extension index: "<<extension<<std::endl;
+		if (this->validCgi(request, extension))
+		{
+			Logger::Log()<<"cgi detected"<<std::endl;
+			this->handleCgiMetadata(request, stat_file);
+		}
+	//	else if (method == POST) {
+	//		throw HTTPError("RequestHandler::handleMetadata", "post on regular file", 405);
+	//	}
+		else {
+			response.m_content_type = this->m_mime_types[file.substr(file.rfind('.') + 1)];
+			Logger::Log() << "content-type: "<<this->m_client->m_response_data.m_content_type<<std::endl;
+		}
+	}
+	else if (method == PUT) {
+		if ((request.m_file_type & S_IFMT) == S_IFDIR || real_path[real_path.size() - 1] == '/') {
+			throw HTTPError("RequestHandler::handleMetadata::PUT", "file is a directory", 409);
+		}
+	}
+	else if ((request.m_file_type & S_IFMT) == S_IFDIR) {
+		if (request.m_location->second["autoindex"] == "on") {
+			Logger::Log()<<"dir listing"<<std::endl;
+			request.m_autoindex= true;
+		}
+		else
+			throw HTTPError("RequestHandler::handleMetadata", "directory listing not enabled", 403);
+	}
+}
+
+//returns path to identified resource and update file_type in member request
+std::string	RequestHandler::statFile() {
+	if (!this->m_request_data)
+		return "";
+
+	t_request & request = *this->m_request_data;
+	size_t	prefix = 0, next_prefix = 0;
+	std::string	stat_file;
+	std::string const & real_path = request.m_real_path;
+	int	method = request.m_method;
+	struct	stat	statbuf;
+
+	while (prefix < real_path.size()) {
+		prefix = real_path.find_first_of("/?", prefix);
+		next_prefix = prefix == std::string::npos ? std::string::npos : real_path.find_first_of("?/", prefix + 1);
+		stat_file = real_path.substr(0, next_prefix);
+		Logger::Log()<<"\tstat "<<stat_file<<std::endl;
+		if (stat(stat_file.c_str(), &statbuf)) {
+			if (method == POST || method == PUT) {
+				request.m_file_type = TYPE_UNDEFINED;
+				break ;
+			}
+			request.m_file_type = TYPE_UNDEFINED;
+			throw HTTPError("RequestHandler::handleMetadata: stat", "invalid full path", 404);
+		}
+		request.m_file_type = statbuf.st_mode;
+		//also check permission
+		if ((request.m_file_type & S_IFMT) == S_IFREG)
+			break ;
+		if ((request.m_file_type & S_IFMT) != S_IFDIR 
+				&& ( request.m_file_type & S_IFMT) != S_IFLNK) // if something else than a directory/smlink
+			throw HTTPError("RequestHandler::handleMetadata: stat", "invalid full path, not a file/directory/symlink", 404);
+		if (next_prefix == std::string::npos)
+			break ;
+		prefix = next_prefix;
+	}
+	return stat_file;
+}
+
 
 void	RequestHandler::handleMetadata(t_client &c) {
 	if (c.m_request_data.m_status_code)
@@ -387,123 +511,67 @@ void	RequestHandler::handleMetadata(t_client &c) {
 	this->m_request_data = &c.m_request_data;
 	this->m_response_data = &c.m_response_data;
 	try {
-		//updating virtual server pointer based on client request's host header
+		//get virtual server and location
 		m_client->updateServerConf();
-		//updating location block
 		c.m_request_data.m_location = c.m_v_server->getLocation(c.m_request_data);
 		c.m_request_data.m_owner = &c;
+
 		Logger::Log()<<"-------FETCHED BLOCK-------\n\tLISTEN "
 			<<c.m_v_server->m_configs.m_directives["listen"]
 			<<"\n\tSERVER_NAME "<< m_client->m_v_server->m_configs.m_directives["server_name"]
 			<<"\n\tLOCATION/ROUTE "<< m_client->m_request_data.m_location->first<<"\n-----------"<<std::endl;
 
 		std::string &real_path =  c.m_request_data.m_real_path;
-		std::string	&file = c.m_request_data.m_file;
-		std::string	stat_file;
-		real_path = c.m_request_data.m_path;
+		real_path = c.m_request_data.m_path; // a bit confusing
 		std::string const & location = c.m_request_data.m_location->first;
-		std::string & alias = c.m_request_data.m_location->second["alias"];
+		std::string alias, index, stat_file;
 
-		Logger::Log() << "location: " << location << std::endl;
-		Logger::Log() << "alias: " << alias << std::endl;
-		Logger::Log() << "index: " << this->m_client->m_request_data.m_location->second["index"] << std::endl;
+		t_directives const &	location_directives = this->m_request_data->m_location->second;
+		t_directives::const_iterator	it = location_directives.find("alias");
+		if (it != location_directives.end()) {
+			alias = it->second;
+			Logger::Log() << "alias: " << it->second << std::endl;
+		}
 
-		/*replacing location path by alias path (what if alias empty?)*/
+		it = location_directives.find("index");
+		if (it != location_directives.end()) {
+			Logger::Log()  << "index: "  << it->second << std::endl;
+		}
+
+		/*replacing location path by alias path*/
+		char buf[PATH_MAX];
+		if (alias.empty())
+			alias = getcwd(buf,  PATH_MAX);
 		if (alias[alias.size() - 1] != '/')
 			alias.append("/");
 		size_t	const replace_len = location.size() > real_path.size() ? real_path.size() : location.size();
 		real_path.replace(0, replace_len, alias);
 
-		Logger::Log()<<"real_path: "<<real_path<<std::endl;
-		Logger::Log()<<"path: "<<this->m_client->m_request_data.m_path<<std::endl;
-		size_t	prefix = 0;
-		size_t	next_prefix = 0;
-		//stat every /prefix/ until
-		// 						found file
-		// 						end of URI
-		// 						stat returns -1, so throw error not found
-		while (prefix < real_path.size()) {
-			prefix = real_path.find_first_of("/?", prefix);
-			next_prefix = prefix == std::string::npos ? std::string::npos : real_path.find_first_of("?/", prefix + 1);
-			stat_file = real_path.substr(0, next_prefix);
-			Logger::Log()<<"\tstat "<<stat_file<<std::endl;
-			if (c.m_request_data.m_method != PUT)
-				if (stat(stat_file.c_str(), &this->m_statbuf))
-					throw HTTPError("RequestHandler::handleMetadata: stat", "invalid full path", 404);
-			//also check permission
-			if ((this->m_statbuf.st_mode & S_IFMT) == S_IFREG) // if file
-				break ;
-			if (c.m_request_data.m_method != PUT)
-				if ((this->m_statbuf.st_mode & S_IFMT) != S_IFDIR 
-						&& (this->m_statbuf.st_mode & S_IFMT) != S_IFLNK) // if something else than a directory/smlink
-					throw HTTPError("RequestHandler::handleMetadata: stat", "invalid full path, not a file/directory/symlink", 404);
-			if (next_prefix == std::string::npos)
-				break ;
-			prefix = next_prefix;
-		}
+		//parse URI
+		stat_file = this->statFile();
+		if (c.m_request_data.m_method != PUT)
+			this->formatIndex(stat_file);
+		c.m_request_data.m_file = real_path.substr(stat_file.rfind('/') + 1, std::string::npos);
 
-		if ((this->m_statbuf.st_mode & S_IFMT) == S_IFDIR) {
-			if (stat_file[stat_file.size() - 1] != '/')
-				stat_file.append("/");
-			std::string const &	index = this->m_client->m_request_data.m_location->second["index"];
-			std::vector<std::string>	v = ft::split(index);
-			for (std::vector<std::string>::iterator it = v.begin(); it != v.end(); ++it) {
+		//Log
+		Logger::Log() << "location: " << location << std::endl;
 
-				std::string	path_index = stat_file + *it;
-				Logger::Log() << "path_index: " << path_index << std::endl;
-				if (stat(path_index.c_str(), &this->m_statbuf) == 0 && (this->m_statbuf.st_mode & S_IFMT) == S_IFREG) {
-					real_path = path_index;
-					Logger::Log() << "real_path: " << real_path << std::endl;
-					break;
-				}
-			}
-		}
-		c.m_request_data.m_file = real_path.substr(prefix + 1, std::string::npos);
-		// if we stopped at file
-		if ((this->m_statbuf.st_mode & S_IFMT) == S_IFREG) {
-			Logger::Log()<<"m_real_path: "<<c.m_request_data.m_real_path<<std::endl;
-			Logger::Log()<<"m_file: "<<c.m_request_data.m_file<<std::endl;
-			Logger::Log()<<"stat file: "<<stat_file<<std::endl;
-			// 	extract extension
-			size_t	extension = c.m_request_data.m_file.find_last_of('.', c.m_request_data.m_file.size());
-			Logger::Log()<<"extension index: "<<extension<<std::endl;
-			// 	if CGI directives exist && extension == cgi directive && cgi_path is valid
-			if (this->validCgi(c.m_request_data, extension))
-			{
-				Logger::Log()<<"cgi detected"<<std::endl;
-				this->handleCgiMetadata(c.m_request_data, stat_file);
-			}
-			else
-			{
-				//	normal file;
-				//	check extension against mime types;
-				this->m_client->m_response_data.m_content_type = this->m_mime_types[file.substr(file.rfind('.') + 1)];
-				Logger::Log() << "content-type: "<<this->m_client->m_response_data.m_content_type<<std::endl;
-				//	if there are additional entries after this file, we throw bad request
-				if (c.m_request_data.m_method != PUT)
-					if (next_prefix != std::string::npos)
-						throw HTTPError("RequestHandler::handleMetadata", "invalid full path", 404);
-			}
-		} 
-		//		see if autoindex on then flag it so handleRequest can call the appropriate method
-		//		else return bad request?
-		else if (this->m_client->m_request_data.m_method != PUT)
-		{
-			if (c.m_request_data.m_location->second["autoindex"] == "on")
-			{
-				Logger::Log()<<"dir listing"<<std::endl;
-				c.m_request_data.m_autoindex= true;
-			}
-			else
-				throw HTTPError("RequestHandler::handleMetadata", "directory listing not enabled", 403);
-		}
-		AllowedMethods(c, *this);
-		Authenticated(c, *this);
-		// Logger::Log()<<"stat file: "<<stat_file<<std::endl;
-		if (m_client->m_request_data.m_method == PUT)
-			if (real_path[real_path.size() - 1] == '/' || (stat(real_path.c_str(), &this->m_statbuf) && S_ISDIR(this->m_statbuf.st_mode)))
-				throw HTTPError("RequestHandler::handleMetadata::PUT", "file is a directory", 409);
-	} catch (HTTPError & e) {
+		Logger::Log()<<"m_path: "<<this->m_client->m_request_data.m_path<<std::endl;
+		Logger::Log()<<"m_real_path: "<<c.m_request_data.m_real_path<<std::endl;
+		Logger::Log()<<"m_file: "<<c.m_request_data.m_file<<std::endl;
+		Logger::Log()<<"stat file: "<<stat_file<<std::endl;
+
+		//
+		this->interpretUri(stat_file);
+
+		//handle headers
+		AllowedMethods();
+		Authenticated();
+		GetLanguage();
+		//could be member of RequestHandler and called like this->AllowedMethods()
+	} 
+	catch (HTTPError & e)
+	{
 		std::cerr << e.what() << std::endl;
 		this->m_request_data->m_status_code = e.HTTPStatusCode();
 		this->m_request_data->m_done = true;
@@ -513,8 +581,9 @@ void	RequestHandler::handleMetadata(t_client &c) {
 std::string		RequestHandler::handlePUT()
 {
 	std::string m_file = this->m_request_data->m_real_path.substr(this->m_request_data->m_real_path.find_last_of('/') + 1);
-	const char *upload_store = this->m_request_data->m_location->second["upload_store"].c_str();
-	std::string path_to_file = std::string(upload_store) + m_file;
+	std::string upload_store = this->m_request_data->m_location->second["upload_store"];
+	upload_store.erase(upload_store.find_last_of(' '));
+	std::string path_to_file = std::string(upload_store) + '/' + m_file;
 
 	if (stat(path_to_file.c_str(), &this->m_statbuf) == 0){
 		this->m_request_data->m_status_code = 204;
@@ -524,8 +593,7 @@ std::string		RequestHandler::handlePUT()
 	else 
 		this->m_request_data->m_status_code = 201;
 	char* current_dir = getcwd(NULL, 0);
-	
-	if (chdir(upload_store))
+	if (chdir(upload_store.c_str()))
 		throw HTTPError("RequestHandler::PUT", "Upload store directory doesn't exist", 500);
 	int fd  = open(m_file.c_str(), O_TRUNC | O_CREAT | O_WRONLY,  0600); // S_IRWXU = owner having all persmissions 
 	if (fd == -1)
@@ -584,11 +652,11 @@ void	RequestHandler::handleRequest(t_client &c) {
 				 case HEAD:
 				 	m_client->m_response_str = handleHEAD();
 				 	break;
-				 case POST:
-					m_client->m_response_str = handlePOST();
-				 	break;
 				case PUT:
 					m_client->m_response_str = handlePUT();
+					break;
+				case POST:
+					m_client->m_response_str = handlePOST();
 					break;
 				// case DELETE:
 				// 	m_client->m_response_str = handleDELETE();

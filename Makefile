@@ -1,18 +1,28 @@
+OS 			:= $(shell uname)
 NAME		:=	webserv
 FLAGS		=	-Wall -Wextra -Werror -std=c++98 -pedantic
 
-DEBUG 		?=	0
-LOG			?=	1
+SANITIZE	?=	0
+DEBUG		?=	0
+LOG			?=	0
+LOG_FILE	?=	0
 
-ifeq ($(DEBUG), 1)
+ifeq ($(SANITIZE), 1)
 FLAGS+= -g -fsanitize=address
 endif
 
-LOG_FILE=
+ifeq ($(DEBUG), 1)
+FLAGS+= -g
+endif
+
+OUT_LOG=
 
 ifeq ($(LOG), 1)
 FLAGS+=	-DLOG
-LOG_FILE+=  2>&1 | tee webserv.log
+endif
+
+ifeq ($(LOG_FILE), 1)
+OUT_LOG+=  2>&1 | tee webserv.log
 endif
 
 INCLUDES	:=	-Iincludes
@@ -20,9 +30,18 @@ INCLUDES	:=	-Iincludes
 SRC_DIR		:= 	srcs
 OBJ_DIR		:=	objs
 CONF_DIR 		:=	conf
+TEST_DIR	:= ${PWD}/tests
+
+WWW			:= ${PWD}/www
+REPO		:= ${PWD}
+
+ifeq ($(OS), Linux)
+CGI_TESTER := ubuntu_cgi_tester
+else
+CGI_TESTER := cgi_tester
+endif
 
 OBJ =	main
-OBJ +=	Authentication
 OBJ +=	base64
 OBJ +=	Cgi
 OBJ +=	Client
@@ -30,6 +49,7 @@ OBJ +=	Logger
 OBJ +=	RequestHandler
 OBJ +=	RequestHandlerMimeTypes
 OBJ +=	RequestHandlerStatusCodes
+OBJ +=	ResponseHeaders
 OBJ +=	Server
 OBJ +=	ServerAccept
 OBJ +=	ServerInit
@@ -52,7 +72,7 @@ all: $(NAME)
 
 $(NAME): $(OBJ)
 	@$(foreach obj, $?, echo Linking $(notdir $(obj))$(NL))
-	$(CC) $(FLAGS) $(OBJ) -g -o $(NAME)
+	@$(CC) $(FLAGS) $(OBJ) -o $(NAME)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HEADER)
 	@mkdir -p $(OBJ_DIR)/$(dir $*)
@@ -60,7 +80,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HEADER)
 	@$(CC) $(FLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
-	@$(RM) -r $(wildcard $(OBJ_DIR))
+	@$(RM) -r $(wildcard $(OBJ_DIR)) $(subst $(WWW)/upload_store/empty.txt,, $(wildcard $(WWW)/upload_store/*))
 
 clean_config:
 	@$(RM) -r $(wildcard $(CONF_DIR)/*.conf)
@@ -74,8 +94,12 @@ re:
 	$(MAKE) all config
 
 run: $(NAME) config
-	./$(NAME) $(LOG_FILE)
+	@./$(NAME) $(OUT_LOG) || true
 config:
-	WWW=${PWD}/www REPO=${PWD} ./generate_config.pl
+	@WWW=$(WWW) \
+		REPO=$(REPO) \
+		TEST_DIR=$(TEST_DIR) \
+		CGI_TESTER=$(CGI_TESTER) \
+		./generate_config.pl
 
 .PHONY: all clean fclean re

@@ -18,8 +18,10 @@ struct	Request
 		int                  	    		m_protocol;
 		size_t								m_content_length;
 		std::vector<std::string> 			m_headers;
+		std::map<std::string, std::string> 		x_headers;
 		bool								m_if_body;
 		std::string							m_body;
+		std::string							m_tmp_body;
 		bool								m_metadata_parsed;
 		bool								m_done;
 		bool								m_chunked;
@@ -32,6 +34,10 @@ struct	Request
 		std::string							m_path_info;
 		std::string							m_real_path;
 		std::string							m_file;
+		int									m_file_type;
+		bool								m_looking_for_size;
+		bool								m_last_chunk;
+
 };
 
 struct	Response
@@ -43,6 +49,8 @@ struct	Response
 		std::string					m_content_type;
 		std::string					m_body;
 		std::vector<std::string>	m_response_headers;
+		std::string					m_content_language;
+		std::string					m_content_location;
 };
 
 class	Client

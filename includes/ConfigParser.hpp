@@ -57,8 +57,8 @@ class	ConfigParser
 		typedef Server::t_v_server_conf		t_v_server_conf;
 		typedef Server::t_directives		t_directives;
 		typedef Server::t_v_server			t_v_server;
-		typedef Server::t_v_server_blocks			t_v_server_blocks;
-		typedef Server::t_v_server_all		t_v_server_all;
+		typedef Server::t_v_server_blocks	t_v_server_blocks;
+		typedef Server::t_v_server_map		t_v_server_map;
 		typedef Server::t_ip_port			t_ip_port;
 		typedef	std::queue<t_v_server_conf>	t_config_tokens;
 		typedef	std::vector<std::string>			t_fields;
@@ -71,7 +71,7 @@ class	ConfigParser
 		}
 	}
 
-	static	void	convertTokens(t_config_tokens &tokens, t_v_server_all &v_server_all) {
+	static	void	convertTokens(t_config_tokens &tokens, t_v_server_map &v_server_all) {
 		t_v_server_conf	conf;
 		bool	duplicate;
 
@@ -103,7 +103,7 @@ class	ConfigParser
 		}
 	}
 
-	static void	parse(char const *path, t_v_server_all &v_server_all) { 
+	static void	parse(char const *path, t_v_server_map &v_server_all) { 
 
 		t_fields fields(2);
 		t_config_tokens	tokens;
@@ -147,7 +147,7 @@ class	ConfigParser
 			std::string _error;
 	};
 
-	static void	printBlocks(t_v_server_all &v_server_all) {
+	static void	printBlocks(t_v_server_map &v_server_all) {
 			for (std::map<t_ip_port, t_v_server_blocks>::iterator ip_port = v_server_all.begin()
 					; ip_port != v_server_all.end(); ++ip_port){
 

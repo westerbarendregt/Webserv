@@ -3,3 +3,4 @@ webserv.log
 nginx.conf
 .idea
 objs
+.ccls
