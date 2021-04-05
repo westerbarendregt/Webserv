@@ -21,9 +21,8 @@ int	usage() {
 void	sigtermClose(int) {
 	s.close();
 	std::cerr << "\nexiting webserv..."<< std::endl;
-	exit(SIGINT);
+	exit(128 + SIGINT);
 }
-
 
 int	main(int ac, char **av) {
 

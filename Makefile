@@ -3,7 +3,8 @@ NAME		:=	webserv
 FLAGS		=	-Wall -Wextra -Werror -std=c++98 -pedantic
 
 SANITIZE	?=	0
-LOG			?=	1
+DEBUG		?=	0
+LOG			?=	0
 LOG_FILE	?=	0
 
 ifeq ($(SANITIZE), 1)
@@ -71,7 +72,7 @@ all: $(NAME)
 
 $(NAME): $(OBJ)
 	@$(foreach obj, $?, echo Linking $(notdir $(obj))$(NL))
-	@$(CC) $(FLAGS) $(OBJ) -g -o $(NAME)
+	@$(CC) $(FLAGS) $(OBJ) -o $(NAME)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HEADER)
 	@mkdir -p $(OBJ_DIR)/$(dir $*)

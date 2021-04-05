@@ -59,7 +59,6 @@ void	Cgi::convertEnv(t_client &c) {
 void	Cgi::read(t_client &c) {
 	char buf[CGI_BUF_SIZE];
 
-	std::fill(buf, buf + sizeof(buf), 0);
 	ssize_t	nbytes = ::read(c.getReadFd(), buf, CGI_BUF_SIZE - 1);
 	if (nbytes <= 0) {
 		if (nbytes == -1)
@@ -68,7 +67,10 @@ void	Cgi::read(t_client &c) {
 		c.m_cgi_end_chunk = true;
 	}
 	else
+	{
+		buf[nbytes] = '\0';
 		c.m_cgi_out_buf.append(buf);
+	}
 }
 
 

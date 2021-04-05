@@ -258,11 +258,11 @@ void 		RequestHandler::responseBody() {
 	char 	buf[1025];
 	ssize_t ret;
 	do {
-		std::fill_n(buf, 1025, 0);
 		ret = read(fd, buf, 1024);
 		if (ret == -1) {
 			throw HTTPError("RequestHandler::responseBody", "error reading file", 500);
 		}
+		buf[ret] = '\0';
 		this->m_response_data->m_body.append(buf);
 	} while (ret > 0);
 
