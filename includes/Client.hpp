@@ -34,6 +34,7 @@ struct	Request
 		std::string							m_path_info;
 		std::string							m_real_path;
 		std::string							m_file;
+		std::string							m_remote_user;
 		int									m_file_type;
 		bool								m_looking_for_size;
 		bool								m_last_chunk;

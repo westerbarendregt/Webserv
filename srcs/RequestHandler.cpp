@@ -405,7 +405,10 @@ void	RequestHandler::formatIndex(std::string &stat_file) {
 					(statbuf.st_mode & S_IFMT) == S_IFREG) {
 					request.m_file_type = statbuf.st_mode;
 					index_exist = true;
-					real_path = path_index;
+					//real_path = path_index + real_path.substr(path_index.size() - 1, std::string::npos);
+					if (real_path.size() < path_index.size())
+						real_path = path_index;
+					stat_file = path_index;
 					Logger::Log() << "real_path: " << real_path << std::endl;
 					break;
 				}
@@ -565,10 +568,9 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		this->interpretUri(stat_file);
 
 		//handle headers
-		AllowedMethods();
-		Authenticated();
-		GetLanguage();
-		//could be member of RequestHandler and called like this->AllowedMethods()
+		this->AllowedMethods();
+		this->Authenticated();
+		this->GetLanguage();
 	} 
 	catch (HTTPError & e)
 	{

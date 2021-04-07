@@ -4,7 +4,7 @@ FLAGS		=	-Wall -Wextra -Werror -std=c++98 -pedantic
 
 SANITIZE	?=	0
 DEBUG		?=	0
-LOG			?=	0
+LOG			?=	1
 LOG_FILE	?=	0
 
 ifeq ($(SANITIZE), 1)

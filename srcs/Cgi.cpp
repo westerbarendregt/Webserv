@@ -52,7 +52,7 @@ void	Cgi::convertEnv(t_client &c) {
 	}
 	this->m_env_array[i] = 0;
 	this->m_argv[0] = ft::strdup(c.m_request_data.m_location->second["cgi_path"]);
-	this->m_argv[1] = ft::strdup(c.m_request_data.m_file);
+	this->m_argv[1] = ft::strdup(c.m_request_data.m_real_path);
 	this->m_argv[2] = 0;
 }
 
@@ -63,7 +63,7 @@ void	Cgi::read(t_client &c) {
 	if (nbytes <= 0) {
 		if (nbytes == -1)
 			throw HTTPError("Cgi::read", strerror(errno), 500);
-		c.m_cgi_out_buf.clear();
+		//c.m_cgi_out_buf.clear();
 		c.m_cgi_end_chunk = true;
 	}
 	else
@@ -183,25 +183,24 @@ void	Cgi::run(t_client &c) {
 }
 
 void	Cgi::fillEnv(t_request_data &request) {
-	char	buf[PATH_MAX];
-	(void)buf;
-	this->m_env_map["AUTH_TYPE"]=std::string(request.m_headers[AUTHORIZATION]);
+	std::string &auth = request.m_headers[AUTHORIZATION];
+	this->m_env_map["AUTH_TYPE"]=std::string(auth, 0, auth.find(' '));
 	this->m_env_map["CONTENT_LENGTH"]=ft::intToString(request.m_body.size());
-	this->m_env_map["CONTENT_TYPE"]=std::string(request.m_headers[CONTENTTYPE]);
+	this->m_env_map["CONTENT_TYPE"]=request.m_headers[CONTENTTYPE];
 	this->m_env_map["GATEWAY_INTERFACE"]="CGI/1.1";
 	if (request.m_owner->m_cgi_post)
 		this->m_env_map["PATH_INFO"]=request.m_path; //need opti
 	else
-		this->m_env_map["PATH_INFO"]="/";
-	this->m_env_map["PATH_TRANSLATED"]= getcwd(buf, PATH_MAX) + this->m_env_map["PATH_INFO"]; //or htdocs
+		this->m_env_map["PATH_INFO"]="/"; //change
+	this->m_env_map["PATH_TRANSLATED"]= request.m_real_path;
 	this->m_env_map["QUERY_STRING"] = request.m_query_string;
 	struct	sockaddr_in	*tmp = reinterpret_cast<struct sockaddr_in*>(&request.m_owner->m_sockaddr);
 	this->m_env_map["REMOTE_ADDR"] = ft::inet_ntoa(tmp->sin_addr);
-	this->m_env_map["REMOTE_IDENT"] =""; //?
-	this->m_env_map["REMOTE_USER"] =""; //?
+	this->m_env_map["REMOTE_IDENT"] =""; //not supported
+	this->m_env_map["REMOTE_USER"] =request.m_remote_user;
 	this->m_env_map["REQUEST_METHOD"] = methods[request.m_method]; //maybe simpler way?
 	this->m_env_map["REQUEST_URI"] = request.m_path;
-	this->m_env_map["SCRIPT_FILENAME"] = request.m_file; //if cgi-bin/test.php script_name is cgi-bin/test-cgi.php
+	this->m_env_map["SCRIPT_NAME"] = request.m_file;
 	this->m_env_map["SERVER_NAME"] =SERVER_VERSION;
 	this->m_env_map["SERVER_PORT"] = request.m_owner->m_v_server->m_port;
 	this->m_env_map["SERVER_PROTOCOL"]="HTTP/1.1";
@@ -267,10 +266,15 @@ void	RequestHandler::handleCgiResponse(t_client &c) {
 		c.m_response_str.append(CRLF);
 		c.m_response_data.m_cgi_metadata_parsed = true;
 		c.m_cgi_out_buf.erase(0, metadata_index + CRLF_LEN + CRLF_LEN);
+		if (!c.m_cgi_out_buf.empty()) {
+			c.m_response_str.append(ft::hexString(c.m_cgi_out_buf.size()) + CRLF + c.m_cgi_out_buf + CRLF);
+			c.m_cgi_out_buf.clear();
+		}
 	}
 	if (c.m_response_data.m_cgi_metadata_sent) {
-		if (c.m_cgi_out_buf.size() == 0)
+		if (c.m_cgi_out_buf.empty()) {
 			c.m_cgi_end_chunk = 1;
+		}
 		c.m_response_str.append(ft::hexString(c.m_cgi_out_buf.size()) + CRLF + c.m_cgi_out_buf + CRLF);
 		c.m_cgi_out_buf.clear();
 	}
@@ -278,8 +282,8 @@ void	RequestHandler::handleCgiResponse(t_client &c) {
 
 void	RequestHandler::handleCgiMetadata(t_request &request, std::string &file) {
 	request.m_cgi = true;
-	if (request.m_real_path.size() - file.size() == 0) {
-		request.m_file = file;
+	if (request.m_real_path.size() == file.size()) {
+		//request.m_file = file;
 		return ;
 	}
 	size_t query_string_index = request.m_file.find('?', 0);
@@ -288,7 +292,10 @@ void	RequestHandler::handleCgiMetadata(t_request &request, std::string &file) {
 	size_t	path_info_index = request.m_file.find('/', 0);
 	if (path_info_index != std::string::npos) 
 		request.m_path_info = request.m_file.substr(path_info_index, query_string_index - path_info_index);
-	request.m_file = file;
+	else
+		request.m_path_info = "/";
+	if (request.m_real_path.size() > request.m_file.size())
+		request.m_file = file;
 	//checek permission for path_info
 	Logger::Log()<<"file: "<<request.m_file<<std::endl;
 	Logger::Log()<<"path_info: "<<request.m_path_info<<std::endl;
