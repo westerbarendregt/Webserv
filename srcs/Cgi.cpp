@@ -189,7 +189,7 @@ void	Cgi::fillEnv(t_request_data &request) {
 	this->m_env_map["REMOTE_ADDR"] = ft::inet_ntoa(tmp->sin_addr);
 	this->m_env_map["REMOTE_IDENT"] =""; //not supported
 	this->m_env_map["REMOTE_USER"] =request.m_remote_user;
-	this->m_env_map["REQUEST_METHOD"] = methods[request.m_method]; //maybe simpler way?
+	this->m_env_map["REQUEST_METHOD"] = methods[request.m_method];
 	this->m_env_map["REQUEST_URI"] = request.m_path;
 	this->m_env_map["SCRIPT_NAME"] = request.m_file;
 	this->m_env_map["SCRIPT_FILENAME"] = request.m_script_path; //so it works with php-cgi
@@ -197,8 +197,13 @@ void	Cgi::fillEnv(t_request_data &request) {
 	this->m_env_map["SERVER_PORT"] = request.m_owner->m_v_server->m_port;
 	this->m_env_map["SERVER_PROTOCOL"]="HTTP/1.1";
 	this->m_env_map["SERVER_SOFTWARE"]="HTTP 1.1";
-	this->m_env_map["REDIRECT_STATUS"]="true"; // see if need to be disabled
-	this->m_env_map["HTTP_X_SECRET_HEADER_FOR_TEST"]="1"; // see if need to be disabled
+	this->m_env_map["REDIRECT_STATUS"]="true";
+	for (std::map<std::string, std::string>::iterator it = request.x_headers.begin();
+			it != request.x_headers.end(); ++it) {
+		std::string	key = "HTTP_" + it->first;
+		std::replace(key.begin(), key.end(), '-', '_');
+		this->m_env_map[key] = it->second;
+	}
 }
 
 void	Cgi::reset() {
