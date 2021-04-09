@@ -12,7 +12,6 @@ int	Server::accept(int socket) {
 
 	if (!(v = this->getVirtualServer(socket)))
 	{
-		Logger::Log()<<"no listeners with socket "<<socket<<std::endl;
 		return 1; //not a new connection
 	}
 	c.m_v_server_blocks = v;

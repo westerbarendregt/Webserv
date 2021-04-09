@@ -63,9 +63,41 @@ def test_async_cgi_post():
 
 def test_cgi_post():
     try :
-        print("\t\ttest_cgi_post")
-        r=requests.post('http://127.0.0.1:8080/path/to/simple_form.php', \
+        print("-------POST data=query=string")
+        r=requests.post('http://127.0.0.1:8080/php/post_test_raw.php', \
                 data="query=string", headers={"Content-Type": "application/x-www-form-urlencoded"})
+        print(r.text)
+        #---------#
+        print("------POST ?query=string data=query=string")
+        r=requests.post('http://127.0.0.1:8080/php/post_test_raw.php?query=string', \
+                data="query=string", headers={"Content-Type": "application/x-www-form-urlencoded"})
+        print(r.text)
+        #---------#
+        print("--------POST ?query=string data=query=string&key=val")
+        r=requests.post('http://127.0.0.1:8080/php/post_test_raw.php?query=string', \
+                data="query=string&key=val", headers={"Content-Type": "application/x-www-form-urlencoded"})
+        print(r.text)
+        #---------#
+        print("--------POST /path/info/?query=string data=query=string&key=val")
+        r=requests.post('http://127.0.0.1:8080/php/post_test_raw.php/path/info?query=string', \
+                data="query=string&key=val", headers={"Content-Type": "application/x-www-form-urlencoded"})
+        print(r.text)
+        #---------#
+        print("--------GET ?query=string\n")
+        r=requests.get('http://127.0.0.1:8080/php/post_test_raw.php?query=string')
+        print(r.text)
+        #---------#
+        print("--------GET /path/info\n")
+        r=requests.get('http://127.0.0.1:8080/php/post_test_raw.php/path/info')
+        print(r.text)
+        #---------#
+        print("--------GET /path/info?query=string\n")
+        r=requests.get('http://127.0.0.1:8080/php/post_test_raw.php/path/info?query=string')
+        print(r.text)
+        #---------#
+        print("--------GET /path/info/ok?query=string&key=value\n")
+        r=requests.get('http://127.0.0.1:8080/php/post_test_raw.php/path/info/ok?query=string&key=val')
+        print(r.text)
     except Exception as e:
         print(e)
         print("---FAILED---")

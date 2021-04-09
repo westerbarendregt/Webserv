@@ -32,7 +32,7 @@ class RequestHandler
 		std::string			statFile();
 		void				formatIndex(std::string &stat_file);
 		void				interpretUri(std::string & stat_file);
-		void				handleCgiMetadata(t_request &request, std::string &file);
+		void				handleCgiMetadata(t_request &request, std::string &stat_file);
 		void				handleCgiResponse(t_client &c);
 		int					handleCgi(t_client &c);
 		void				handleRequest(t_client &c);

@@ -4,7 +4,7 @@ FLAGS		=	-Wall -Wextra -Werror -std=c++98 -pedantic
 
 SANITIZE	?=	0
 DEBUG		?=	0
-LOG			?=	1
+LOG			?=	0
 LOG_FILE	?=	0
 
 ifeq ($(SANITIZE), 1)
@@ -68,7 +68,7 @@ define NL
 
 endef
 
-all: $(NAME)
+all: $(NAME) config
 
 $(NAME): $(OBJ)
 	@$(foreach obj, $?, echo Linking $(notdir $(obj))$(NL))
@@ -91,9 +91,9 @@ fclean:
 
 re:
 	$(MAKE) fclean
-	$(MAKE) all config
+	$(MAKE) all
 
-run: $(NAME) config
+run: $(NAME)
 	@./$(NAME) $(OUT_LOG) || true
 config:
 	@WWW=$(WWW) \

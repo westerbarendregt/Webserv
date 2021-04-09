@@ -63,7 +63,6 @@ void	Cgi::read(t_client &c) {
 	if (nbytes <= 0) {
 		if (nbytes == -1)
 			throw HTTPError("Cgi::read", strerror(errno), 500);
-		//c.m_cgi_out_buf.clear();
 		c.m_cgi_end_chunk = true;
 	}
 	else
@@ -113,12 +112,8 @@ void	Cgi::write(t_client &c) {
 }
 
 void	Cgi::setParentIo(t_client &c) {
-	if (c.m_cgi_post) {
-		if (pipe(c.m_cgi_write_pipe) == -1) {
-			throw HTTPError("Cgi::run: pipe(cgi_write_pipe)", strerror(errno), 500);
-		}
-		if (c.m_cgi_write_pipe[OUT] > c.m_range_fd)
-			c.m_range_fd = c.m_cgi_write_pipe[OUT];
+	if (pipe(c.m_cgi_write_pipe) == -1) {
+		throw HTTPError("Cgi::run: pipe(cgi_write_pipe)", strerror(errno), 500);
 	}
 	if (pipe(c.m_cgi_read_pipe) == -1) {
 		throw HTTPError("Cgi::run: pipe(cgi_read_pipe)", strerror(errno), 500);
@@ -127,10 +122,8 @@ void	Cgi::setParentIo(t_client &c) {
 		Logger::Log() << "Cgi::init : fcntl(m_cgi_read_pipe[IN]): " << strerror(errno)<<std::endl;
 	if (fcntl(c.m_cgi_read_pipe[OUT], F_SETFL, O_NONBLOCK) == -1)
 		Logger::Log() << "Cgi::init : fcntl(m_cgi_read_pipe[OUT]): " << strerror(errno)<<std::endl;
-	if (c.m_cgi_post && fcntl(c.m_cgi_write_pipe[OUT], F_SETFL, O_NONBLOCK) == -1)
+	if (fcntl(c.m_cgi_write_pipe[OUT], F_SETFL, O_NONBLOCK) == -1)
 		Logger::Log() << "Cgi::init : fcntl(m_cgi_write_pipe[OUT]): " << strerror(errno)<<std::endl;
-	if (c.m_cgi_read_pipe[IN] > c.m_range_fd)
-		c.m_range_fd = c.m_cgi_read_pipe[IN];
 }
 
 void	Cgi::setChildIo(t_client &c) {
@@ -140,14 +133,12 @@ void	Cgi::setChildIo(t_client &c) {
 	if (close(c.m_cgi_read_pipe[IN]) == -1
 		|| close(c.m_cgi_read_pipe[OUT]) == -1)
 		throw HTTPError("Cgi::setChildIo: close(cgi_read_pipe[IN-OUT])", strerror(errno), 500);
-	if (c.m_cgi_post) {
-		if (dup2(c.m_cgi_write_pipe[IN], STDIN_FILENO) == -1) {
+	if (dup2(c.m_cgi_write_pipe[IN], STDIN_FILENO) == -1) {
 			throw HTTPError("Cgi::exec: dup2(cgi_write_pipe[IN], STDIN_FILENO)", strerror(errno), 500);
 		}
 	if (close(c.m_cgi_write_pipe[IN]) == -1
 		|| close(c.m_cgi_write_pipe[OUT]) == -1)
 		throw HTTPError("Cgi::setChildIo: close(cgi_write_pipe[IN-OUT])", strerror(errno), 500);
-	}
 }
 
 
@@ -164,6 +155,9 @@ void	Cgi::exec(t_client &c) {
 		}
 	}
 	this->reset();
+	if (close(c.m_cgi_write_pipe[IN]) == -1)
+		throw HTTPError("Cgi::exec: close(m_cgi_write_pipe[IN])", strerror(errno), 500);
+	c.m_cgi_write_pipe[IN] = -1;
 	if (close(c.m_cgi_read_pipe[OUT]) == -1)
 		throw HTTPError("Cgi::exec: close(m_cgi_read_pipe[OUT])", strerror(errno), 500);
 	c.m_cgi_read_pipe[OUT] = -1;
@@ -188,11 +182,8 @@ void	Cgi::fillEnv(t_request_data &request) {
 	this->m_env_map["CONTENT_LENGTH"]=ft::intToString(request.m_body.size());
 	this->m_env_map["CONTENT_TYPE"]=request.m_headers[CONTENTTYPE];
 	this->m_env_map["GATEWAY_INTERFACE"]="CGI/1.1";
-	if (request.m_owner->m_cgi_post)
-		this->m_env_map["PATH_INFO"]=request.m_path; //need opti
-	else
-		this->m_env_map["PATH_INFO"]="/"; //change
-	this->m_env_map["PATH_TRANSLATED"]= request.m_real_path;
+	this->m_env_map["PATH_INFO"]= request.m_path_info;
+	this->m_env_map["PATH_TRANSLATED"]= request.m_script_path.substr(0, request.m_script_path.rfind('/')) + request.m_path_info;
 	this->m_env_map["QUERY_STRING"] = request.m_query_string;
 	struct	sockaddr_in	*tmp = reinterpret_cast<struct sockaddr_in*>(&request.m_owner->m_sockaddr);
 	this->m_env_map["REMOTE_ADDR"] = ft::inet_ntoa(tmp->sin_addr);
@@ -201,6 +192,7 @@ void	Cgi::fillEnv(t_request_data &request) {
 	this->m_env_map["REQUEST_METHOD"] = methods[request.m_method]; //maybe simpler way?
 	this->m_env_map["REQUEST_URI"] = request.m_path;
 	this->m_env_map["SCRIPT_NAME"] = request.m_file;
+	this->m_env_map["SCRIPT_FILENAME"] = request.m_script_path; //so it works with php-cgi
 	this->m_env_map["SERVER_NAME"] =SERVER_VERSION;
 	this->m_env_map["SERVER_PORT"] = request.m_owner->m_v_server->m_port;
 	this->m_env_map["SERVER_PROTOCOL"]="HTTP/1.1";
@@ -280,24 +272,19 @@ void	RequestHandler::handleCgiResponse(t_client &c) {
 	}
 }
 
-void	RequestHandler::handleCgiMetadata(t_request &request, std::string &file) {
+void	RequestHandler::handleCgiMetadata(t_request &request, std::string &stat_file) {
 	request.m_cgi = true;
-	if (request.m_real_path.size() == file.size()) {
-		//request.m_file = file;
+	request.m_path_info = request.m_path;
+	request.m_script_path = stat_file;
+	if (request.m_real_path.size() == stat_file.size()) {
 		return ;
 	}
-	size_t query_string_index = request.m_file.find('?', 0);
-	if (query_string_index != std::string::npos)
-		request.m_query_string = request.m_file.substr(query_string_index + 1, std::string::npos);
-	size_t	path_info_index = request.m_file.find('/', 0);
-	if (path_info_index != std::string::npos) 
-		request.m_path_info = request.m_file.substr(path_info_index, query_string_index - path_info_index);
-	else
-		request.m_path_info = "/";
-	if (request.m_real_path.size() > request.m_file.size())
-		request.m_file = file;
-	//checek permission for path_info
-	Logger::Log()<<"file: "<<request.m_file<<std::endl;
+	size_t query_string_index = request.m_path.find('?', 0);
+	if (query_string_index != std::string::npos) {
+		request.m_query_string = request.m_path.substr(query_string_index + 1, std::string::npos);
+		request.m_path_info.resize(query_string_index);
+	}
+	Logger::Log()<<"script_path: "<<request.m_script_path<<std::endl;
 	Logger::Log()<<"path_info: "<<request.m_path_info<<std::endl;
 	Logger::Log()<<"query_string : "<<request.m_query_string<<std::endl;
 }
@@ -340,7 +327,7 @@ void	Cgi::setCgiFd(fd_set *read_set, fd_set *write_set, t_client &c) {
 		if (c.m_cgi_read_pipe[IN] > c.m_range_fd)
 			c.m_range_fd = c.m_cgi_read_pipe[IN];
 	}
-	if (c.m_cgi_post && c.m_cgi_write_pipe[OUT] != -1) {
+	if (c.m_cgi_write_pipe[OUT] != -1) {
 		FD_SET(c.m_cgi_write_pipe[OUT], write_set);
 		if (c.m_cgi_write_pipe[OUT] > c.m_range_fd)
 			c.m_range_fd = c.m_cgi_write_pipe[OUT];
@@ -386,7 +373,7 @@ int RequestHandler::handleCgi(t_client &c) {
 		if (select(c.m_range_fd + 1, &read_set, &write_set, NULL, &tv) == -1)
 			throw HTTPError("RequestHandler::handleCgi: select", strerror(errno), 500);
 		//write
-		if (c.m_cgi_post && write_fd != -1 &&  FD_ISSET(write_fd, &write_set)) {
+		if (write_fd != -1 &&  FD_ISSET(write_fd, &write_set)) {
 			this->m_cgi.write(c);
 		}
 		//read
