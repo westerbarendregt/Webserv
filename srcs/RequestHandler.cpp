@@ -582,9 +582,10 @@ std::string		RequestHandler::handlePUT()
 {
 	std::string m_file = this->m_request_data->m_real_path.substr(this->m_request_data->m_real_path.find_last_of('/') + 1);
 	std::string upload_store = this->m_request_data->m_location->second["upload_store"];
-	upload_store.erase(upload_store.find_last_of(' '));
 	std::string path_to_file = std::string(upload_store) + '/' + m_file;
 
+	if (upload_store.find(" "))
+		upload_store.erase(upload_store.find_last_of(' '));
 	if (stat(path_to_file.c_str(), &this->m_statbuf) == 0){
 		this->m_request_data->m_status_code = 204;
 		if ((this->m_statbuf.st_uid != getuid())) // checking if owner id of file is the same as the webserver id.

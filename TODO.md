@@ -31,5 +31,9 @@ Monday 29-03
 - [ ] check the buffer recv size, might be high
 - [ ] Add log levels for the output -log [cerr-cout]
 - [ ] check how exactly tv influences select()
-- [ ] handle put trim upload_store better
+- [x] handle put trim upload_store better
 - [ ] write some more test for compare python
+
+
+
+!!

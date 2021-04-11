@@ -76,7 +76,7 @@ void	Server::run(){
 				if (c->m_request_data.m_status_code < 400 && c->m_request_data.m_cgi && this->m_request_handler.handleCgi(*c) == CONTINUE)
 					continue ;
 				this->respond(*c);
-				Logger::Log()<<"listening..."<<std::endl;
+				Logger::Log() << "listening..."<<std::endl;
 				//can close connection if the response is an error
 			}
 		} // for (i in range_fd)
