@@ -435,26 +435,23 @@ void	RequestHandler::interpretUri(std::string &stat_file) {
 
 
 	if (method == POST || (request.m_file_type & S_IFMT) == S_IFREG) { //file
-		if (method != POST && real_path != stat_file) {
-			throw HTTPError("RequestHandler::interpretUri", "invalid uri, path_info or query string detected", 404);
-		}
 		// 	extract extension
 		size_t	extension = file.find_last_of('.', file.size());
 		Logger::Log()<<"extension index: "<<extension<<std::endl;
 		if (extension == std::string::npos) {
 			response.m_content_type = "text/plain";
 		}
-		else if (this->validCgi(request, extension))
-		{
+		else if (this->validCgi(request, extension)) {
 			Logger::Log()<<"cgi detected"<<std::endl;
 			this->handleCgiMetadata(request, stat_file);
+			return ;
 		}
-	//	else if (method == POST) {
-	//		throw HTTPError("RequestHandler::handleMetadata", "post on regular file", 405);
-	//	}
 		else {
 			response.m_content_type = this->m_mime_types[stat_file.substr(stat_file.rfind('.') + 1)];
 			Logger::Log() << "content-type: "<<this->m_client->m_response_data.m_content_type<<std::endl;
+		}
+		if (real_path != stat_file) {
+			throw HTTPError("RequestHandler::interpretUri", "invalid uri, path_info or query string detected", 404);
 		}
 	}
 	else if (method == PUT) {

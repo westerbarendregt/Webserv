@@ -1,4 +1,4 @@
-- [ ] Adding the value in the index directive is not compatible with query strings / cgi
+- [x] Adding the value in the index directive is not compatible with query strings / cgi
 - [x] On PUT requests check file permissions before calling open
 - [x] test what nginx does when it doesn't have permissions
 - [x] Make compare function in python script that compares nginx with our webserv
@@ -28,8 +28,8 @@ Monday 29-03
 - [x] add variable MACOS/LINUX portability for tester variable
 - [ ] we are allowed to use unlink, maybe apply it at DELETE if you're bored or the paper says so... 
 - [x] CGI implementing the x_headers!, there in a map in the struct request
-- [ ] check the buffer recv size, might be high
+- [x] check the buffer recv size, might be high
 - [ ] Add log levels for the output -log [cerr-cout]
-- [ ] check how exactly tv influences select()
+- [x] check how exactly tv influences select()
 - [ ] handle put trim upload_store better
 - [ ] write some more test for compare python
