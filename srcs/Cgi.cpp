@@ -102,12 +102,10 @@ void	Cgi::write(t_client &c) {
 	if (nbytes == -1) {
 		throw HTTPError("Cgi::write: ", strerror(errno), 500);
 	}
-	if (static_cast<size_t>(nbytes) == len) {
+	c.m_cgi_write_offset += nbytes;
+	if (c.m_cgi_write_offset >= c.m_request_data.m_body.size()) {
 		close(c.m_cgi_write_pipe[OUT]);
 		c.m_cgi_write_pipe[OUT] = -1;
-	}
-	else {
-		c.m_cgi_write_offset += nbytes;
 	}
 }
 
