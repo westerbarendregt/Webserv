@@ -20,13 +20,6 @@ WORKDIR /webserv/
 COPY ft_server/srcs/wp-config.php www/wordpress/
 COPY ft_server/srcs/config.inc.php www/phpmyadmin/
 
-COPY Makefile .
-COPY srcs/ srcs/
-COPY includes/ includes/
-COPY conf_templates/ft_server.conf conf/
-
-#COPY www/html/index.html www/wordpress/
-
 RUN service mysql start && \
 	mysql -e "CREATE DATABASE wordpress;" && \
 	mysql -e "CREATE USER 'admin'@'localhost' IDENTIFIED BY 'cheese';" && \
@@ -45,6 +38,11 @@ RUN wget https://wordpress.org/latest.tar.gz -P /tmp && \
 	mv wp /usr/local/bin/ && \
 	service mysql restart && \
 	wp core install --allow-root --url=localhost --path=/webserv/www/wordpress --title="Webserv" --admin_user=admin --admin_password=cheese --admin_email=bpeeters@student.codam.nl --skip-email
+
+COPY Makefile .
+COPY srcs/ srcs/
+COPY includes/ includes/
+COPY conf_templates/ft_server.conf conf/
 
 RUN make LOG=0
 

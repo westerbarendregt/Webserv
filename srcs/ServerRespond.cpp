@@ -13,23 +13,23 @@ void	Server::respond(int client_socket) {
 }
 
 void	Server::respond(t_client &c) {
-	Logger::Log()<<"sending response"<<std::endl;
-	Logger::Log() << "RESPONSE:\n" << c.m_response_str.c_str() << std::endl;
+	//Logger::Log()<<"sending response"<<std::endl;
+	//Logger::Log() << "RESPONSE:\n" << c.m_response_str.c_str() << std::endl;
 	ssize_t	sent = 0;
 	size_t	len = c.m_response_str.size();
 	 if ((sent = send(c.m_socket, c.m_response_str.c_str(), len, 0)) == -1) {  //MSG_NOSIGNAL is not portable on MACOS, see main for global signal(SIGPIPE)
-		 return closeClientConnection(c);
+		 return removeClient(c);
 	 }
 	 c.m_response_data.m_response_headers.clear();
 	 c.m_response_str.erase(0, sent);
 	 if (static_cast<size_t>(sent) == len) {
 		 c.m_response_data.m_cgi_metadata_sent = 1;
-		 if (c.m_request_data.m_cgi && !c.m_cgi_end_chunk)
-			 return ;
-		if (c.m_request_data.m_status_code >= 400){
-			this->closeClientConnection(c);
+		if (c.m_request_data.m_status_code >= 400) {
+			this->removeClient(c);
 			return ;
 		}
+		if (c.m_request_data.m_cgi && !c.m_cgi_end_chunk)
+			 return ;
 	 	FD_CLR(c.m_socket, &this->m_write_all);
 	 	FD_SET(c.m_socket, &this->m_read_all);
 		c.reset();

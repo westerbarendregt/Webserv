@@ -12,8 +12,10 @@ Request::Request()
 	m_protocol(-1),
 	m_content_length(0),
 	m_headers(18, ""),
+	x_headers(),
 	m_if_body(false),
 	m_body(""),
+	m_tmp_body(""),
 	m_metadata_parsed(false),
 	m_done(false),
 	m_chunked(false),
@@ -25,7 +27,10 @@ Request::Request()
 	m_query_string(""),
 	m_path_info(""),
 	m_real_path(""),
-	m_file("")
+	m_file(""),
+	m_file_type(TYPE_UNDEFINED),
+	m_looking_for_size(true),
+	m_last_chunk(false)
 {
 }
 
@@ -35,8 +40,10 @@ Request::Request(Request const & src)
 	 m_protocol(src.m_protocol),
 	 m_content_length(src.m_content_length),
 	 m_headers(src.m_headers.begin(), src.m_headers.end()),
+	 x_headers(src.x_headers.begin(), src.x_headers.end()),
 	 m_if_body(src.m_if_body),
 	 m_body(src.m_body),
+	 m_tmp_body(src.m_tmp_body),
 	 m_metadata_parsed(src.m_metadata_parsed),
 	 m_done(src.m_done),
 	 m_chunked(src.m_chunked),
@@ -48,7 +55,10 @@ Request::Request(Request const & src)
 	 m_query_string(src.m_query_string),
 	 m_path_info(src.m_path_info),
 	 m_real_path(src.m_real_path),
-	 m_file(src.m_file)
+	 m_file(src.m_file),
+	 m_file_type(src.m_file_type),
+	 m_looking_for_size(src.m_looking_for_size),
+	 m_last_chunk(src.m_last_chunk)
 {
 }
 
@@ -58,8 +68,10 @@ Request &Request::operator=(Request const & rhs) {
 	 this->m_protocol       = rhs.m_protocol;
 	 this->m_content_length = rhs.m_content_length;
 	 this->m_headers.assign(rhs.m_headers.begin(), rhs.m_headers.end());
+	 this->x_headers 		= rhs.x_headers;
 	 this->m_if_body        = rhs.m_if_body;
 	 this->m_body           = rhs.m_body;
+	 this->m_tmp_body       = rhs.m_tmp_body;
 	 this->m_metadata_parsed= rhs.m_metadata_parsed;
 	 this->m_done           = rhs.m_done;
 	 this->m_chunked        = rhs.m_chunked;
@@ -67,12 +79,15 @@ Request &Request::operator=(Request const & rhs) {
 	 this->m_autoindex      = rhs.m_autoindex;
 	 this->m_status_code    = rhs.m_status_code;
 	 this->m_start          = rhs.m_start;
-	 this->m_location       = rhs.m_location;
-	 this->m_query_string   = rhs.m_query_string;
-	 this->m_path_info      = rhs.m_path_info;
-	 this->m_real_path      = rhs.m_real_path;
-	 this->m_file           = rhs.m_file;
-	return *this;
+	 this->m_location       	= rhs.m_location;
+	 this->m_query_string   	= rhs.m_query_string;
+	 this->m_path_info      	= rhs.m_path_info;
+	 this->m_real_path      	= rhs.m_real_path;
+	 this->m_file           	= rhs.m_file;
+	 this->m_file_type           	= rhs.m_file_type;
+	 this->m_looking_for_size 	= rhs.m_looking_for_size;
+	 this->m_last_chunk 		= rhs.m_last_chunk;
+	 return *this;
 }
 
 void	Request::reset() {
@@ -81,8 +96,10 @@ void	Request::reset() {
 	this->m_protocol = -1;
 	this->m_content_length = 0;
 	this->m_headers.assign(18, "");
+	this->m_headers.clear();
 	this->m_if_body = false;
 	this->m_body.clear();
+	this->m_tmp_body.clear();
 	this->m_metadata_parsed = false;
 	this->m_done = false;
 	this->m_chunked = false;
@@ -95,6 +112,9 @@ void	Request::reset() {
 	this->m_path_info.clear();
 	this->m_real_path.clear();
 	this->m_file.clear();
+	this->m_file_type = TYPE_UNDEFINED;
+	this->m_looking_for_size = true;
+	this->m_last_chunk = false;
 }
 
 Response::Response()
@@ -102,7 +122,9 @@ Response::Response()
 	 m_cgi_metadata_sent(false),
 	 m_content_type(""),
 	 m_body(""),
-	 m_response_headers(0)
+	 m_response_headers(0),
+	 m_content_language(""),
+	 m_content_location("")
 {
 }
 
@@ -112,6 +134,8 @@ void	Response::reset() {
 	this->m_content_type = "";
 	this->m_body = "";
 	this->m_response_headers.clear();
+	this->m_content_language = "";
+	this->m_content_location = "";
 }
 
 Client::Client() 

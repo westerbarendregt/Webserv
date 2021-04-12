@@ -51,8 +51,8 @@ void	Server::run(){
 				 	}
 					else if (!c->m_request_data.m_done){
 							// Logger::Log() << "GETTING BODY!!!!!!!!!!!!" << std::endl;
-				 		RequestParser::GetBody(*c);
-						RequestParser::Print(*c);
+				 		RequestParser::GetBody(*c, false);
+						// RequestParser::Print(*c);
 					}
 				 	if (c->m_request_data.m_done)
 					{
@@ -67,13 +67,13 @@ void	Server::run(){
 					}
 				}
 				else {
-					this->closeClientConnection(*c);
+					this->removeClient(*c);
 				}
 				Logger::Log()<<"listening..."<<std::endl;
 			} // FD_ISSET(this->read_fd)
 			else if (FD_ISSET(i, &this->m_write_fd)) {
 				c = getClient(i);
-				if (c->m_request_data.m_cgi && this->m_request_handler.handleCgi(*c) == CONTINUE)
+				if (c->m_request_data.m_status_code < 400 && c->m_request_data.m_cgi && this->m_request_handler.handleCgi(*c) == CONTINUE)
 					continue ;
 				this->respond(*c);
 				Logger::Log()<<"listening..."<<std::endl;

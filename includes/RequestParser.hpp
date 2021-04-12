@@ -58,6 +58,14 @@ class RequestParser
 		return ERROR;
 	}
 	
+	static std::string				getValueHeader(std::string& line)
+	{
+		std::string header = line.substr(line.find(':') + 1, line.size() - (line.find(":") + 1));
+		size_t start = header.find_first_not_of(BLANKS);
+		size_t len = header.find_last_not_of(BLANKS) - start + 1;
+		return header.substr(start, len); //trimming start and end of whitespaces
+	}
+
 	static int				GetHeaders(Client& c)
 	{
 		std::string line;
@@ -80,12 +88,13 @@ class RequestParser
 				}
 			}
 			for (int i = 0; headers[i]; ++i){
-				if (line.find(headers[i]) != std::string::npos){
-					std::string header = line.substr(line.find(':') + 1, line.size() - (line.find(":") + 1));
-					size_t start = header.find_first_not_of(BLANKS);
-					size_t len = header.find_last_not_of(BLANKS) - start + 1;
-					c.m_request_data.m_headers[i] = header.substr(start, len); //trimming start and end of whitespaces
-				}
+				if (line.find(headers[i]) != std::string::npos)
+					c.m_request_data.m_headers[i] = getValueHeader(line);
+			}
+			if (line[0] == 'X'&& line[1] == '-' && line.find(":") != std::string::npos){
+				std::string key = line.substr(0, line.find(":"));
+				std::string value = getValueHeader(line);
+    			c.m_request_data.x_headers[key] = value;
 			}
 		}
 		return SUCCESS;
@@ -135,38 +144,49 @@ class RequestParser
 			c.m_request_data.m_if_body = true;
 	}
 
-	static bool					ChunkedData(Client& c)
+	static bool					ChunkedData(Client& c, bool first)
 	{
 		std::string line;
 		int ret = 1;
 
-		if (ft::getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start))
+		if (first)
+			c.m_request_str = c.m_request_str.substr(c.m_request_data.m_start);
+		c.m_request_data.m_tmp_body.append(c.m_request_str);
+		if (c.m_request_data.m_tmp_body.find("0\r\n\r\n") == std::string::npos)
+			return SUCCESS;
+		c.m_request_data.m_start = 0;
+		while (ret)
 		{
-			size_t current_chunk_size = ft::AtoiHex(line.c_str());
-			if (current_chunk_size == 0 && line == "0\r\n")
+			ret = ft::getline_crlf(c.m_request_data.m_tmp_body, line, 1, c.m_request_data.m_start);
+			if ((line == "\r\n") && c.m_request_data.m_last_chunk == true)
 			{
-				c.m_request_data.m_done = true;
-				if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
-					return SUCCESS;
-				return ERROR;
+					c.m_request_data.m_done = true;
+					if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
+						return SUCCESS;
+					return ERROR;
 			}
-			if (line.find(CRLF) != std::string::npos)
-			{
-				c.m_request_data.m_content_length += current_chunk_size;
-				while (ret)
-				{
-					ret = ft::getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start);
-					if (line.find(CRLF) != std::string::npos){
-						c.m_request_data.m_body.append(line.substr(0, line.size() - 2));
-						if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
-							return SUCCESS;
-						return ERROR;
-					}
-					c.m_request_data.m_body.append(line);
+			c.m_request_data.m_last_chunk = false;
+			if (!ret){
+				c.m_request_data.m_body.append(line);
+				return SUCCESS;
+			}
+			if (c.m_request_data.m_looking_for_size == true){
+				c.m_request_data.m_looking_for_size = false;
+				size_t current_chunk_size = ft::AtoiHex(line.c_str());	
+				if (current_chunk_size == 0 && line == "0\r\n")
+					c.m_request_data.m_last_chunk = true;
+				if (c.m_request_data.m_body.size() != c.m_request_data.m_content_length){
+					std::cout << "size: " << c.m_request_data.m_body.size() << " length: " << c.m_request_data.m_content_length << std::endl;
+					return ERROR;
 				}
+				c.m_request_data.m_content_length += current_chunk_size;
+			}
+			else {
+				c.m_request_data.m_looking_for_size = true;
+				c.m_request_data.m_body.append(line.substr(0, line.size() - 2));
 			}
 		}
-
+		Logger::Log() << "this should not happen" << std::endl;
 		return SUCCESS;
 	}
 
@@ -191,15 +211,18 @@ class RequestParser
 		CleanData(c);
 	}
 
-	static int				GetBody(Client& c)
+	static int				GetBody(Client& c, bool first)
 	{
 		std::string line;
 		int ret = 1;
 
 		if (c.m_request_data.m_chunked == true)
 		{
-			if (ChunkedData(c)){
+			if (ChunkedData(c, first)){
 				c.m_request_data.m_start = 0;
+				c.m_request_str.clear();
+				c.m_request_data.m_status_code = 400;
+				c.m_request_data.m_done = true;
 				return ERROR;
 			}
 			c.m_request_data.m_start = 0;
@@ -212,10 +235,14 @@ class RequestParser
 				c.m_request_data.m_body.append(line);
 			}
 		}
-		if (c.m_request_data.m_body.size() == c.m_request_data.m_content_length)
+		if (c.m_request_data.m_body.size() >= c.m_request_data.m_content_length)
 		{
 			c.m_request_data.m_done = true;
 			c.m_request_data.m_start = 0;
+			if (c.m_request_data.m_body.size() > c.m_request_data.m_content_length){
+				c.m_request_data.m_status_code = 400;
+				return ERROR;
+			}
 		}
 		else 
 			c.m_request_data.m_done = false;
@@ -246,10 +273,12 @@ class RequestParser
 		}
 		for (int i = 0; i < 18; ++i)
 			Logger::Log() << headers[i] << ":" << c.m_request_data.m_headers[i] << std::endl;//"---" << c.m_request_data.m_headers[i].size() << std::endl;
+		for(std::map<std::string, std::string>::iterator it = c.m_request_data.x_headers.begin(); it != c.m_request_data.x_headers.end(); ++it)
+			Logger::Log() << "key = [" << it->first << "] value = [" << it->second << "]" << std::endl;
 		if (c.m_request_data.m_chunked)
 			Logger::Log() << std::endl << "The body is chunked!" << std::endl;
 		Logger::Log() << "BODY-length: " << c.m_request_data.m_content_length << std::endl;
-		Logger::Log() << "BODY:" << c.m_request_data.m_body << std::endl << std::endl;
+		// Logger::Log() << "BODY:" << c.m_request_data.m_body << std::endl << std::endl;
 		if (c.m_request_data.m_status_code)
 			Logger::Log() << "While parsing found error NR: " << c.m_request_data.m_status_code << std::endl;
 		if (c.m_request_data.m_metadata_parsed && c.m_request_data.m_done)
@@ -272,7 +301,7 @@ class RequestParser
 		CheckHeaderData(c);
 		if ((c.m_request_data.m_if_body || c.m_request_data.m_chunked ) && (c.m_request_data.m_method == POST || c.m_request_data.m_method == PUT))
 		{
-			if (GetBody(c))
+			if (GetBody(c, true))
 				return ErrorRequest(c, 2);
 		}
 		else

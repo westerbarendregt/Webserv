@@ -57,10 +57,9 @@ void	Cgi::convertEnv(t_client &c) {
 }
 
 void	Cgi::read(t_client &c) {
-	char buf[5000];
+	char buf[CGI_BUF_SIZE];
 
-	std::fill(buf, buf + sizeof(buf), 0);
-	ssize_t	nbytes = ::read(c.getReadFd(), buf, 4096);
+	ssize_t	nbytes = ::read(c.getReadFd(), buf, CGI_BUF_SIZE - 1);
 	if (nbytes <= 0) {
 		if (nbytes == -1)
 			throw HTTPError("Cgi::read", strerror(errno), 500);
@@ -68,7 +67,10 @@ void	Cgi::read(t_client &c) {
 		c.m_cgi_end_chunk = true;
 	}
 	else
+	{
+		buf[nbytes] = '\0';
 		c.m_cgi_out_buf.append(buf);
+	}
 }
 
 
@@ -125,6 +127,8 @@ void	Cgi::setParentIo(t_client &c) {
 		Logger::Log() << "Cgi::init : fcntl(m_cgi_read_pipe[IN]): " << strerror(errno)<<std::endl;
 	if (fcntl(c.m_cgi_read_pipe[OUT], F_SETFL, O_NONBLOCK) == -1)
 		Logger::Log() << "Cgi::init : fcntl(m_cgi_read_pipe[OUT]): " << strerror(errno)<<std::endl;
+	if (c.m_cgi_post && fcntl(c.m_cgi_write_pipe[OUT], F_SETFL, O_NONBLOCK) == -1)
+		Logger::Log() << "Cgi::init : fcntl(m_cgi_write_pipe[OUT]): " << strerror(errno)<<std::endl;
 	if (c.m_cgi_read_pipe[IN] > c.m_range_fd)
 		c.m_range_fd = c.m_cgi_read_pipe[IN];
 }
@@ -159,6 +163,7 @@ void	Cgi::exec(t_client &c) {
 			throw HTTPError("Cgi::exec: execve", strerror(errno), 500);
 		}
 	}
+	this->reset();
 	if (close(c.m_cgi_read_pipe[OUT]) == -1)
 		throw HTTPError("Cgi::exec: close(m_cgi_read_pipe[OUT])", strerror(errno), 500);
 	c.m_cgi_read_pipe[OUT] = -1;
@@ -184,7 +189,10 @@ void	Cgi::fillEnv(t_request_data &request) {
 	this->m_env_map["CONTENT_LENGTH"]=ft::intToString(request.m_body.size());
 	this->m_env_map["CONTENT_TYPE"]=std::string(request.m_headers[CONTENTTYPE]);
 	this->m_env_map["GATEWAY_INTERFACE"]="CGI/1.1";
-	this->m_env_map["PATH_INFO"]=request.m_path_info; //  used to specify the name of the file to be opened and interpreted  by the cgi program
+	if (request.m_owner->m_cgi_post)
+		this->m_env_map["PATH_INFO"]=request.m_path; //need opti
+	else
+		this->m_env_map["PATH_INFO"]="/";
 	this->m_env_map["PATH_TRANSLATED"]= getcwd(buf, PATH_MAX) + this->m_env_map["PATH_INFO"]; //or htdocs
 	this->m_env_map["QUERY_STRING"] = request.m_query_string;
 	struct	sockaddr_in	*tmp = reinterpret_cast<struct sockaddr_in*>(&request.m_owner->m_sockaddr);
@@ -199,6 +207,7 @@ void	Cgi::fillEnv(t_request_data &request) {
 	this->m_env_map["SERVER_PROTOCOL"]="HTTP/1.1";
 	this->m_env_map["SERVER_SOFTWARE"]="HTTP 1.1";
 	this->m_env_map["REDIRECT_STATUS"]="true"; // see if need to be disabled
+	this->m_env_map["HTTP_X_SECRET_HEADER_FOR_TEST"]="1"; // see if need to be disabled
 }
 
 void	Cgi::reset() {
@@ -257,7 +266,7 @@ void	RequestHandler::handleCgiResponse(t_client &c) {
 		//
 		c.m_response_str.append(CRLF);
 		c.m_response_data.m_cgi_metadata_parsed = true;
-		c.m_cgi_out_buf.erase(0, metadata_index + CRLF_LEN);
+		c.m_cgi_out_buf.erase(0, metadata_index + CRLF_LEN + CRLF_LEN);
 	}
 	if (c.m_response_data.m_cgi_metadata_sent) {
 		if (c.m_cgi_out_buf.size() == 0)
@@ -318,19 +327,29 @@ bool	RequestHandler::validCgi(t_request &request, size_t extension_index) {
 void	Cgi::setCgiFd(fd_set *read_set, fd_set *write_set, t_client &c) {
 	FD_ZERO(read_set);
 	FD_ZERO(write_set);
-	if (!c.m_cgi_end_chunk)
+	c.m_range_fd = 0;
+	if (!c.m_cgi_end_chunk) {
 		FD_SET(c.m_cgi_read_pipe[IN], read_set);
-	if (c.m_cgi_post && c.m_cgi_write_pipe[OUT] != -1)
+		if (c.m_cgi_read_pipe[IN] > c.m_range_fd)
+			c.m_range_fd = c.m_cgi_read_pipe[IN];
+	}
+	if (c.m_cgi_post && c.m_cgi_write_pipe[OUT] != -1) {
 		FD_SET(c.m_cgi_write_pipe[OUT], write_set);
+		if (c.m_cgi_write_pipe[OUT] > c.m_range_fd)
+			c.m_range_fd = c.m_cgi_write_pipe[OUT];
+	}
 }
 
 void	Cgi::kill(t_client &c)
 {
-	if (waitpid(c.m_cgi_pid, NULL, WNOHANG) == -1) {
-		Logger::Log() << "Cgi::kill: waitpid: " << strerror(errno)<<std::endl;
-	}
-	if (::kill(c.m_cgi_pid, SIGKILL) == -1) {
-		Logger::Log() << "Cgi::kill: kill: " << strerror(errno)<<std::endl;
+	if (c.m_cgi_pid > 0) {
+		if (waitpid(c.m_cgi_pid, NULL, WNOHANG) == -1) {
+			Logger::Log() << "Cgi::kill: waitpid: " << strerror(errno)<<std::endl;
+		}
+		if (::kill(c.m_cgi_pid, 0) != -1 && ::kill(c.m_cgi_pid, SIGKILL) == -1) {
+			Logger::Log() << "Cgi::kill: kill: " << strerror(errno)<<std::endl;
+		}
+		c.m_cgi_pid = -1;
 	}
 	c.m_cgi_running = false;
 }
@@ -353,10 +372,14 @@ int RequestHandler::handleCgi(t_client &c) {
 		}
 		//select
 		this->m_cgi.setCgiFd(&read_set, &write_set, c);
-		if (select(c.m_range_fd + 1, &read_set, &write_set, NULL, 0) == -1)
+
+		struct timeval	tv;
+		tv.tv_sec = 0;
+		tv.tv_usec = 0;
+		if (select(c.m_range_fd + 1, &read_set, &write_set, NULL, &tv) == -1)
 			throw HTTPError("RequestHandler::handleCgi: select", strerror(errno), 500);
 		//write
-		if (c.m_cgi_post && FD_ISSET(write_fd, &write_set)) {
+		if (c.m_cgi_post && write_fd != -1 &&  FD_ISSET(write_fd, &write_set)) {
 			this->m_cgi.write(c);
 		}
 		//read

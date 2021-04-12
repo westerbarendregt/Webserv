@@ -5,7 +5,8 @@
 # include <string>
 # include "Client.hpp"
 
-# define CGI_ENV_LEN 19
+# define CGI_ENV_LEN 20
+# define CGI_BUF_SIZE 100000
 
 
 class	Cgi {

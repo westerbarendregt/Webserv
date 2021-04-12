@@ -23,13 +23,14 @@ class	Server
 		typedef	int									t_port;
 		typedef	std::vector<t_v_server>				t_v_server_blocks;
 		typedef	t_v_server_conf::t_directives		t_directives;
-		typedef std::map<t_ip_port, t_v_server_blocks> t_v_server_all;
+		typedef std::map<t_ip_port, t_v_server_blocks> t_v_server_map;
 		typedef std::map<int, t_client> 			t_client_map;
 
 		friend class RequestHandler;
 
-		Server(char const *path);
+		explicit Server();
 		~Server();
+		void	parse(char const *path);
 		void	run();
 		void	init();
 		void	close();
@@ -40,6 +41,7 @@ class	Server
 		void	addClient();
 		void	connectVirtualServer(t_v_server &v_server);
 		void	closeClientConnection(t_client &c);
+		void	removeClient(t_client &c);
 		t_v_server_blocks	*getVirtualServer(int socket);
 		t_client	*getClient(int client_socket);
 		fd_set		m_read_all;
@@ -48,9 +50,9 @@ class	Server
 		fd_set		m_write_fd;
 		int			m_range_fd;
 	private:
-			t_v_server_all	m_v_server_all;
-			t_client_map	m_client_map;
-			t_request_handler	m_request_handler;
+		t_v_server_map 	m_v_server_all;
+		t_client_map	m_client_all;
+		t_request_handler	m_request_handler;
 };
 
 #endif
