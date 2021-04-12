@@ -5,7 +5,7 @@
 # define CRLF_LEN 2
 # define TYPE_UNDEFINED -1
 # define HEX_STR "0123456789ABCDEF"
-# define RECV_BUF_SIZE 1000001
+# define RECV_BUF_SIZE 500000
 
 # define SERVER_VERSION "webserv/1.0"
 

@@ -4,7 +4,7 @@
 - [x] Make compare function in python script that compares nginx with our webserv
 - [x] Add signal handler for sigterm / ctrl-c
 - [x] Test with chunked input
-- [?] Implement missing headers
+- [x] Implement missing headers
 - [ ] Accept-Charset
 - [ ] User-Agent
 - [ ] Referer
@@ -27,7 +27,7 @@ Monday 29-03
 - [x] fix test GET Expected 404 on http://localhost:8080/directory/Yeah
 - [x] add variable MACOS/LINUX portability for tester variable
 - [ ] we are allowed to use unlink, maybe apply it at DELETE if you're bored or the paper says so... 
-- [ ] CGI implementing the x_headers!, there in a map in the struct request
+- [x] CGI implementing the x_headers!, there in a map in the struct request
 - [ ] check the buffer recv size, might be high
 - [ ] Add log levels for the output -log [cerr-cout]
 - [ ] check how exactly tv influences select()
