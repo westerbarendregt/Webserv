@@ -10,6 +10,7 @@
 # include <fcntl.h>
 # include <string.h>
 # include <unistd.h>
+# include <errno.h>
 # include "Server.hpp"
 # include "Conf.hpp"
 # include "WebServer.hpp"
