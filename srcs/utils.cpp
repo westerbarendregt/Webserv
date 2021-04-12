@@ -217,7 +217,6 @@ int		getline(std::string& total, std::string& line, int line_break, size_t& star
 	}
 	else {
 		line = total.substr(start, total.size() - start);
-		// start = 0;
 	}
 	return 0;
 }

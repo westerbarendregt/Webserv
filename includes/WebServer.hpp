@@ -29,7 +29,7 @@ enum e_methods
 
 enum e_headers
 {
-	ACCEPTCHARSETS,
+	ACCEPTCHARSET,
 	ACCEPTLANGUAGE,
 	ALLOW,
 	AUTHORIZATION,

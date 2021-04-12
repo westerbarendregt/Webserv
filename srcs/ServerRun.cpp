@@ -52,7 +52,7 @@ void	Server::run(){
 					else if (!c->m_request_data.m_done){
 							// Logger::Log() << "GETTING BODY!!!!!!!!!!!!" << std::endl;
 				 		RequestParser::GetBody(*c, false);
-						// RequestParser::Print(*c);
+						RequestParser::Print(*c);
 					}
 				 	if (c->m_request_data.m_done)
 					{

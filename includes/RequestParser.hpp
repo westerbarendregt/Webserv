@@ -19,7 +19,7 @@ class Client;
 
 static const char *methods[] = {"GET", "HEAD", "POST", "PUT", "DELETE", NULL};
 
-static const char *headers[] = {"ACCEPT-CHARSETS", "ACCEPT-LANGUAGE", "ALLOW", "AUTHORIZATION",
+static const char *headers[] = {"ACCEPT-CHARSET", "ACCEPT-LANGUAGE", "ALLOW", "AUTHORIZATION",
 	"CONTENT-LANGUAGE", "CONTENT-LENGTH", "CONTENT-LOCATION", "CONTENT-TYPE", "DATE", "HOST",
 	"LAST-MODIFIED", "LOCATION", "REFERER", "RETRY-AFTER", "SERVER", "TRANSFER-ENCODING", "USER-AGENT",
 	"WWW-AUTHENTICATE", NULL};
@@ -231,7 +231,7 @@ class RequestParser
 		}
 		else if (c.m_request_data.m_chunked == false){
 			while (ret){
-				ret = ft::getline_crlf(c.m_request_str, line, 1, c.m_request_data.m_start);
+				ret = ft::getline(c.m_request_str, line, 1, c.m_request_data.m_start);
 				c.m_request_data.m_body.append(line);
 			}
 		}
@@ -247,6 +247,7 @@ class RequestParser
 		else 
 			c.m_request_data.m_done = false;
 		c.m_request_str.clear();
+		c.m_request_data.m_start = 0;
 		return SUCCESS;
 	}
 
@@ -277,7 +278,7 @@ class RequestParser
 			Logger::Log() << "key = [" << it->first << "] value = [" << it->second << "]" << std::endl;
 		if (c.m_request_data.m_chunked)
 			Logger::Log() << std::endl << "The body is chunked!" << std::endl;
-		Logger::Log() << "BODY-length: " << c.m_request_data.m_content_length << std::endl;
+		Logger::Log() << "BODY-length: " << c.m_request_data.m_content_length << "  Actual size: " << c.m_request_data.m_body.size() << std::endl;
 		// Logger::Log() << "BODY:" << c.m_request_data.m_body << std::endl << std::endl;
 		if (c.m_request_data.m_status_code)
 			Logger::Log() << "While parsing found error NR: " << c.m_request_data.m_status_code << std::endl;
