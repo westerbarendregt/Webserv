@@ -434,8 +434,6 @@ void	RequestHandler::interpretUri(std::string &stat_file) {
 
 	if (method == POST || (request.m_file_type & S_IFMT) == S_IFREG) { //file
 		if (method != POST && real_path != stat_file) {
-			Logger::Log() << "real path: " << real_path << std::endl;
-			Logger::Log() << "stat file: " << stat_file << std::endl;
 			throw HTTPError("RequestHandler::interpretUri", "invalid uri, path_info or query string detected", 404);
 		}
 		// 	extract extension
