@@ -129,6 +129,9 @@ def test_qstring_pinfo ():
         print("--------non cgi GET /path/info?query=string\n")
         r=requests.get('http://127.0.0.1:8080/default/index.html/path/info?query=string')
         assert r.status_code == 404
+        print("--------non cgi GET /?query=string\n")
+        r=requests.get('http://127.0.0.1:8080/?query=string')
+        assert r.status_code == 200
     except Exception as e:
         print(e)
         print("---FAILED---")

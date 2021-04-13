@@ -405,7 +405,11 @@ void	RequestHandler::formatIndex(std::string &stat_file) {
 					if (real_path.size() < path_index.size())
 						real_path = path_index;
 					stat_file = path_index;
-					request.m_path += *it;
+					size_t	query_string =  request.m_path.find('?');
+					if (query_string != std::string::npos)
+						request.m_path.insert(query_string, *it);
+					else
+						request.m_path.append(*it);
 					Logger::Log() << "real_path: " << real_path << std::endl;
 					break;
 				}
@@ -493,6 +497,19 @@ std::string	RequestHandler::statFile() {
 	int	method = request.m_method;
 	struct	stat	statbuf;
 
+	next_prefix = real_path.find("/?", 0);
+	if (next_prefix != std::string::npos) {
+		stat_file = real_path.substr(0, next_prefix);
+		if (stat(stat_file.c_str(), &statbuf)) {
+			if (method == POST || method == PUT) {
+				request.m_file_type = TYPE_UNDEFINED;
+			}
+			request.m_file_type = TYPE_UNDEFINED;
+			throw HTTPError("RequestHandler::handleMetadata: stat", "invalid full path", 404);
+		}
+		request.m_file_type = statbuf.st_mode;
+		return stat_file;
+	}
 	while (prefix < real_path.size()) {
 		prefix = real_path.find_first_of("/?", prefix);
 		next_prefix = prefix == std::string::npos ? std::string::npos : real_path.find_first_of("?/", prefix + 1);
@@ -601,7 +618,8 @@ void	RequestHandler::handleMetadata(t_client &c) {
 std::string		RequestHandler::handlePUT()
 {
 	//I think here you can use this->m_request_data->m_file
-	std::string m_file = this->m_request_data->m_real_path.substr(this->m_request_data->m_real_path.find_last_of('/') + 1);
+	//std::string m_file = this->m_request_data->m_real_path.substr(this->m_request_data->m_real_path.find_last_of('/') + 1);
+	std::string const & m_file = this->m_request_data->m_file;
 	std::string upload_store = this->m_request_data->m_location->second["upload_store"];
 	upload_store.erase(upload_store.find_last_of(' '));
 	std::string path_to_file = std::string(upload_store) + '/' + m_file;
