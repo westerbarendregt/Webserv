@@ -525,7 +525,8 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			<<"\n\tLOCATION/ROUTE "<< m_client->m_request_data.m_location->first<<"\n-----------"<<std::endl;
 
 		std::string &real_path =  c.m_request_data.m_real_path;
-		real_path = c.m_request_data.m_path;
+//		real_path = c.m_request_data.m_path;
+		real_path = c.m_request_data.m_path.substr(0, this->m_request_data->m_path.find('?'));
 		std::string const & location = c.m_request_data.m_location->first;
 		std::string alias, index, stat_file;
 
