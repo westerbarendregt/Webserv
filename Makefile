@@ -93,7 +93,7 @@ re:
 	$(MAKE) fclean
 	$(MAKE) all
 
-run: $(NAME)
+run: $(NAME) config
 	@./$(NAME) $(OUT_LOG) || true
 config:
 	@WWW=$(WWW) \

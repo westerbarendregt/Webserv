@@ -18,7 +18,7 @@
 #include "Logger.hpp"
 
 Cgi::Cgi()
-	: m_env_array(0), m_argv(0)
+	: m_env_array(0), m_argv(0), m_env_array_size(0)
 {
 }
 
@@ -27,19 +27,25 @@ Cgi::~Cgi() {
 }
 
 //only allocates memory when Cgi is used
-void	Cgi::init() {
-	if (this->m_env_array)
+void	Cgi::init(t_client const & c) {
+	size_t	const size = CGI_ENV_DEFAULT_SIZE + c.m_request_data.x_headers.size();
+	if (size < this->m_env_array_size)
 		return ;
-	this->m_env_array = static_cast<char **>(malloc(sizeof(char *) * CGI_ENV_LEN));
+	this->m_env_array_size = size;
+	if (this->m_env_array) {
+		free(this->m_env_array);
+	}
+	this->m_env_array = reinterpret_cast<char **>(malloc(sizeof(char *) * size));
 	if (!this->m_env_array)
 		throw (serverError("Cgi::init", "failed to allocate cgi env"));
 	if (this->m_argv)
 		return ;
-	this->m_argv = static_cast<char **>(malloc(sizeof(char *) * 3));
+	this->m_argv = reinterpret_cast<char **>(malloc(sizeof(char *) * 3));
 }
 
-void	Cgi::convertEnv(t_client &c) {
+void	Cgi::convertEnv(t_client const & c) {
 	t_cgi_env_map::iterator it = this->m_env_map.begin();
+	t_request_data const & request = c.m_request_data;
 	size_t	i = 0;
 	while (it != this->m_env_map.end()) {
 		std::string	convert(it->first + "=" + it->second);
@@ -51,8 +57,8 @@ void	Cgi::convertEnv(t_client &c) {
 		++i;
 	}
 	this->m_env_array[i] = 0;
-	this->m_argv[0] = ft::strdup(c.m_request_data.m_location->second["cgi_path"]);
-	this->m_argv[1] = ft::strdup(c.m_request_data.m_real_path);
+	this->m_argv[0] = ft::strdup(request.m_location->second["cgi_path"]);
+	this->m_argv[1] = ft::strdup(request.m_real_path);
 	this->m_argv[2] = 0;
 }
 
@@ -149,7 +155,7 @@ void	Cgi::exec(t_client &c) {
 		this->setChildIo(c);
 		if (execve(this->m_argv[0], this->m_argv, this->m_env_array) == -1) {
 			this->clear();
-			throw HTTPError("Cgi::exec: execve", strerror(errno), 500);
+			::exit(EXIT_FAILURE);
 		}
 	}
 	this->reset();
@@ -166,16 +172,17 @@ void	Cgi::run(t_client &c) {
 	if (!c.m_cgi_running) {
 		c.m_cgi_running = true;
 		c.m_cgi_post = c.m_request_data.m_method == POST;
-		this->init();
-		this->fillEnv(c.m_request_data);
+		this->init(c);
+		this->fillEnv(c);
 		this->convertEnv(c);
 		this->setParentIo(c);
 		this->exec(c);
 	}
 }
 
-void	Cgi::fillEnv(t_request_data &request) {
-	std::string &auth = request.m_headers[AUTHORIZATION];
+void	Cgi::fillEnv(t_client const & c) {
+	t_request_data	const & request = c.m_request_data;
+	std::string const &auth = request.m_headers[AUTHORIZATION];
 	this->m_env_map["AUTH_TYPE"]=std::string(auth, 0, auth.find(' '));
 	this->m_env_map["CONTENT_LENGTH"]=ft::intToString(request.m_body.size());
 	this->m_env_map["CONTENT_TYPE"]=request.m_headers[CONTENTTYPE];
@@ -196,7 +203,7 @@ void	Cgi::fillEnv(t_request_data &request) {
 	this->m_env_map["SERVER_PROTOCOL"]="HTTP/1.1";
 	this->m_env_map["SERVER_SOFTWARE"]="HTTP 1.1";
 	this->m_env_map["REDIRECT_STATUS"]="true";
-	for (std::map<std::string, std::string>::iterator it = request.x_headers.begin();
+	for (std::map<std::string, std::string>::const_iterator it = request.x_headers.begin();
 			it != request.x_headers.end(); ++it) {
 		std::string	key = "HTTP_" + it->first;
 		std::replace(key.begin(), key.end(), '-', '_');
@@ -206,7 +213,7 @@ void	Cgi::fillEnv(t_request_data &request) {
 
 void	Cgi::reset() {
 	if (this->m_env_array) {
-		for (size_t	i = 0; this->m_env_array[i]; ++i) {
+		for (size_t	i = 0; this->m_env_array[i]; i++) {
 			if (this->m_env_array[i])
 				free(this->m_env_array[i]);
 			this->m_env_array[i] = 0;
@@ -364,8 +371,11 @@ int RequestHandler::handleCgi(t_client &c) {
 			wpid = waitpid(c.m_cgi_pid, &wstatus, WNOHANG);
 			if (wpid == -1)
 				throw HTTPError("RequestHandler::handleCgi : wait", strerror(errno), 500);
-			if (wpid) // has exited, maybe also check for WIFEXITED(), WSTATUS() here
+			if (wpid) {
 				c.m_cgi_running = false;
+				if (WEXITSTATUS(wstatus) ==  EXIT_FAILURE)
+					throw HTTPError("Cgi::exec: execve", strerror(errno), 500);
+			}
 		}
 		//select
 		this->m_cgi.setCgiFd(&read_set, &write_set, c);
