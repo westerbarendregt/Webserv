@@ -263,7 +263,7 @@ void 		RequestHandler::responseBody() {
 			throw HTTPError("RequestHandler::responseBody", "error reading file", 500);
 		}
 		buf[ret] = '\0';
-		this->m_response_data->m_body.append(buf);
+		this->m_response_data->m_body.append(buf, ret);
 	} while (ret > 0);
 
 	if (close(fd) == -1) {
@@ -334,6 +334,7 @@ std::string	RequestHandler::generateErrorPage(int error) {
 			v = ft::split(it->second);
 		}
 	}
+
 	if (!v.empty()) {
 		error_path = v.back();
 		v.pop_back();
@@ -405,7 +406,9 @@ void	RequestHandler::formatIndex(std::string &stat_file) {
 					(statbuf.st_mode & S_IFMT) == S_IFREG) {
 					request.m_file_type = statbuf.st_mode;
 					index_exist = true;
-					real_path = path_index;
+					if (real_path.size() < path_index.size())
+						real_path = path_index;
+					stat_file = path_index;
 					Logger::Log() << "real_path: " << real_path << std::endl;
 					break;
 				}
@@ -430,21 +433,25 @@ void	RequestHandler::interpretUri(std::string &stat_file) {
 	std::string const & real_path = request.m_real_path;
 	int	method = request.m_method;
 
+
 	if (method == POST || (request.m_file_type & S_IFMT) == S_IFREG) { //file
 		// 	extract extension
-		size_t	extension = request.m_file.find_last_of('.', request.m_file.size());
+		size_t	extension = file.find_last_of('.', file.size());
 		Logger::Log()<<"extension index: "<<extension<<std::endl;
-		if (this->validCgi(request, extension))
-		{
+		if (extension == std::string::npos) {
+			response.m_content_type = "text/plain";
+		}
+		else if (this->validCgi(request, extension)) {
 			Logger::Log()<<"cgi detected"<<std::endl;
 			this->handleCgiMetadata(request, stat_file);
+			return ;
 		}
-	//	else if (method == POST) {
-	//		throw HTTPError("RequestHandler::handleMetadata", "post on regular file", 405);
-	//	}
 		else {
-			response.m_content_type = this->m_mime_types[file.substr(file.rfind('.') + 1)];
+			response.m_content_type = this->m_mime_types[stat_file.substr(stat_file.rfind('.') + 1)];
 			Logger::Log() << "content-type: "<<this->m_client->m_response_data.m_content_type<<std::endl;
+		}
+		if (real_path != stat_file) {
+			throw HTTPError("RequestHandler::interpretUri", "invalid uri, path_info or query string detected", 404);
 		}
 	}
 	else if (method == PUT) {
@@ -522,7 +529,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			<<"\n\tLOCATION/ROUTE "<< m_client->m_request_data.m_location->first<<"\n-----------"<<std::endl;
 
 		std::string &real_path =  c.m_request_data.m_real_path;
-		real_path = c.m_request_data.m_path; // a bit confusing
+		real_path = c.m_request_data.m_path;
 		std::string const & location = c.m_request_data.m_location->first;
 		std::string alias, index, stat_file;
 
@@ -549,6 +556,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 
 		//parse URI
 		stat_file = this->statFile();
+
 		if (c.m_request_data.m_method != PUT)
 			this->formatIndex(stat_file);
 		c.m_request_data.m_file = real_path.substr(stat_file.rfind('/') + 1, std::string::npos);
@@ -565,10 +573,10 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		this->interpretUri(stat_file);
 
 		//handle headers
-		AllowedMethods();
-		Authenticated();
-		GetCharset();
-		GetLanguage();
+		this->AllowedMethods();
+		this->Authenticated();
+		this->GetCharset();
+		this->GetLanguage();
 		//could be member of RequestHandler and called like this->AllowedMethods()
 	} 
 	catch (HTTPError & e)

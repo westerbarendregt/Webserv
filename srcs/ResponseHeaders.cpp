@@ -62,6 +62,7 @@ void                RequestHandler::Authenticated()
     std::string encoded, decoded;
     encoded = auth.substr(auth.find(' ') + 1);
     decoded = base64::decode(encoded); // decode the incoming username and password
+	this->m_request_data->m_remote_user = decoded.substr(0, decoded.find(':'));
     CheckCorrectCredentials(decoded, path_ht);
 	Logger::Log() << "[USER-AGENT = AUTHENTICATED]" << std::endl;
 }

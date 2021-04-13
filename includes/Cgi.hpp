@@ -5,8 +5,8 @@
 # include <string>
 # include "Client.hpp"
 
-# define CGI_ENV_LEN 20
-# define CGI_BUF_SIZE 100000
+# define CGI_ENV_DEFAULT_SIZE 20
+# define CGI_BUF_SIZE 500000
 
 
 class	Cgi {
@@ -23,9 +23,9 @@ class	Cgi {
 		void	run(t_client &c);
 		~Cgi();
 	private:
-		void	init();
-		void	fillEnv(t_request_data &request);
-		void	convertEnv(t_client &c);
+		void	init(t_client const & c);
+		void	fillEnv(t_client const & c);
+		void	convertEnv(t_client const & c);
 		void	setParentIo(t_client &c);
 		void	setChildIo(t_client &c);
 		void	setCgiFd(fd_set *read_set, fd_set *write_set, t_client &c);
@@ -40,6 +40,7 @@ class	Cgi {
 		t_cgi_env_map		m_env_map;
 		t_cgi_env_array 	m_env_array;
 		t_cgi_argv			m_argv;
+		size_t				m_env_array_size;
 };
 
 #endif
