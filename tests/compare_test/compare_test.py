@@ -55,6 +55,8 @@ def runtester():
     lc.clearcache()
     status_code_Web = statusWeb[statusWeb.find(' ')+1:12]
     print (bcolors.OKGREEN + status_code_Web + bcolors.ENDC)
+    webservFile.close()
+    os.remove("webservFile")
     return status_code_Web
 
 def runCommand(port):
