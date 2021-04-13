@@ -60,8 +60,7 @@ def test_async_cgi_post():
         os._exit(1);
     print("---OK---")
 
-
-def test_cgi_post():
+def test_cgi():
     try :
         print("-------POST data=query=string")
         r=requests.post('http://127.0.0.1:8080/php/post_test_raw.php', \
@@ -98,12 +97,45 @@ def test_cgi_post():
         print("--------GET /path/info/ok?query=string&key=value\n")
         r=requests.get('http://127.0.0.1:8080/php/post_test_raw.php/path/info/ok?query=string&key=val')
         print(r.text)
+
     except Exception as e:
         print(e)
         print("---FAILED---")
         os._exit(1);
     print("---OK---")
 
-test_async_cgi_get()
-test_async_cgi_post()
-test_cgi_post()
+def test_qstring_pinfo ():
+    try:
+        print("-------- non cgi POST /path/info/\n")
+        r=requests.post('http://127.0.0.1:8080/default/index.html/path/info')
+        assert r.status_code == 404
+        
+        print("--------non cgi POST ?query=string\n")
+        r=requests.post('http://127.0.0.1:8080/default/index.html?query=string')
+        assert r.status_code == 405
+        
+        print("-------- non cgi POST /path/info?query=string\n")
+        r=requests.post('http://127.0.0.1:8080/default/index.html/path/info?query=string')
+        assert r.status_code == 404
+        
+        print("--------non cgi GET path/info\n")
+        r=requests.get('http://127.0.0.1:8080/default/index.html/path/info')
+        assert r.status_code == 404
+        
+        print("--------non cgi GET ?query=string\n")
+        r=requests.get('http://127.0.0.1:8080/default/index.html?query=string')
+        assert r.status_code == 200
+        
+        print("--------non cgi GET /path/info?query=string\n")
+        r=requests.get('http://127.0.0.1:8080/default/index.html/path/info?query=string')
+        assert r.status_code == 404
+    except Exception as e:
+        print(e)
+        print("---FAILED---")
+        os._exit(1);
+    print("---OK---")
+
+#test_async_cgi_get()
+#test_async_cgi_post()
+#test_cgi()
+test_qstring_pinfo()
