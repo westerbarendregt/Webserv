@@ -188,7 +188,7 @@ void	Cgi::fillEnv(t_client const & c) {
 	this->m_env_map["CONTENT_TYPE"]=request.m_headers[CONTENTTYPE];
 	this->m_env_map["GATEWAY_INTERFACE"]="CGI/1.1";
 	this->m_env_map["PATH_INFO"]= request.m_path_info;
-	this->m_env_map["PATH_TRANSLATED"]= request.m_script_path.substr(0, request.m_script_path.rfind('/')) + request.m_path_info;
+	this->m_env_map["PATH_TRANSLATED"]= request.m_stat_file.substr(0, request.m_stat_file.rfind('/')) + request.m_path_info;
 	this->m_env_map["QUERY_STRING"] = request.m_query_string;
 	struct	sockaddr_in	*tmp = reinterpret_cast<struct sockaddr_in*>(&request.m_owner->m_sockaddr);
 	this->m_env_map["REMOTE_ADDR"] = ft::inet_ntoa(tmp->sin_addr);
@@ -197,7 +197,7 @@ void	Cgi::fillEnv(t_client const & c) {
 	this->m_env_map["REQUEST_METHOD"] = methods[request.m_method];
 	this->m_env_map["REQUEST_URI"] = request.m_path;
 	this->m_env_map["SCRIPT_NAME"] = request.m_file;
-	this->m_env_map["SCRIPT_FILENAME"] = request.m_script_path; //so it works with php-cgi
+	this->m_env_map["SCRIPT_FILENAME"] = request.m_stat_file; //so it works with php-cgi
 	this->m_env_map["SERVER_NAME"] =SERVER_VERSION;
 	this->m_env_map["SERVER_PORT"] = request.m_owner->m_v_server->m_port;
 	this->m_env_map["SERVER_PROTOCOL"]="HTTP/1.1";
@@ -285,7 +285,7 @@ void	RequestHandler::handleCgiResponse(t_client &c) {
 void	RequestHandler::handleCgiMetadata(t_request &request, std::string &stat_file) {
 	request.m_cgi = true;
 	request.m_path_info = request.m_path;
-	request.m_script_path = stat_file;
+	request.m_stat_file= stat_file;
 	if (request.m_real_path.size() == stat_file.size()) {
 		return ;
 	}
@@ -294,7 +294,7 @@ void	RequestHandler::handleCgiMetadata(t_request &request, std::string &stat_fil
 		request.m_query_string = request.m_path.substr(query_string_index + 1, std::string::npos);
 		request.m_path_info.resize(query_string_index);
 	}
-	Logger::Log()<<"script_path: "<<request.m_script_path<<std::endl;
+	Logger::Log()<<"m_stat_file: "<<request.m_stat_file<<std::endl;
 	Logger::Log()<<"path_info: "<<request.m_path_info<<std::endl;
 	Logger::Log()<<"query_string : "<<request.m_query_string<<std::endl;
 }
