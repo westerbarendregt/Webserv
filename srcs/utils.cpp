@@ -217,7 +217,6 @@ int		getline(std::string& total, std::string& line, int line_break, size_t& star
 	}
 	else {
 		line = total.substr(start, total.size() - start);
-		// start = 0;
 	}
 	return 0;
 }
@@ -263,11 +262,12 @@ bool	compare(char c, char *str)
 	return false;
 }
 
-char	*strdup(std::string &src) {
+char	*strdup(std::string const & src) {
 	char *result = reinterpret_cast<char *>(malloc(src.size() + 1));
-
-	src.copy(result, src.size(), 0);
-	result[src.size()] = '\0';
+	if (!result)
+		return NULL;
+	size_t	len = src.copy(result, src.size(), 0);
+	result[len] = '\0';
 	return result;
 }
 

@@ -2,7 +2,6 @@
 <body BGCOLOR=#ABCDEF>
 <h1>TEST-CGI</h1>
 <?php
-echo "oi\n";
 #echo "<br>\n";
 ##echo "Date is " . date('Y-m-d') . "<br>\n";
 echo "<br><br>META VARIABLE PASSED<br><br>\n";

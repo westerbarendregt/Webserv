@@ -40,9 +40,10 @@ RUN wget https://wordpress.org/latest.tar.gz -P /tmp && \
 	wp core install --allow-root --url=localhost --path=/webserv/www/wordpress --title="Webserv" --admin_user=admin --admin_password=cheese --admin_email=bpeeters@student.codam.nl --skip-email
 
 COPY Makefile .
+COPY generate_config.pl .
 COPY srcs/ srcs/
 COPY includes/ includes/
-COPY conf_templates/ft_server.conf conf/
+COPY conf_templates/ft_server.conf conf_templates/ft_server.conf
 
 RUN make LOG=0
 

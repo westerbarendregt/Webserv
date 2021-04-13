@@ -18,7 +18,7 @@
 #include "Logger.hpp"
 
 Cgi::Cgi()
-	: m_env_array(0), m_argv(0)
+	: m_env_array(0), m_argv(0), m_env_array_size(0)
 {
 }
 
@@ -27,19 +27,25 @@ Cgi::~Cgi() {
 }
 
 //only allocates memory when Cgi is used
-void	Cgi::init() {
-	if (this->m_env_array)
+void	Cgi::init(t_client const & c) {
+	size_t	const size = CGI_ENV_DEFAULT_SIZE + c.m_request_data.x_headers.size();
+	if (size < this->m_env_array_size)
 		return ;
-	this->m_env_array = static_cast<char **>(malloc(sizeof(char *) * CGI_ENV_LEN));
+	this->m_env_array_size = size;
+	if (this->m_env_array) {
+		free(this->m_env_array);
+	}
+	this->m_env_array = reinterpret_cast<char **>(malloc(sizeof(char *) * size));
 	if (!this->m_env_array)
 		throw (serverError("Cgi::init", "failed to allocate cgi env"));
 	if (this->m_argv)
 		return ;
-	this->m_argv = static_cast<char **>(malloc(sizeof(char *) * 3));
+	this->m_argv = reinterpret_cast<char **>(malloc(sizeof(char *) * 3));
 }
 
-void	Cgi::convertEnv(t_client &c) {
+void	Cgi::convertEnv(t_client const & c) {
 	t_cgi_env_map::iterator it = this->m_env_map.begin();
+	t_request_data const & request = c.m_request_data;
 	size_t	i = 0;
 	while (it != this->m_env_map.end()) {
 		std::string	convert(it->first + "=" + it->second);
@@ -51,8 +57,8 @@ void	Cgi::convertEnv(t_client &c) {
 		++i;
 	}
 	this->m_env_array[i] = 0;
-	this->m_argv[0] = ft::strdup(c.m_request_data.m_location->second["cgi_path"]);
-	this->m_argv[1] = ft::strdup(c.m_request_data.m_file);
+	this->m_argv[0] = ft::strdup(request.m_location->second["cgi_path"]);
+	this->m_argv[1] = ft::strdup(request.m_real_path);
 	this->m_argv[2] = 0;
 }
 
@@ -63,7 +69,6 @@ void	Cgi::read(t_client &c) {
 	if (nbytes <= 0) {
 		if (nbytes == -1)
 			throw HTTPError("Cgi::read", strerror(errno), 500);
-		c.m_cgi_out_buf.clear();
 		c.m_cgi_end_chunk = true;
 	}
 	else
@@ -103,22 +108,16 @@ void	Cgi::write(t_client &c) {
 	if (nbytes == -1) {
 		throw HTTPError("Cgi::write: ", strerror(errno), 500);
 	}
-	if (static_cast<size_t>(nbytes) == len) {
+	c.m_cgi_write_offset += nbytes;
+	if (c.m_cgi_write_offset >= c.m_request_data.m_body.size()) {
 		close(c.m_cgi_write_pipe[OUT]);
 		c.m_cgi_write_pipe[OUT] = -1;
-	}
-	else {
-		c.m_cgi_write_offset += nbytes;
 	}
 }
 
 void	Cgi::setParentIo(t_client &c) {
-	if (c.m_cgi_post) {
-		if (pipe(c.m_cgi_write_pipe) == -1) {
-			throw HTTPError("Cgi::run: pipe(cgi_write_pipe)", strerror(errno), 500);
-		}
-		if (c.m_cgi_write_pipe[OUT] > c.m_range_fd)
-			c.m_range_fd = c.m_cgi_write_pipe[OUT];
+	if (pipe(c.m_cgi_write_pipe) == -1) {
+		throw HTTPError("Cgi::run: pipe(cgi_write_pipe)", strerror(errno), 500);
 	}
 	if (pipe(c.m_cgi_read_pipe) == -1) {
 		throw HTTPError("Cgi::run: pipe(cgi_read_pipe)", strerror(errno), 500);
@@ -127,10 +126,8 @@ void	Cgi::setParentIo(t_client &c) {
 		Logger::Log() << "Cgi::init : fcntl(m_cgi_read_pipe[IN]): " << strerror(errno)<<std::endl;
 	if (fcntl(c.m_cgi_read_pipe[OUT], F_SETFL, O_NONBLOCK) == -1)
 		Logger::Log() << "Cgi::init : fcntl(m_cgi_read_pipe[OUT]): " << strerror(errno)<<std::endl;
-	if (c.m_cgi_post && fcntl(c.m_cgi_write_pipe[OUT], F_SETFL, O_NONBLOCK) == -1)
+	if (fcntl(c.m_cgi_write_pipe[OUT], F_SETFL, O_NONBLOCK) == -1)
 		Logger::Log() << "Cgi::init : fcntl(m_cgi_write_pipe[OUT]): " << strerror(errno)<<std::endl;
-	if (c.m_cgi_read_pipe[IN] > c.m_range_fd)
-		c.m_range_fd = c.m_cgi_read_pipe[IN];
 }
 
 void	Cgi::setChildIo(t_client &c) {
@@ -140,14 +137,12 @@ void	Cgi::setChildIo(t_client &c) {
 	if (close(c.m_cgi_read_pipe[IN]) == -1
 		|| close(c.m_cgi_read_pipe[OUT]) == -1)
 		throw HTTPError("Cgi::setChildIo: close(cgi_read_pipe[IN-OUT])", strerror(errno), 500);
-	if (c.m_cgi_post) {
-		if (dup2(c.m_cgi_write_pipe[IN], STDIN_FILENO) == -1) {
+	if (dup2(c.m_cgi_write_pipe[IN], STDIN_FILENO) == -1) {
 			throw HTTPError("Cgi::exec: dup2(cgi_write_pipe[IN], STDIN_FILENO)", strerror(errno), 500);
 		}
 	if (close(c.m_cgi_write_pipe[IN]) == -1
 		|| close(c.m_cgi_write_pipe[OUT]) == -1)
 		throw HTTPError("Cgi::setChildIo: close(cgi_write_pipe[IN-OUT])", strerror(errno), 500);
-	}
 }
 
 
@@ -160,10 +155,13 @@ void	Cgi::exec(t_client &c) {
 		this->setChildIo(c);
 		if (execve(this->m_argv[0], this->m_argv, this->m_env_array) == -1) {
 			this->clear();
-			throw HTTPError("Cgi::exec: execve", strerror(errno), 500);
+			::exit(EXIT_FAILURE);
 		}
 	}
 	this->reset();
+	if (close(c.m_cgi_write_pipe[IN]) == -1)
+		throw HTTPError("Cgi::exec: close(m_cgi_write_pipe[IN])", strerror(errno), 500);
+	c.m_cgi_write_pipe[IN] = -1;
 	if (close(c.m_cgi_read_pipe[OUT]) == -1)
 		throw HTTPError("Cgi::exec: close(m_cgi_read_pipe[OUT])", strerror(errno), 500);
 	c.m_cgi_read_pipe[OUT] = -1;
@@ -174,45 +172,48 @@ void	Cgi::run(t_client &c) {
 	if (!c.m_cgi_running) {
 		c.m_cgi_running = true;
 		c.m_cgi_post = c.m_request_data.m_method == POST;
-		this->init();
-		this->fillEnv(c.m_request_data);
+		this->init(c);
+		this->fillEnv(c);
 		this->convertEnv(c);
 		this->setParentIo(c);
 		this->exec(c);
 	}
 }
 
-void	Cgi::fillEnv(t_request_data &request) {
-	char	buf[PATH_MAX];
-	(void)buf;
-	this->m_env_map["AUTH_TYPE"]=std::string(request.m_headers[AUTHORIZATION]);
+void	Cgi::fillEnv(t_client const & c) {
+	t_request_data	const & request = c.m_request_data;
+	std::string const &auth = request.m_headers[AUTHORIZATION];
+	this->m_env_map["AUTH_TYPE"]=std::string(auth, 0, auth.find(' '));
 	this->m_env_map["CONTENT_LENGTH"]=ft::intToString(request.m_body.size());
-	this->m_env_map["CONTENT_TYPE"]=std::string(request.m_headers[CONTENTTYPE]);
+	this->m_env_map["CONTENT_TYPE"]=request.m_headers[CONTENTTYPE];
 	this->m_env_map["GATEWAY_INTERFACE"]="CGI/1.1";
-	if (request.m_owner->m_cgi_post)
-		this->m_env_map["PATH_INFO"]=request.m_path; //need opti
-	else
-		this->m_env_map["PATH_INFO"]="/";
-	this->m_env_map["PATH_TRANSLATED"]= getcwd(buf, PATH_MAX) + this->m_env_map["PATH_INFO"]; //or htdocs
+	this->m_env_map["PATH_INFO"]= request.m_path_info;
+	this->m_env_map["PATH_TRANSLATED"]= request.m_stat_file.substr(0, request.m_stat_file.rfind('/')) + request.m_path_info;
 	this->m_env_map["QUERY_STRING"] = request.m_query_string;
 	struct	sockaddr_in	*tmp = reinterpret_cast<struct sockaddr_in*>(&request.m_owner->m_sockaddr);
 	this->m_env_map["REMOTE_ADDR"] = ft::inet_ntoa(tmp->sin_addr);
-	this->m_env_map["REMOTE_IDENT"] =""; //?
-	this->m_env_map["REMOTE_USER"] =""; //?
-	this->m_env_map["REQUEST_METHOD"] = methods[request.m_method]; //maybe simpler way?
+	this->m_env_map["REMOTE_IDENT"] =""; //not supported
+	this->m_env_map["REMOTE_USER"] =request.m_remote_user;
+	this->m_env_map["REQUEST_METHOD"] = methods[request.m_method];
 	this->m_env_map["REQUEST_URI"] = request.m_path;
-	this->m_env_map["SCRIPT_FILENAME"] = request.m_file; //if cgi-bin/test.php script_name is cgi-bin/test-cgi.php
+	this->m_env_map["SCRIPT_NAME"] = request.m_file;
+	this->m_env_map["SCRIPT_FILENAME"] = request.m_stat_file; //so it works with php-cgi
 	this->m_env_map["SERVER_NAME"] =SERVER_VERSION;
 	this->m_env_map["SERVER_PORT"] = request.m_owner->m_v_server->m_port;
 	this->m_env_map["SERVER_PROTOCOL"]="HTTP/1.1";
 	this->m_env_map["SERVER_SOFTWARE"]="HTTP 1.1";
-	this->m_env_map["REDIRECT_STATUS"]="true"; // see if need to be disabled
-	this->m_env_map["HTTP_X_SECRET_HEADER_FOR_TEST"]="1"; // see if need to be disabled
+	this->m_env_map["REDIRECT_STATUS"]="true";
+	for (std::map<std::string, std::string>::const_iterator it = request.x_headers.begin();
+			it != request.x_headers.end(); ++it) {
+		std::string	key = "HTTP_" + it->first;
+		std::replace(key.begin(), key.end(), '-', '_');
+		this->m_env_map[key] = it->second;
+	}
 }
 
 void	Cgi::reset() {
 	if (this->m_env_array) {
-		for (size_t	i = 0; this->m_env_array[i]; ++i) {
+		for (size_t	i = 0; this->m_env_array[i]; i++) {
 			if (this->m_env_array[i])
 				free(this->m_env_array[i]);
 			this->m_env_array[i] = 0;
@@ -267,30 +268,33 @@ void	RequestHandler::handleCgiResponse(t_client &c) {
 		c.m_response_str.append(CRLF);
 		c.m_response_data.m_cgi_metadata_parsed = true;
 		c.m_cgi_out_buf.erase(0, metadata_index + CRLF_LEN + CRLF_LEN);
+		if (!c.m_cgi_out_buf.empty()) {
+			c.m_response_str.append(ft::hexString(c.m_cgi_out_buf.size()) + CRLF + c.m_cgi_out_buf + CRLF);
+			c.m_cgi_out_buf.clear();
+		}
 	}
 	if (c.m_response_data.m_cgi_metadata_sent) {
-		if (c.m_cgi_out_buf.size() == 0)
+		if (c.m_cgi_out_buf.empty()) {
 			c.m_cgi_end_chunk = 1;
+		}
 		c.m_response_str.append(ft::hexString(c.m_cgi_out_buf.size()) + CRLF + c.m_cgi_out_buf + CRLF);
 		c.m_cgi_out_buf.clear();
 	}
 }
 
-void	RequestHandler::handleCgiMetadata(t_request &request, std::string &file) {
+void	RequestHandler::handleCgiMetadata(t_request &request, std::string &stat_file) {
 	request.m_cgi = true;
-	if (request.m_real_path.size() - file.size() == 0) {
-		request.m_file = file;
+	request.m_path_info = request.m_path;
+	request.m_stat_file= stat_file;
+	if (request.m_real_path.size() == stat_file.size()) {
 		return ;
 	}
-	size_t query_string_index = request.m_file.find('?', 0);
-	if (query_string_index != std::string::npos)
-		request.m_query_string = request.m_file.substr(query_string_index + 1, std::string::npos);
-	size_t	path_info_index = request.m_file.find('/', 0);
-	if (path_info_index != std::string::npos) 
-		request.m_path_info = request.m_file.substr(path_info_index, query_string_index - path_info_index);
-	request.m_file = file;
-	//checek permission for path_info
-	Logger::Log()<<"file: "<<request.m_file<<std::endl;
+	size_t query_string_index = request.m_path.find('?', 0);
+	if (query_string_index != std::string::npos) {
+		request.m_query_string = request.m_path.substr(query_string_index + 1, std::string::npos);
+		request.m_path_info.resize(query_string_index);
+	}
+	Logger::Log()<<"m_stat_file: "<<request.m_stat_file<<std::endl;
 	Logger::Log()<<"path_info: "<<request.m_path_info<<std::endl;
 	Logger::Log()<<"query_string : "<<request.m_query_string<<std::endl;
 }
@@ -333,7 +337,7 @@ void	Cgi::setCgiFd(fd_set *read_set, fd_set *write_set, t_client &c) {
 		if (c.m_cgi_read_pipe[IN] > c.m_range_fd)
 			c.m_range_fd = c.m_cgi_read_pipe[IN];
 	}
-	if (c.m_cgi_post && c.m_cgi_write_pipe[OUT] != -1) {
+	if (c.m_cgi_write_pipe[OUT] != -1) {
 		FD_SET(c.m_cgi_write_pipe[OUT], write_set);
 		if (c.m_cgi_write_pipe[OUT] > c.m_range_fd)
 			c.m_range_fd = c.m_cgi_write_pipe[OUT];
@@ -367,8 +371,11 @@ int RequestHandler::handleCgi(t_client &c) {
 			wpid = waitpid(c.m_cgi_pid, &wstatus, WNOHANG);
 			if (wpid == -1)
 				throw HTTPError("RequestHandler::handleCgi : wait", strerror(errno), 500);
-			if (wpid) // has exited, maybe also check for WIFEXITED(), WSTATUS() here
+			if (wpid) {
 				c.m_cgi_running = false;
+				if (WEXITSTATUS(wstatus) ==  EXIT_FAILURE)
+					throw HTTPError("Cgi::exec: execve", strerror(errno), 500);
+			}
 		}
 		//select
 		this->m_cgi.setCgiFd(&read_set, &write_set, c);
@@ -379,7 +386,7 @@ int RequestHandler::handleCgi(t_client &c) {
 		if (select(c.m_range_fd + 1, &read_set, &write_set, NULL, &tv) == -1)
 			throw HTTPError("RequestHandler::handleCgi: select", strerror(errno), 500);
 		//write
-		if (c.m_cgi_post && write_fd != -1 &&  FD_ISSET(write_fd, &write_set)) {
+		if (write_fd != -1 &&  FD_ISSET(write_fd, &write_set)) {
 			this->m_cgi.write(c);
 		}
 		//read

@@ -68,7 +68,7 @@ define NL
 
 endef
 
-all: $(NAME)
+all: $(NAME) config
 
 $(NAME): $(OBJ)
 	@$(foreach obj, $?, echo Linking $(notdir $(obj))$(NL))
@@ -91,7 +91,7 @@ fclean:
 
 re:
 	$(MAKE) fclean
-	$(MAKE) all config
+	$(MAKE) all
 
 run: $(NAME) config
 	@./$(NAME) $(OUT_LOG) || true

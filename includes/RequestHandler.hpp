@@ -23,6 +23,7 @@ class RequestHandler
 		typedef	VirtualServer	t_v_server;
 		typedef	s_v_server_conf::t_directives t_directives;
 		typedef	s_v_server_conf::t_routes	t_routes;
+		typedef	s_v_server_conf::t_error_pages t_error_pages;
 
 		friend class Server;
 
@@ -32,7 +33,7 @@ class RequestHandler
 		std::string			statFile();
 		void				formatIndex(std::string &stat_file);
 		void				interpretUri(std::string & stat_file);
-		void				handleCgiMetadata(t_request &request, std::string &file);
+		void				handleCgiMetadata(t_request &request, std::string &stat_file);
 		void				handleCgiResponse(t_client &c);
 		int					handleCgi(t_client &c);
 		void				handleRequest(t_client &c);
@@ -41,6 +42,8 @@ class RequestHandler
 		void                AllowedMethods();
 		void                GetLanguage();
 		void				languageHeaders(std::string extension);
+		void                GetCharset();
+		void				charsetHeaders(std::string extension);
 
 
 		void 				printStatusCodes();

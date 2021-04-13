@@ -251,7 +251,7 @@ std::string RequestHandler::statusLine(int status_code) {
 }
 
 void 		RequestHandler::responseBody() {
-	int fd = open(this->m_client->m_request_data.m_real_path.c_str(), O_RDONLY);
+	int fd = open(this->m_client->m_request_data.m_stat_file.c_str(), O_RDONLY);
 	if (fd == -1) {
 		throw HTTPError("RequestHandler::responseBody", "error opening file", 500);
 	}
@@ -328,34 +328,30 @@ std::string	RequestHandler::generateErrorPage(int error) {
 	std::vector<std::string>	v;
 
 	if (this->m_client->m_v_server) {
-		t_directives const &	directives = this->m_client->m_v_server->m_configs.m_directives;
-		t_directives::const_iterator	it = directives.find("error_page");
-		if (it !=  directives.end()) {
-			v = ft::split(it->second);
-		}
-	}
-
-	if (!v.empty()) {
-		error_path = v.back();
-		v.pop_back();
-	}
-
-	for (std::vector<std::string>::iterator it = v.begin(); it != v.end(); ++it) {
-		if (*it == ft::intToString(error)) {
-			this->m_request_data->m_real_path = error_path;
-			try {
-				if (stat(error_path.c_str(), &this->m_statbuf))
-					throw HTTPError("RequestHandler::generateErrorPage ", "invalid default error page", 404);
-				responseBody();
-			} catch (HTTPError & e) {
-				std::cerr << e.what() << std::endl;
-				this->m_request_data->m_status_code = e.HTTPStatusCode();
-				this->m_response_data->m_body.clear();
+		t_error_pages const & error_pages = this->m_client->m_v_server->m_configs.m_error_pages;
+		for (t_error_pages::const_iterator it = error_pages.begin(); it != error_pages.end(); ++it) {
+			v = ft::split(*it);
+			if (!v.empty()) {
+				error_path = v.back();
+				v.pop_back();
 			}
-			break;
+			for (std::vector<std::string>::iterator it = v.begin(); it != v.end(); ++it) {
+				if (*it == ft::intToString(error)) {
+					this->m_request_data->m_real_path = error_path;
+					try {
+						if (stat(error_path.c_str(), &this->m_statbuf))
+							throw HTTPError("RequestHandler::generateErrorPage ", "invalid default error page", 404);
+						responseBody();
+					} catch (HTTPError & e) {
+						std::cerr << e.what() << std::endl;
+						this->m_request_data->m_status_code = e.HTTPStatusCode();
+						this->m_response_data->m_body.clear();
+					}
+					break;
+				}
+			}
 		}
 	}
-
 	std::string status_line = statusLine(error);
 
 	if (this->m_client->m_response_data.m_body.empty()) {
@@ -406,7 +402,14 @@ void	RequestHandler::formatIndex(std::string &stat_file) {
 					(statbuf.st_mode & S_IFMT) == S_IFREG) {
 					request.m_file_type = statbuf.st_mode;
 					index_exist = true;
-					stat_file = real_path = path_index;
+					if (real_path.size() < path_index.size())
+						real_path = path_index;
+					stat_file = path_index;
+					size_t	query_string =  request.m_path.find('?');
+					if (query_string != std::string::npos)
+						request.m_path.insert(query_string, *it);
+					else
+						request.m_path.append(*it);
 					Logger::Log() << "real_path: " << real_path << std::endl;
 					break;
 				}
@@ -433,26 +436,38 @@ void	RequestHandler::interpretUri(std::string &stat_file) {
 
 
 	if (method == POST || (request.m_file_type & S_IFMT) == S_IFREG) { //file
-		if (method != POST && real_path != stat_file) {
-			throw HTTPError("RequestHandler::interpretUri", "invalid uri, path_info or query string detected", 404);
-		}
 		// 	extract extension
 		size_t	extension = file.find_last_of('.', file.size());
 		Logger::Log()<<"extension index: "<<extension<<std::endl;
+		request.m_path_info = request.m_path;
+		request.m_stat_file = stat_file;
+		size_t query_string_index = request.m_path.find('?', 0);
+		if (query_string_index != std::string::npos && query_string_index != request.m_path.size() - 1) { 
+			request.m_query_string = request.m_path.substr(query_string_index + 1, std::string::npos);
+			request.m_path_info.resize(query_string_index);
+		}
 		if (extension == std::string::npos) {
 			response.m_content_type = "text/plain";
 		}
-		else if (this->validCgi(request, extension))
-		{
+		else if (this->validCgi(request, extension)) {
 			Logger::Log()<<"cgi detected"<<std::endl;
-			this->handleCgiMetadata(request, stat_file);
+			request.m_cgi = true;
+			return ;
 		}
-	//	else if (method == POST) {
-	//		throw HTTPError("RequestHandler::handleMetadata", "post on regular file", 405);
-	//	}
 		else {
 			response.m_content_type = this->m_mime_types[stat_file.substr(stat_file.rfind('.') + 1)];
 			Logger::Log() << "content-type: "<<this->m_client->m_response_data.m_content_type<<std::endl;
+		}
+
+		Logger::Log()<<"m_stat_file: "<<this->m_request_data->m_stat_file<<std::endl;
+		Logger::Log()<<"m_path_info: "<<this->m_request_data->m_path_info<<std::endl;
+		Logger::Log()<<"m_query_string : "<<this->m_request_data->m_query_string<<std::endl;
+		request.m_path_info.resize(request.m_path_info.size() - request.m_path_info.find(request.m_file) - request.m_file.size());
+		if (!request.m_path_info.empty()) {
+			throw HTTPError("RequestHandler::interpretUri", "path_info for non-cgi request", 404);
+		}
+		if (!request.m_query_string.empty() && request.m_method == POST) {
+			throw HTTPError("RequestHandler::handleMetadata", "query string with non-cgi POST", 405);
 		}
 	}
 	else if (method == PUT) {
@@ -482,6 +497,19 @@ std::string	RequestHandler::statFile() {
 	int	method = request.m_method;
 	struct	stat	statbuf;
 
+	next_prefix = real_path.find("/?", 0);
+	if (next_prefix != std::string::npos) {
+		stat_file = real_path.substr(0, next_prefix);
+		if (stat(stat_file.c_str(), &statbuf)) {
+			if (method == POST || method == PUT) {
+				request.m_file_type = TYPE_UNDEFINED;
+			}
+			request.m_file_type = TYPE_UNDEFINED;
+			throw HTTPError("RequestHandler::handleMetadata: stat", "invalid full path", 404);
+		}
+		request.m_file_type = statbuf.st_mode;
+		return stat_file;
+	}
 	while (prefix < real_path.size()) {
 		prefix = real_path.find_first_of("/?", prefix);
 		next_prefix = prefix == std::string::npos ? std::string::npos : real_path.find_first_of("?/", prefix + 1);
@@ -531,6 +559,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 
 		std::string &real_path =  c.m_request_data.m_real_path;
 		real_path = c.m_request_data.m_path;
+		//real_path = c.m_request_data.m_path.substr(0, this->m_request_data->m_path.find('?'));
 		std::string const & location = c.m_request_data.m_location->first;
 		std::string alias, index, stat_file;
 
@@ -560,7 +589,8 @@ void	RequestHandler::handleMetadata(t_client &c) {
 
 		if (c.m_request_data.m_method != PUT)
 			this->formatIndex(stat_file);
-		c.m_request_data.m_file = real_path.substr(stat_file.rfind('/') + 1, std::string::npos);
+		this->m_request_data->m_stat_file = stat_file;
+		c.m_request_data.m_file = this->m_request_data->m_stat_file.substr(this->m_request_data->m_stat_file.rfind('/') + 1, std::string::npos);
 
 		//Log
 		Logger::Log() << "location: " << location << std::endl;
@@ -568,15 +598,15 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		Logger::Log()<<"m_path: "<<this->m_client->m_request_data.m_path<<std::endl;
 		Logger::Log()<<"m_real_path: "<<c.m_request_data.m_real_path<<std::endl;
 		Logger::Log()<<"m_file: "<<c.m_request_data.m_file<<std::endl;
-		Logger::Log()<<"stat file: "<<stat_file<<std::endl;
+		Logger::Log()<<"stat file: "<<c.m_request_data.m_stat_file<<std::endl;
 
 		//
-		this->interpretUri(stat_file);
-
+		this->interpretUri(this->m_request_data->m_stat_file);
 		//handle headers
-		AllowedMethods();
-		Authenticated();
-		GetLanguage();
+		this->AllowedMethods();
+		this->Authenticated();
+		this->GetCharset();
+		this->GetLanguage();
 		//could be member of RequestHandler and called like this->AllowedMethods()
 	} 
 	catch (HTTPError & e)
@@ -589,21 +619,25 @@ void	RequestHandler::handleMetadata(t_client &c) {
 
 std::string		RequestHandler::handlePUT()
 {
-	std::string m_file = this->m_request_data->m_real_path.substr(this->m_request_data->m_real_path.find_last_of('/') + 1);
+	//I think here you can use this->m_request_data->m_file
+	//std::string m_file = this->m_request_data->m_real_path.substr(this->m_request_data->m_real_path.find_last_of('/') + 1);
+	std::string const & m_file = this->m_request_data->m_file;
 	std::string upload_store = this->m_request_data->m_location->second["upload_store"];
-	upload_store.erase(upload_store.find_last_of(' '));
-	std::string path_to_file = std::string(upload_store) + '/' + m_file;
 
-	if (stat(path_to_file.c_str(), &this->m_statbuf) == 0){
+	if (upload_store.find(" "))
+		upload_store.erase(upload_store.find_last_of(' '));
+	char* current_dir = getcwd(NULL, 0);
+	if (chdir(upload_store.c_str()))
+		throw HTTPError("RequestHandler::PUT", "Upload store directory doesn't exist", 500);
+
+	if (stat(m_file.c_str(), &this->m_statbuf) == 0){
 		this->m_request_data->m_status_code = 204;
 		if ((this->m_statbuf.st_uid != getuid())) // checking if owner id of file is the same as the webserver id.
 			throw HTTPError("RequestHandler::PUT", "Webserv is not the owner of this file", 403);
 	}
 	else 
 		this->m_request_data->m_status_code = 201;
-	char* current_dir = getcwd(NULL, 0);
-	if (chdir(upload_store.c_str()))
-		throw HTTPError("RequestHandler::PUT", "Upload store directory doesn't exist", 500);
+
 	int fd  = open(m_file.c_str(), O_TRUNC | O_CREAT | O_WRONLY,  0600); // S_IRWXU = owner having all persmissions 
 	if (fd == -1)
 		throw HTTPError("RequestHandler::PUT", "error creating file", 500);

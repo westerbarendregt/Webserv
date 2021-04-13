@@ -23,7 +23,7 @@ std::string intToString(int n);
 size_t		AtoiHex(const char *str);
 std::string	convertDate(const time_t * clock);
 
-char	    *strdup(std::string &src);
+char	    *strdup(std::string const & src);
 size_t	    fullMetaData(std::string const & src);
 std::string hexString(size_t	n);
 std::vector<std::string>	split(std::string const & s, char delim = ' ');

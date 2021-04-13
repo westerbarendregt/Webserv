@@ -28,6 +28,7 @@ Request::Request()
 	m_path_info(""),
 	m_real_path(""),
 	m_file(""),
+	m_remote_user(""),
 	m_file_type(TYPE_UNDEFINED),
 	m_looking_for_size(true),
 	m_last_chunk(false)
@@ -56,6 +57,7 @@ Request::Request(Request const & src)
 	 m_path_info(src.m_path_info),
 	 m_real_path(src.m_real_path),
 	 m_file(src.m_file),
+	 m_remote_user(src.m_remote_user),
 	 m_file_type(src.m_file_type),
 	 m_looking_for_size(src.m_looking_for_size),
 	 m_last_chunk(src.m_last_chunk)
@@ -84,6 +86,7 @@ Request &Request::operator=(Request const & rhs) {
 	 this->m_path_info      	= rhs.m_path_info;
 	 this->m_real_path      	= rhs.m_real_path;
 	 this->m_file           	= rhs.m_file;
+	 this->m_remote_user		= rhs.m_remote_user;
 	 this->m_file_type           	= rhs.m_file_type;
 	 this->m_looking_for_size 	= rhs.m_looking_for_size;
 	 this->m_last_chunk 		= rhs.m_last_chunk;

@@ -33,7 +33,7 @@ void                CheckCorrectCredentials(std::string decoded, std::string pat
         throw HTTPError("Authentication", "Incorrect path to .htpasswd or .htpasswd couldn't be opended", 403);
     char buf[1001];
     int ret = read(fd, buf, 1000);
-    if (close(fd) == -1 || ret == -1)
+    if (ret == -1 || close(fd) == -1)
         throw HTTPError("Authentication", "couldn't read from .htpasswd", 403);
     std::string line, credentials;
     credentials = buf;
@@ -62,8 +62,58 @@ void                RequestHandler::Authenticated()
     std::string encoded, decoded;
     encoded = auth.substr(auth.find(' ') + 1);
     decoded = base64::decode(encoded); // decode the incoming username and password
+	this->m_request_data->m_remote_user = decoded.substr(0, decoded.find(':'));
     CheckCorrectCredentials(decoded, path_ht);
 	Logger::Log() << "[USER-AGENT = AUTHENTICATED]" << std::endl;
+}
+
+void                RequestHandler::charsetHeaders(std::string extension){
+    std::string &new_path = this->m_response_data->m_content_location;
+    new_path = m_request_data->m_path + "/" + m_request_data->m_file + "." + extension;
+    SetContentLocation();
+
+    if (this->m_client->m_response_data.m_content_type.empty())
+		this->m_client->m_response_data.m_content_type += "text/plain";
+    this->m_client->m_response_data.m_content_type += "; charset=";
+    if (extension == "utf")
+        this->m_client->m_response_data.m_content_type += "utf-8";
+    else 
+        this->m_client->m_response_data.m_content_type += "iso-8859-1";
+}
+
+void                 RequestHandler::GetCharset()
+{
+	struct	stat	statbuf;
+    const char *charset_extensions[] = {"utf", "iso", 0};
+    std::string charset_header = m_request_data->m_headers[ACCEPTCHARSET];
+
+    if (charset_header.empty()){
+		Logger::Log() << "[NO CHARSET SEPCIFIED]" << std::endl; // checking if charset header is sent with request
+        return ;
+    }
+    std::string real_path = m_request_data->m_real_path;
+    std::vector<std::string> charsets = ft::split(charset_header, ',');
+    for (std::vector<std::string>::iterator it = charsets.begin(); it != charsets.end(); ++it){
+        (*it).erase(std::remove((*it).begin(), (*it).end(), ' '), (*it).end()); // stripping spaces
+        if ((*it).size() > 3 && (*it)[3] == '-'){
+            (*it) = (*it).substr(0, 3);
+            Logger::Log() << "extension:[" << *it << "]" << std::endl;
+            if (stat((real_path + '.' + *it).c_str(), &statbuf) == 0){
+                m_request_data->m_real_path = real_path + '.' + *it;
+		        Logger::Log() << "[FOUND CHARSET SPECIFIED]" << std::endl;
+                return charsetHeaders(*it);
+            }
+        }
+        if ((*it) == "*"){
+            for (int i = 0; charset_extensions[i]; ++i){
+                if (stat((real_path + '.' + charset_extensions[i]).c_str(), &statbuf) == 0){
+                m_request_data->m_real_path = real_path + '.' + charset_extensions[i];
+		        Logger::Log() << "[FOUND CHARSET SPECIFIED]" << std::endl;
+                return charsetHeaders(charset_extensions[i]);
+                }
+            }
+        }
+    }
 }
 
 void                RequestHandler::languageHeaders(std::string extension){
@@ -90,7 +140,7 @@ void                 RequestHandler::GetLanguage()
     std::vector<std::string> languages = ft::split(content_language, ',');
     for (std::vector<std::string>::iterator it = languages.begin(); it != languages.end(); ++it){
         (*it).erase(std::remove((*it).begin(), (*it).end(), ' '), (*it).end()); // stripping spaces
-        if ((*it)[2] == '-' || (*it)[2] == ';' || (*it).size() == 2){
+        if ((*it).size() > 2 && ((*it)[2] == '-' || (*it)[2] == ';' || (*it).size() == 2)){
             Logger::Log() << "extension:[" << *it << "]" << std::endl;
             (*it) = (*it).substr(0, 2);
             if (stat((real_path + '.' + *it).c_str(), &statbuf) == 0){

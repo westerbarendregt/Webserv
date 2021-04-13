@@ -35,7 +35,22 @@ then
 	exit 1
 fi
 
+pkill webserv > /dev/null 2>&1 
+
+./webserv ./conf/webserv_cmp.conf > /dev/null 2>&1 &
+if !(pgrep webserv > /dev/null)
+	then
+		echo "FAILED"
+		exit 1
+fi
+if !(python3 tests/compare_test/compare_test.py webserv)
+then
+	pkill webserv > /dev/null 2>&1
+	echo "FAILED"
+	exit 1
+fi
 pkill webserv > /dev/null 2>&1
+# ./webserv ./conf/tester.conf
 
 make fclean
 

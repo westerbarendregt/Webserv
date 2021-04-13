@@ -45,25 +45,59 @@ def runPort(port, file, method, headers, body, url_file_name, print_out):
         file.write(output.stdout.decode())
     # file.close()
 
+def runtester():
+    webservFile = open("webservFile", "w+")
+    webservFile.truncate(0)
+    output = subprocess.run(["curl", "-i" ,"-X", "PUT",  "http://localhost:5000/put_test/chicken.png", "--upload-file", "tests/chicken.png"], capture_output=True)
+    webservFile.write(output.stdout.decode())
+    webservFile.close()
+    statusWeb = lc.getline("webservFile", 1)
+    lc.clearcache()
+    status_code_Web = statusWeb[statusWeb.find(' ')+1:12]
+    print (bcolors.OKGREEN + status_code_Web + bcolors.ENDC)
+    webservFile.close()
+    os.remove("webservFile")
+    return status_code_Web
 
 def runCommand(port):
     print(bcolors.WARNING + "-----------------------------------------------"+ bcolors.ENDC)
-    runBoth("GET", ["User-agent: Go-http-client/1.1", "Accept-Encoding: gzip"], "", "/", port)
-    runBoth("GET", ["Accept-Language: de-DE"], "", "/language/", port)
-    runBoth("GET", ["Accept-Language: es-SP"], "", "/language/", port)
-    runBoth("GET", ["Accept-Language: fr-FR, tu-TU, nl-NL"], "", "/language/", port)
-    runBoth("GET", ["Accept-Language: nl;q=-ru"], "", "/language/", port)
-    runBoth("GET", ["Accept-Language: es-ES, nl;q=-ru"], "", "/language/", port)
-    runBoth("GET", ["Accept-Language: *"], "", "/language/", port)
-    runBoth("POST", ["User-agent: Go-http-client/1.1", "Accept-Encoding: chunked", "Accept-Type: test/file"], "", "/", port)
-    # # runBoth("HEAD", ["User-agent: Go-http-client/1.1"], "", "/", port)
-    runBoth("PUT", ["'AUTHORIZATION: Basic d2Vic2VydjpjaGVlc2U='", "Connection: keep-alive"], "", 
+    if runBoth("GET", ["User-agent: Go-http-client/1.1", "Accept-Encoding: gzip"], "", "/", port) != "200":
+        sys.exit(5)
+    if runBoth("GET", ["Accept-Language: de-DE"], "", "/language/", port) != "200":
+        sys.exit(5)
+    if runBoth("GET", ["Accept-Charset: iso-8859-15"], "", "/charset/", port) != "200":
+        sys.exit(5)
+    if runBoth("GET", ["Accept-Charset: utf-8"], "", "/charset/", port) != "200":
+        sys.exit(5)
+    if runBoth("GET", ["Accept-Charset: *"], "", "/charset/", port) != "200":
+        sys.exit(5)
+    if runBoth("GET", ["Accept-Language: es-SP"], "", "/language/", port) != "200":
+        sys.exit(5)
+    if runBoth("GET", ["Accept-Language: fr-FR, tu-TU, nl-NL"], "", "/language/", port) != "200":
+        sys.exit(5)
+    if runBoth("GET", ["Accept-Language: nl;q=-ru"], "", "/language/", port) != "200":
+        sys.exit(5)
+    if runBoth("GET", ["Accept-Language: es-ES, nl;q=-ru"], "", "/language/", port) != "200":
+        sys.exit(5)
+    if runBoth("GET", ["Accept-Language: *"], "", "/language/", port) != "200":
+        sys.exit(5)
+    if runBoth("POST", ["User-agent: Go-http-client/1.1", "Accept-Encoding: chunked", "Accept-Type: test/file"], "", "/", port) != "405":
+        sys.exit(5)
+    tmp_var = runBoth("PUT", ["'AUTHORIZATION: Basic d2Vic2VydjpjaGVlc2U='", "Connection: keep-alive"], "", 
             "/put_test/111.txt", port)
-    runBoth("PUT", ["'AUTHORIZATION: Basic d2Vic2VydjpjaGVlc2U='", "Connection: keep-alive", 
+    if (tmp_var != "201" and tmp_var != "204"):
+        sys.exit(5)
+    tmp_var = runBoth("PUT", ["'AUTHORIZATION: Basic d2Vic2VydjpjaGVlc2U='", "Connection: keep-alive", 
             "X-secrets: chips", "X-other_secret: cake", "X-final_secret: maple syrup", "-X-Not-a-Secret: nothing"], "", 
             "/put_test/111.txt", port)
-    # runBoth("POST", "", "hellos", "/directory/", port)
+    if tmp_var != "201" and tmp_var != "204":
+        sys.exit(5)
+    tmp_var = runtester()
+    if tmp_var != "201" and tmp_var != "204":
+        sys.exit(5)
+
     print(bcolors.WARNING + "-----------------------------------------------"+ bcolors.ENDC)
+
 
 def runBoth(method, headers, body, url, port):#webservPort, nginxPort):
     webservFile = open("webservFile", "w+")
@@ -114,7 +148,17 @@ def runBoth(method, headers, body, url, port):#webservPort, nginxPort):
         if port == "8080":
             runPort(port, nginxFile, method, args, body, url, 1)
         elif port == "5000":
-            runPort(port, webservFile, method, args, body, url, 1)
+            runPort(port, webservFile, method, args, body, url, 0)
+            webservFile.close()
+            statusWeb = lc.getline("webservFile", 1)
+            lc.clearcache()
+            status_code_Web = statusWeb[statusWeb.find(' ')+1:12]
+            print (bcolors.OKGREEN + status_code_Web + bcolors.ENDC)
+            nginxFile.close()
+            webservFile.close()
+            os.remove("nginxFile")
+            os.remove("webservFile")
+            return status_code_Web
     nginxFile.close()
     webservFile.close()
     os.remove("nginxFile")
@@ -136,6 +180,6 @@ elif sys.argv[1] == 'compare':
     runCommand("0")
 else :
     print ("NOT RECOGNIZED - first argument should be: nginx, webserv or compare")
-print (ret)
+# print (ret)
 sys.exit(ret)
     
