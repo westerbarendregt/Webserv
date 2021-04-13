@@ -169,6 +169,11 @@ class	ConfigParser
 								++path_directives)
 							Logger::Log()<<"\t\t\t\t"<<path_directives->first<<" "<<path_directives->second<<std::endl;
 					}
+					Logger::Log() << "\t\t\tERROR_PAGES"<<std::endl;
+					for (t_v_server_conf::t_error_pages::iterator it = c.m_error_pages.begin();
+							it != c.m_error_pages.end(); ++it) {
+							Logger::Log()<<"\t\t\t\t"<<*it<<std::endl;
+					}
 				}
 		}
 	}
@@ -275,7 +280,13 @@ class	ConfigParser
 			size_t	end = fields[RIGHT].find_first_of(";", 0);
 			if (end == std::string::npos)
 				return INVALID;
-			tokens.back().m_directives[fields[LEFT]] = fields[RIGHT].substr(0, end); //pushing to directives map
+			std::string const  & directive_name = fields[LEFT];
+			if (directive_name == "error_page") {
+				tokens.back().m_error_pages.push_back(fields[RIGHT].substr(0, end)); //pushing to error_pages vector
+			}
+			else {
+				tokens.back().m_directives[fields[LEFT]] = fields[RIGHT].substr(0, end); //pushing to directives map
+			}
 			if (!fields[RIGHT].empty()) //shift fields if we didn't reach eol
 				fields[LEFT].assign(fields[RIGHT].begin() + end + 1, fields[RIGHT].end());
 			return SUCCESS;

@@ -23,6 +23,7 @@ class RequestHandler
 		typedef	VirtualServer	t_v_server;
 		typedef	s_v_server_conf::t_directives t_directives;
 		typedef	s_v_server_conf::t_routes	t_routes;
+		typedef	s_v_server_conf::t_error_pages t_error_pages;
 
 		friend class Server;
 

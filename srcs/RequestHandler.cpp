@@ -328,34 +328,30 @@ std::string	RequestHandler::generateErrorPage(int error) {
 	std::vector<std::string>	v;
 
 	if (this->m_client->m_v_server) {
-		t_directives const &	directives = this->m_client->m_v_server->m_configs.m_directives;
-		t_directives::const_iterator	it = directives.find("error_page");
-		if (it !=  directives.end()) {
-			v = ft::split(it->second);
-		}
-	}
-
-	if (!v.empty()) {
-		error_path = v.back();
-		v.pop_back();
-	}
-
-	for (std::vector<std::string>::iterator it = v.begin(); it != v.end(); ++it) {
-		if (*it == ft::intToString(error)) {
-			this->m_request_data->m_real_path = error_path;
-			try {
-				if (stat(error_path.c_str(), &this->m_statbuf))
-					throw HTTPError("RequestHandler::generateErrorPage ", "invalid default error page", 404);
-				responseBody();
-			} catch (HTTPError & e) {
-				std::cerr << e.what() << std::endl;
-				this->m_request_data->m_status_code = e.HTTPStatusCode();
-				this->m_response_data->m_body.clear();
+		t_error_pages const & error_pages = this->m_client->m_v_server->m_configs.m_error_pages;
+		for (t_error_pages::const_iterator it = error_pages.begin(); it != error_pages.end(); ++it) {
+			v = ft::split(*it);
+			if (!v.empty()) {
+				error_path = v.back();
+				v.pop_back();
 			}
-			break;
+			for (std::vector<std::string>::iterator it = v.begin(); it != v.end(); ++it) {
+				if (*it == ft::intToString(error)) {
+					this->m_request_data->m_real_path = error_path;
+					try {
+						if (stat(error_path.c_str(), &this->m_statbuf))
+							throw HTTPError("RequestHandler::generateErrorPage ", "invalid default error page", 404);
+						responseBody();
+					} catch (HTTPError & e) {
+						std::cerr << e.what() << std::endl;
+						this->m_request_data->m_status_code = e.HTTPStatusCode();
+						this->m_response_data->m_body.clear();
+					}
+					break;
+				}
+			}
 		}
 	}
-
 	std::string status_line = statusLine(error);
 
 	if (this->m_client->m_response_data.m_body.empty()) {
