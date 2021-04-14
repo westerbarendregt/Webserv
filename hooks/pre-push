@@ -50,6 +50,15 @@ then
 	exit 1
 fi
 pkill webserv > /dev/null 2>&1
+
+
+./webserv ./conf/multi_name.conf > /dev/null 2>&1 &
+if !(tests/multi_name.sh)
+then
+	pkill webserv > /dev/null 2>&1
+	echo "FAILED"
+	exit 1
+fi
 # ./webserv ./conf/tester.conf
 
 make fclean
