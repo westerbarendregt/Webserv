@@ -9,7 +9,7 @@
 - [ ] User-Agent
 - [ ] Referer
 - [ ] Retry-After
-- [ ] Write tests for POST cgi with html forms
+- [x] Write tests for POST cgi with html forms
 - [ ] post really always 200
 
 
@@ -20,7 +20,7 @@ Monday 29-03
 - READ THE PAPER!
 -  Implement some checks with hostname:port
 	- [x] for host headers that include a port, only compare what precedes the port
-	- [ ] write tests for multi_name.conf
+	- [x] write tests for multi_name.conf
 	- [x] handle duplicate server_name for same port
 - [x] try some tests with siege 
 - [x] Running the tester
