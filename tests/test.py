@@ -105,6 +105,9 @@ def test_cgi_qstring_pinfo():
 def test_qstring_pinfo ():
     print(bcolors.HEADER + bcolors.BOLD + "\ttest_qstring_pinfo" + bcolors.ENDC)
     try:
+
+        #----#
+
         print("non cgi POST /path/info/")
         r=requests.post('http://127.0.0.1:8080/default/index.html/path/info')
         assert r.status_code == 404, r.status_code
@@ -116,6 +119,12 @@ def test_qstring_pinfo ():
         print("non cgi POST /path/info?query=string")
         r=requests.post('http://127.0.0.1:8080/default/index.html/path/info?query=string')
         assert r.status_code == 404, r.status_code
+
+        print("non cgi POST /?query=string")
+        r=requests.post('http://127.0.0.1:8080/?query=string')
+        assert r.status_code == 405, r.status_code
+
+        #----#
         
         print("non cgi GET path/info")
         r=requests.get('http://127.0.0.1:8080/default/index.html/path/info')
@@ -132,6 +141,32 @@ def test_qstring_pinfo ():
         print("non cgi GET /?query=string")
         r=requests.get('http://127.0.0.1:8080/?query=string')
         assert r.status_code == 200, r.status_code
+
+        #----#
+        #curl -i -X PUT "http://localhost:8080/put_test/chicken.png" --upload-file "tests/chicken.png"
+        # put chicken first -> 201 created
+        #curl -i -X PUT "http://localhost:8080/put_test/chicken.png" --upload-file "tests/chicken.png"
+        # put chicken second -> 204 no content
+
+        # PUT query=string
+        #lurl -i -X PUT "http://localhost:8080/put_test/chicken.png?query=string" --upload-file "tests/chicken.png"
+        # put chicken first -> 201 created
+        #lurl -i -X PUT "http://localhost:8080/put_test/chicken.png?query=string" --upload-file "tests/chicken.png"
+        # put chicken second -> 204 no content
+
+        # PUT /path/info
+        #curl -i -X PUT "http://localhost:8080/put_test/chicken.png/path/info" --upload-file "tests/chicken.png"
+        # put chicken first -> 500
+        #curl -i -X PUT "http://localhost:8080/put_test/chicken.png/path/info" --upload-file "tests/chicken.png"
+        # put chicken second -> 500
+        #500
+
+        # PUT /path/info?query=string
+        #curl -i -X PUT "http://localhost:8080/put_test/chicken.png/path/info?query=string" --upload-file "tests/chicken.png"
+        # put chicken first -> 500
+        #curl -i -X PUT "http://localhost:8080/put_test/chicken.png/path/info?query=string" --upload-file "tests/chicken.png"
+        # put chicken second -> 500
+        #500
 
     except Exception as e:
         logging.error(bcolors.FAIL + bcolors.BOLD + "FAIL" + bcolors.ENDC, exc_info=True)
