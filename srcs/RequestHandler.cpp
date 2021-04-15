@@ -197,7 +197,7 @@ void 		RequestHandler::SetLocation() {
 }
 
 std::string RequestHandler::GetRetryAfter(){
-	return "";
+	return "Retry-After: 3600" CRLF;
 }
 
 void		RequestHandler::SetRetryAfter(){
@@ -337,7 +337,7 @@ std::string	RequestHandler::generateErrorPage(int error) {
 			}
 			for (std::vector<std::string>::iterator it = v.begin(); it != v.end(); ++it) {
 				if (*it == ft::intToString(error)) {
-					this->m_request_data->m_real_path = error_path;
+					this->m_request_data->m_stat_file = error_path;
 					try {
 						if (stat(error_path.c_str(), &this->m_statbuf))
 							throw HTTPError("RequestHandler::generateErrorPage ", "invalid default error page", 404);
