@@ -345,6 +345,7 @@ std::string	RequestHandler::generateErrorPage(int error) {
 					} catch (HTTPError & e) {
 						std::cerr << e.what() << std::endl;
 						this->m_request_data->m_status_code = e.HTTPStatusCode();
+						error = e.HTTPStatusCode();
 						this->m_response_data->m_body.clear();
 					}
 					break;
