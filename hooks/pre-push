@@ -1,5 +1,22 @@
 #!/bin/bash
 
+full=0
+interactive=0
+
+#when launched as a pre-push hook by git
+# note: won't run 42 tester if FULL_HOOK is not exported in the calling shell
+# export FULL_HOOK=[1-0] INTERACTIVE_HOOK=[1-0] to change that
+
+[[ "$FULL_HOOK" == "1" ]] && full=1
+[[ "$INTERACTIVE_HOOK" == "1" ]] && interactive=1
+
+#when launched from cli
+for arg in "$@"
+do
+	[[ "$arg" == "--full" ]] && full=1
+	[[ "$arg" == "-i" ]] && interactive=1
+done
+
 function clean_exit() {
 	pkill webserv > /dev/null 2>&1
 	make fclean
@@ -21,13 +38,27 @@ function assert() {
 }
 
 trap "clean_exit 1" SIGHUP SIGINT SIGTERM
-remote="$1"
-url="$2"
 
 assert "which python3" "please install python3"
 assert "which php-cgi" "please install php-cgi"
 
 make re config
+
+./webserv ./conf/tester.conf > /dev/null 2>&1 &
+
+sleep 1
+
+if [ $full -eq 1 ]
+then
+	if [ $interactive -eq 1 ]
+	then
+		assert "./tests/ubuntu_tester http://localhost:8080"
+	else
+		echo "" | assert "./tests/ubuntu_tester http://localhost:8080"
+	fi
+fi
+
+pkill webserv > /dev/null 2>&1
 ./webserv ./conf/webserv.conf > /dev/null 2>&1 &
 
 sleep 1
