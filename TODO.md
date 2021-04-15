@@ -6,7 +6,7 @@
 - [x] Test with chunked input
 - [x] Implement missing headers
 - [x] Accept-Charset
-- [ ] User-Agent
+- [x] User-Agent
 - [ ] Referer
 - [ ] Retry-After
 - [x] Write tests for POST cgi with html forms

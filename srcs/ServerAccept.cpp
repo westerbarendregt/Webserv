@@ -7,6 +7,7 @@
 #include "Logger.hpp"
 
 int	Server::accept(int socket) {
+	const int MAX_CLIENTS = 1000;
 	t_v_server_blocks *v;
 	t_client c;
 
@@ -24,6 +25,12 @@ int	Server::accept(int socket) {
 		throw(serverError("fcntl: ", strerror(errno)));
 	Logger::Log()<<"adding client socket "<<c.m_socket<<std::endl;
 	this->m_client_all[c.m_socket] = c;
+	if (this->m_client_all.size() > MAX_CLIENTS) {
+		c.m_request_data.m_status_code = 503;
+		this->m_request_handler.handleRequest(c);
+		this->respond(c);
+		return 0;
+	}
 	FD_SET(c.m_socket, &this->m_read_all);
 	if (c.m_socket > this->m_range_fd)
 		this->m_range_fd = c.m_socket;
