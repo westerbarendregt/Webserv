@@ -54,52 +54,52 @@ def test_cgi_qstring_pinfo():
         print("GET ?query=string")
         r=requests.get('http://127.0.0.1:8080/php/check_env.php?query=string')
         data=r.json()
-        assert data['QUERY_STRING'] == "query=string"
+        assert data['QUERY_STRING'] == "query=string", data['QUERY_STRING']
         #---------#
         print("GET /path/info")
         r=requests.get('http://127.0.0.1:8080/php/check_env.php/path/info')
         data=r.json()
-        assert data['PATH_INFO'] == "/php/check_env.php/path/info"
+        assert data['PATH_INFO'] == "/php/check_env.php/path/info", data['PATH_INFO']
         #---------#
         print("GET /path/info?query=string")
         r=requests.get('http://127.0.0.1:8080/php/check_env.php/path/info?query=string')
         data=r.json()
-        assert data['PATH_INFO'] == "/php/check_env.php/path/info"
-        assert data['QUERY_STRING'] == "query=string"
+        assert data['PATH_INFO'] == "/php/check_env.php/path/info", data['PATH_INFO']
+        assert data['QUERY_STRING'] == "query=string", data['QUERY_STRING']
         #---------#
         print("GET /path/info/ok?query=string&key=value")
         r=requests.get('http://127.0.0.1:8080/php/check_env.php/path/info/ok?query=string&key=val')
         data=r.json()
-        assert data['PATH_INFO'] == "/php/check_env.php/path/info/ok"
-        assert data['QUERY_STRING'] == "query=string&key=val"
+        assert data['PATH_INFO'] == "/php/check_env.php/path/info/ok", data['PATH_INFO']
+        assert data['QUERY_STRING'] == "query=string&key=val", data['QUERY_STRING']
         #---------#
         print("GET index /?query=string&key=val")
         r=requests.get('http://127.0.0.1:8080/php/?query=string&key=val')
         data=r.json()
-        assert data['PATH_INFO'] == "/php/check_env.php"
-        assert data['QUERY_STRING'] == "query=string&key=val"
+        assert data['PATH_INFO'] == "/php/check_env.php", data['PATH_INFO']
+        assert data['QUERY_STRING'] == "query=string&key=val", data['QUERY_STRING']
         #---------#
         print("GET index ?query=string&key=val")
         r=requests.get('http://127.0.0.1:8080/php/?query=string&key=val')
         data=r.json()
-        assert data['PATH_INFO'] == "/php/check_env.php"
-        assert data['QUERY_STRING'] == "query=string&key=val"
+        assert data['PATH_INFO'] == "/php/check_env.php", data['PATH_INFO']
+        assert data['QUERY_STRING'] == "query=string&key=val", data['QUERY_STRING']
         #---------#
         print("POST index /?query=string&key=val")
         r=requests.post('http://127.0.0.1:8080/php/?query=string&key=val')
         data=r.json()
-        assert data['PATH_INFO'] == "/php/check_env.php"
-        assert data['QUERY_STRING'] == "query=string&key=val"
+        assert data['PATH_INFO'] == "/php/check_env.php", data['PATH_INFO']
+        assert data['QUERY_STRING'] == "query=string&key=val", data['QUERY_STRING']
         #---------#
         print("POST index ?query=string&key=val")
-        r=requests.post('http://127.0.0.1:8080/php/?query=string&key=val')
+        r=requests.post('http://127.0.0.1:8080/php/?query=string&key=val') 
         data=r.json()
-        assert data['PATH_INFO'] == "/php/check_env.php"
-        assert data['QUERY_STRING'] == "query=string&key=val"
+        assert data['PATH_INFO'] == "/php/check_env.php", data['PATH_INFO']
+        assert data['QUERY_STRING'] == "query=string&key=val" , data['QUERY_STRING']
 
-    except Exception as e:
+    except Exception:
         logging.error("FAIL", exc_info=True)
-        os._exit(1);
+        os._exit(1)
     print(bcolors.OKGREEN+ "OK" + bcolors.ENDC)
 
 def test_qstring_pinfo ():
@@ -168,9 +168,9 @@ def test_qstring_pinfo ():
         # put chicken second -> 500
         #500
 
-    except Exception as e:
+    except Exception:
         logging.error(bcolors.FAIL + bcolors.BOLD + "FAIL" + bcolors.ENDC, exc_info=True)
-        os._exit(1);
+        os._exit(1)
     print(bcolors.OKGREEN+ "OK" + bcolors.ENDC)
 
 test_cgi_qstring_pinfo()

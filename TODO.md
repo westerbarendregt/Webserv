@@ -33,3 +33,4 @@ Monday 29-03
 - [x] check how exactly tv influences select()
 - [x] handle put trim upload_store better
 - [x] write some more test for compare python and add to hooks
+- [ ] add PHPCGI variable in Makefile
