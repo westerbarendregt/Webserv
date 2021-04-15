@@ -91,23 +91,23 @@ void                 RequestHandler::GetCharset()
 		Logger::Log() << "[NO CHARSET SEPCIFIED]" << std::endl; // checking if charset header is sent with request
         return ;
     }
-    std::string real_path = m_request_data->m_real_path;
+    std::string stat_file = m_request_data->m_stat_file;
     std::vector<std::string> charsets = ft::split(charset_header, ',');
     for (std::vector<std::string>::iterator it = charsets.begin(); it != charsets.end(); ++it){
         (*it).erase(std::remove((*it).begin(), (*it).end(), ' '), (*it).end()); // stripping spaces
         if ((*it).size() > 3 && (*it)[3] == '-'){
             (*it) = (*it).substr(0, 3);
             Logger::Log() << "extension:[" << *it << "]" << std::endl;
-            if (stat((real_path + '.' + *it).c_str(), &statbuf) == 0){
-                m_request_data->m_real_path = real_path + '.' + *it;
+            if (stat((stat_file + '.' + *it).c_str(), &statbuf) == 0){
+                m_request_data->m_stat_file = stat_file + '.' + *it;
 		        Logger::Log() << "[FOUND CHARSET SPECIFIED]" << std::endl;
                 return charsetHeaders(*it);
             }
         }
         if ((*it) == "*"){
             for (int i = 0; charset_extensions[i]; ++i){
-                if (stat((real_path + '.' + charset_extensions[i]).c_str(), &statbuf) == 0){
-                m_request_data->m_real_path = real_path + '.' + charset_extensions[i];
+                if (stat((stat_file + '.' + charset_extensions[i]).c_str(), &statbuf) == 0){
+                m_request_data->m_stat_file = stat_file + '.' + charset_extensions[i];
 		        Logger::Log() << "[FOUND CHARSET SPECIFIED]" << std::endl;
                 return charsetHeaders(charset_extensions[i]);
                 }
@@ -136,27 +136,51 @@ void                 RequestHandler::GetLanguage()
 		Logger::Log() << "[NO LANGUAGE SPECIFIED]" << std::endl; // checking if content-language header is sent with request
         return ;
     }
-    std::string real_path = m_request_data->m_real_path;
+    std::string m_stat_file = m_request_data->m_stat_file;
     std::vector<std::string> languages = ft::split(content_language, ',');
     for (std::vector<std::string>::iterator it = languages.begin(); it != languages.end(); ++it){
         (*it).erase(std::remove((*it).begin(), (*it).end(), ' '), (*it).end()); // stripping spaces
         if ((*it).size() > 2 && ((*it)[2] == '-' || (*it)[2] == ';' || (*it).size() == 2)){
             Logger::Log() << "extension:[" << *it << "]" << std::endl;
             (*it) = (*it).substr(0, 2);
-            if (stat((real_path + '.' + *it).c_str(), &statbuf) == 0){
-                m_request_data->m_real_path = real_path + '.' + *it;
+            if (stat((m_stat_file + '.' + *it).c_str(), &statbuf) == 0){
+                m_request_data->m_stat_file = m_stat_file + '.' + *it;
 		        Logger::Log() << "[FOUND LANGUAGE SPECIFIED]" << std::endl;
                 return languageHeaders(*it);
             }
         }
         if ((*it) == "*"){
             for (int i = 0; language_extensions[i]; ++i){
-                if (stat((real_path + '.' + language_extensions[i]).c_str(), &statbuf) == 0){
-                m_request_data->m_real_path = real_path + '.' + language_extensions[i];
+                if (stat((m_stat_file + '.' + language_extensions[i]).c_str(), &statbuf) == 0){
+                m_request_data->m_stat_file = m_stat_file + '.' + language_extensions[i];
 		        Logger::Log() << "[FOUND LANGUAGE SPECIFIED]" << std::endl;
                 return languageHeaders(language_extensions[i]);
                 }
             }
         }
     }
+}
+
+void                 RequestHandler::UserAgent()
+{
+	struct	stat	statbuf;
+    std::string user_agent = m_request_data->m_headers[USERAGENT];
+    
+    if (user_agent.empty()){
+		Logger::Log() << "[NO USER AGENT]" << std::endl; // checking if content-language header is sent with request
+        return ;
+    }
+    std::string stat_file = m_request_data->m_stat_file;
+    size_t found1 = user_agent.find("curl"); //search for curl in user agent header and save index
+    size_t found2 = user_agent.find("Safari"); // search for Safari in user agent header and save index
+    size_t found3 = user_agent.find("Chrome"); // search for Safari in user agent header and save index
+    if (found1 < found2 && found1 < found3)
+        if (stat((stat_file + ".curl").c_str(), &statbuf) == 0)
+            m_request_data->m_stat_file.append(".curl");
+    if (found2 < found1 && found2 < found3)
+        if (stat((stat_file + ".safari").c_str(), &statbuf) == 0)
+            m_request_data->m_stat_file.append(".safari");
+    if (found3 < found2 && found3 < found1)
+        if (stat((stat_file + ".chrome").c_str(), &statbuf) == 0)
+            m_request_data->m_stat_file.append(".chrome");
 }

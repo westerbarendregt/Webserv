@@ -44,6 +44,7 @@ class RequestHandler
 		void				languageHeaders(std::string extension);
 		void                GetCharset();
 		void				charsetHeaders(std::string extension);
+		void				UserAgent();
 
 
 		void 				printStatusCodes();

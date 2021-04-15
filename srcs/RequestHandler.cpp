@@ -251,6 +251,7 @@ std::string RequestHandler::statusLine(int status_code) {
 }
 
 void 		RequestHandler::responseBody() {
+	std::cout << this->m_client->m_request_data.m_stat_file.c_str() << std::endl;
 	int fd = open(this->m_client->m_request_data.m_stat_file.c_str(), O_RDONLY);
 	if (fd == -1) {
 		throw HTTPError("RequestHandler::responseBody", "error opening file", 500);
@@ -607,6 +608,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		this->Authenticated();
 		this->GetCharset();
 		this->GetLanguage();
+		this->UserAgent();
 		//could be member of RequestHandler and called like this->AllowedMethods()
 	} 
 	catch (HTTPError & e)
