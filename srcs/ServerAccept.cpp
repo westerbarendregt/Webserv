@@ -27,7 +27,6 @@ int	Server::accept(int socket) {
 	this->m_client_all[c.m_socket] = c;
 	if (this->m_client_all.size() > MAX_CLIENTS) {
 		c.m_request_data.m_status_code = 503;
-		this->m_request_handler.SetRetryAfter();
 		this->m_request_handler.handleRequest(c);
 		this->respond(c);
 		return 0;

@@ -371,6 +371,7 @@ std::string	RequestHandler::generateErrorPage(int error) {
 	SetDate();
 	SetContentType();
 	SetContentLength();
+	if (error == 503) SetRetryAfter();
 	std::string	response_headers = responseHeaders();
 	ret = status_line + response_headers + CRLF;
 	if (m_request_data->m_method != HEAD)

@@ -6,4 +6,5 @@ http://localhost:8080/charset/
 http://localhost:8080/webserv/html/index.html
 http://localhost:8080/webserv/co/ro/na/covid.png
 http://localhost:8080/path/to/check_env.php POST user=juan
+http://localhost:8080/path/to/php_info.php POST user=juan
 http://localhost:8080/default/nonexistant.html
