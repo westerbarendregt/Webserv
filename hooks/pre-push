@@ -23,6 +23,7 @@ url="$2"
 
 make re config
 ./webserv ./conf/webserv.conf > /dev/null 2>&1 &
+sleep(1)
 if !(pgrep webserv > /dev/null)
 	then
 		echo "FAILED"
@@ -38,6 +39,7 @@ fi
 pkill webserv > /dev/null 2>&1 
 
 ./webserv ./conf/webserv_cmp.conf > /dev/null 2>&1 &
+sleep(1)
 if !(pgrep webserv > /dev/null)
 	then
 		echo "FAILED"
