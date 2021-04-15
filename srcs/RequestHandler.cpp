@@ -607,6 +607,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		this->Authenticated();
 		this->GetCharset();
 		this->GetLanguage();
+		this->UserAgent();
 		//could be member of RequestHandler and called like this->AllowedMethods()
 	} 
 	catch (HTTPError & e)

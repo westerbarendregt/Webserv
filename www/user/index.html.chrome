@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Did you know that Chrome is a CPU hog, welcome anyway... </title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Did you know that Chrome is a CPU hog, welcome anyway... </h1>
+
+<p><em>Thank you for using webserv.</em></p>
+</body>
+</html>
