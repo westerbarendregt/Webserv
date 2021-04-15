@@ -622,13 +622,12 @@ void	RequestHandler::handleMetadata(t_client &c) {
 
 std::string		RequestHandler::handlePUT()
 {
-	//I think here you can use this->m_request_data->m_file
-	//std::string m_file = this->m_request_data->m_real_path.substr(this->m_request_data->m_real_path.find_last_of('/') + 1);
 	std::string const & m_file = this->m_request_data->m_file;
 	std::string upload_store = this->m_request_data->m_location->second["upload_store"];
+	size_t	trim = upload_store.find(" ");
 
-	if (upload_store.find(" "))
-		upload_store.erase(upload_store.find_last_of(' '));
+	if (trim != std::string::npos)
+		upload_store.resize(trim);
 	char* current_dir = getcwd(NULL, 0);
 	if (chdir(upload_store.c_str()))
 		throw HTTPError("RequestHandler::PUT", "Upload store directory doesn't exist", 500);

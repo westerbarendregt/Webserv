@@ -203,6 +203,7 @@ void	Cgi::fillEnv(t_client const & c) {
 	this->m_env_map["SERVER_PROTOCOL"]="HTTP/1.1";
 	this->m_env_map["SERVER_SOFTWARE"]="HTTP 1.1";
 	this->m_env_map["REDIRECT_STATUS"]="true";
+	this->m_env_map["HTTP_REFERER"]=request.m_headers[REFERER];
 	for (std::map<std::string, std::string>::const_iterator it = request.x_headers.begin();
 			it != request.x_headers.end(); ++it) {
 		std::string	key = "HTTP_" + it->first;
