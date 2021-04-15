@@ -91,7 +91,7 @@ void                 RequestHandler::GetCharset()
 		Logger::Log() << "[NO CHARSET SEPCIFIED]" << std::endl; // checking if charset header is sent with request
         return ;
     }
-    std::string stat_file = m_request_data->m_stat_file;
+    const std::string& stat_file = m_request_data->m_stat_file;
     std::vector<std::string> charsets = ft::split(charset_header, ',');
     for (std::vector<std::string>::iterator it = charsets.begin(); it != charsets.end(); ++it){
         (*it).erase(std::remove((*it).begin(), (*it).end(), ' '), (*it).end()); // stripping spaces
@@ -130,29 +130,29 @@ void                 RequestHandler::GetLanguage()
 {
 	struct	stat	statbuf;
     const char *language_extensions[] = {"nl", "fr", "de", "jp", "ch", "en", "po", "es", 0};
-    std::string content_language = m_request_data->m_headers[ACCEPTLANGUAGE];
+    const std::string& content_language = m_request_data->m_headers[ACCEPTLANGUAGE];
 
     if (content_language.empty()){
 		Logger::Log() << "[NO LANGUAGE SPECIFIED]" << std::endl; // checking if content-language header is sent with request
         return ;
     }
-    std::string m_stat_file = m_request_data->m_stat_file;
+    const std::string& stat_file = m_request_data->m_stat_file;
     std::vector<std::string> languages = ft::split(content_language, ',');
     for (std::vector<std::string>::iterator it = languages.begin(); it != languages.end(); ++it){
         (*it).erase(std::remove((*it).begin(), (*it).end(), ' '), (*it).end()); // stripping spaces
         if ((*it).size() > 2 && ((*it)[2] == '-' || (*it)[2] == ';' || (*it).size() == 2)){
             Logger::Log() << "extension:[" << *it << "]" << std::endl;
             (*it) = (*it).substr(0, 2);
-            if (stat((m_stat_file + '.' + *it).c_str(), &statbuf) == 0){
-                m_request_data->m_stat_file = m_stat_file + '.' + *it;
+            if (stat((stat_file + '.' + *it).c_str(), &statbuf) == 0){
+                m_request_data->m_stat_file = stat_file + '.' + *it;
 		        Logger::Log() << "[FOUND LANGUAGE SPECIFIED]" << std::endl;
                 return languageHeaders(*it);
             }
         }
         if ((*it) == "*"){
             for (int i = 0; language_extensions[i]; ++i){
-                if (stat((m_stat_file + '.' + language_extensions[i]).c_str(), &statbuf) == 0){
-                m_request_data->m_stat_file = m_stat_file + '.' + language_extensions[i];
+                if (stat((stat_file + '.' + language_extensions[i]).c_str(), &statbuf) == 0){
+                m_request_data->m_stat_file = stat_file + '.' + language_extensions[i];
 		        Logger::Log() << "[FOUND LANGUAGE SPECIFIED]" << std::endl;
                 return languageHeaders(language_extensions[i]);
                 }
@@ -164,13 +164,13 @@ void                 RequestHandler::GetLanguage()
 void                 RequestHandler::UserAgent()
 {
 	struct	stat	statbuf;
-    std::string user_agent = m_request_data->m_headers[USERAGENT];
+    const std::string & user_agent = m_request_data->m_headers[USERAGENT];
     
     if (user_agent.empty()){
 		Logger::Log() << "[NO USER AGENT]" << std::endl; // checking if content-language header is sent with request
         return ;
     }
-    std::string stat_file = m_request_data->m_stat_file;
+    const std::string & stat_file = m_request_data->m_stat_file;
     size_t found1 = user_agent.find("curl"); //search for curl in user agent header and save index
     size_t found2 = user_agent.find("Safari"); // search for Safari in user agent header and save index
     size_t found3 = user_agent.find("Chrome"); // search for Safari in user agent header and save index
