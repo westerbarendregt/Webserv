@@ -1,70 +1,82 @@
-#!/bin/sh
+#!/bin/bash
 
-# An example hook script to verify what is about to be pushed.  Called by "git
-# push" after it has checked the remote status, but before anything has been
-# pushed.  If this script exits with a non-zero status nothing will be pushed.
-#
-# This hook is called with the following parameters:
-#
-# $1 -- Name of the remote to which the push is being done
-# $2 -- URL to which the push is being done
-#
-# If pushing without using a named remote those arguments will be equal.
-#
-# Information about the commits which are being pushed is supplied as lines to
-# the standard input in the form:
-#
-#   <local ref> <local oid> <remote ref> <remote oid>
-#
+full=0
+interactive=0
 
-trap "pkill webserv > /dev/null 2>&1; make fclean ; exit 1" SIGHUP SIGINT SIGTERM
-remote="$1"
-url="$2"
+#when launched as a pre-push hook by git
+# note: won't run 42 tester if FULL_HOOK is not exported in the calling shell
+# export FULL_HOOK=[1-0] INTERACTIVE_HOOK=[1-0] to change that
+
+[[ "$FULL_HOOK" == "1" ]] && full=1
+[[ "$INTERACTIVE_HOOK" == "1" ]] && interactive=1
+
+#when launched from cli
+for arg in "$@"
+do
+	[[ "$arg" == "--full" ]] && full=1
+	[[ "$arg" == "-i" ]] && interactive=1
+done
+
+function clean_exit() {
+	pkill webserv > /dev/null 2>&1
+	make fclean
+	if [ $1 -eq 1 ]
+	then
+		echo "FAILED"
+	 else
+		echo "OK"
+	fi
+	exit $1
+}
+
+function assert() {
+	if !($1)
+	then
+		[[ -n "$2" ]] && echo $2
+		clean_exit 1
+	fi
+}
+
+trap "clean_exit 1" SIGHUP SIGINT SIGTERM
+
+assert "which python3" "please install python3"
+assert "which php-cgi" "please install php-cgi"
 
 make re config
-./webserv ./conf/webserv.conf > /dev/null 2>&1 &
+
+./webserv ./conf/tester.conf > /dev/null 2>&1 &
+
 sleep 1
-if !(pgrep webserv > /dev/null)
-	then
-		echo "FAILED"
-		exit 1
-fi
-if !(python3 ./tests/test.py);
+
+if [ $full -eq 1 ]
 then
-	pkill webserv > /dev/null 2>&1
-	echo "FAILED"
-	exit 1
+	if [ $interactive -eq 1 ]
+	then
+		assert "./tests/ubuntu_tester http://localhost:8080"
+	else
+		echo "" | assert "./tests/ubuntu_tester http://localhost:8080"
+	fi
 fi
 
-pkill webserv > /dev/null 2>&1 
-
-./webserv ./conf/webserv_cmp.conf > /dev/null 2>&1 &
-sleep 1
-if !(pgrep webserv > /dev/null)
-	then
-		echo "FAILED"
-		exit 1
-fi
-if !(python3 tests/compare_test/compare_test.py webserv)
-then
-	pkill webserv > /dev/null 2>&1
-	echo "FAILED"
-	exit 1
-fi
 pkill webserv > /dev/null 2>&1
+./webserv ./conf/webserv.conf > /dev/null 2>&1 &
 
-
-./webserv ./conf/multi_name.conf > /dev/null 2>&1 &
 sleep 1
-if !(tests/multi_name.sh)
-then
-	pkill webserv > /dev/null 2>&1
-	echo "FAILED"
-	exit 1
-fi
-# ./webserv ./conf/tester.conf
 
-make fclean
+assert "pgrep webserv"
+assert "python3 ./tests/test.py"
 
-echo "OK"
-exit 0
+pkill webserv > /dev/null 2>&1
+./webserv ./conf/webserv_cmp.conf > /dev/null 2>&1 &
+
+sleep 1
+assert "pgrep webserv"
+assert "python3 tests/compare_test/compare_test.py webserv"
+
+pkill webserv > /dev/null 2>&1
+./webserv ./conf/multi_name.conf > /dev/null 2>&1 &
+
+sleep 1
+assert "tests/multi_name.sh"
+
+clean_exit 0

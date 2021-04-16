@@ -638,10 +638,13 @@ std::string		RequestHandler::handlePUT()
 	std::string const & m_file = this->m_request_data->m_file;
 	std::string upload_store = this->m_request_data->m_location->second["upload_store"];
 	size_t	trim = upload_store.find(" ");
+	char buf[PATH_MAX];
+	char *current_dir;
 
 	if (trim != std::string::npos)
 		upload_store.resize(trim);
-	char* current_dir = getcwd(NULL, 0);
+	if ((current_dir = getcwd(buf, PATH_MAX)) == NULL)
+		throw HTTPError("RequestHandler::handlePUT", strerror(errno), 500);
 	if (chdir(upload_store.c_str()))
 		throw HTTPError("RequestHandler::PUT", "Upload store directory doesn't exist", 500);
 

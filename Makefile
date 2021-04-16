@@ -1,4 +1,5 @@
 OS 			:= $(shell uname)
+PHP_PATH 	:= $(shell which php-cgi)
 NAME		:=	webserv
 FLAGS		=	-Wall -Wextra -Werror -std=c++98 -pedantic
 
@@ -100,6 +101,7 @@ config:
 		REPO=$(REPO) \
 		TEST_DIR=$(TEST_DIR) \
 		CGI_TESTER=$(CGI_TESTER) \
+		PHP_PATH=$(PHP_PATH) \
 		./generate_config.pl
 
 .PHONY: all clean fclean re

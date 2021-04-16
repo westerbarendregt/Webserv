@@ -7,9 +7,10 @@
 - [x] Implement missing headers
 - [x] Accept-Charset
 - [x] User-Agent
-- [ ] Referer
-- [ ] Retry-After
+- [x] Referer
+- [x] Retry-After
 - [x] Write tests for POST cgi with html forms
+
 - [ ] post really always 200
 
 
@@ -33,4 +34,4 @@ Monday 29-03
 - [x] check how exactly tv influences select()
 - [x] handle put trim upload_store better
 - [x] write some more test for compare python and add to hooks
-- [ ] add PHPCGI variable in Makefile
+- [x] add PHPCGI variable in Makefile
