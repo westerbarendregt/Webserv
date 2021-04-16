@@ -106,6 +106,7 @@ class RequestHandler
 		t_client	*m_client;
 		t_request	*m_request_data;
 		Response	*m_response_data;
+		std::string m_path;
 };
 
 #endif

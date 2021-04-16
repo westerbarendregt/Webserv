@@ -69,7 +69,7 @@ void                RequestHandler::Authenticated()
 
 void                RequestHandler::charsetHeaders(std::string extension){
     std::string &new_path = this->m_response_data->m_content_location;
-    new_path = m_request_data->m_path + "/" + m_request_data->m_file + "." + extension;
+    new_path = this->m_path + "/" + m_request_data->m_file + "." + extension;
     SetContentLocation();
 
     if (this->m_client->m_response_data.m_content_type.empty())
@@ -118,7 +118,7 @@ void                 RequestHandler::GetCharset()
 
 void                RequestHandler::languageHeaders(std::string extension){
     std::string &new_path = this->m_response_data->m_content_location;
-    new_path = m_request_data->m_path + "/" + m_request_data->m_file + "." + extension;
+    new_path = this->m_path + "/" + m_request_data->m_file + "." + extension;
 
     this->m_response_data->m_content_language = extension;
     SetContentLanguage();

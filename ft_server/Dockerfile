@@ -10,14 +10,12 @@ RUN apt-get update && \
     apt-get -y install build-essential --no-install-recommends && \
     apt-get -y install clang
 
-RUN mkdir -p /webserv/www && \
-    mkdir /webserv/www/wordpress && \
-    mkdir /webserv/www/phpmyadmin && \
+RUN mkdir -p /webserv/www/phpmyadmin && \
     mkdir /webserv/conf
 
 WORKDIR /webserv/
 
-COPY ft_server/srcs/wp-config.php www/wordpress/
+COPY ft_server/srcs/wp-config.php www/
 COPY ft_server/srcs/config.inc.php www/phpmyadmin/
 
 RUN service mysql start && \
@@ -32,12 +30,12 @@ RUN wget https://files.phpmyadmin.net/phpMyAdmin/5.0.1/phpMyAdmin-5.0.1-english.
 	chmod 777 /webserv/www/phpmyadmin/tmp
 
 RUN wget https://wordpress.org/latest.tar.gz -P /tmp && \
-	tar -xzf /tmp/latest.tar.gz --strip-components=1 -C /webserv/www/wordpress/ && \
+	tar -xzf /tmp/latest.tar.gz --strip-components=1 -C /webserv/www/ && \
 	wget -O wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && \
 	chmod +x wp && \
 	mv wp /usr/local/bin/ && \
 	service mysql restart && \
-	wp core install --allow-root --url=localhost --path=/webserv/www/wordpress --title="Webserv" --admin_user=admin --admin_password=cheese --admin_email=bpeeters@student.codam.nl --skip-email
+	wp core install --allow-root --url=localhost --path=/webserv/www --title="Webserv" --admin_user=admin --admin_password=cheese --admin_email=bpeeters@student.codam.nl --skip-email
 
 COPY Makefile .
 COPY generate_config.pl .

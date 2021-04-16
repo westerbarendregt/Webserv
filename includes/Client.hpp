@@ -14,7 +14,7 @@ struct	Request
 		void	reset();
 		Client								*m_owner;
 		int                     			m_method;
-		std::string							m_path;
+		std::string							m_uri;
 		int                  	    		m_protocol;
 		size_t								m_content_length;
 		std::vector<std::string> 			m_headers;

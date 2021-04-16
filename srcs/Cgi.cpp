@@ -58,7 +58,7 @@ void	Cgi::convertEnv(t_client const & c) {
 	}
 	this->m_env_array[i] = 0;
 	this->m_argv[0] = ft::strdup(request.m_location->second["cgi_path"]);
-	this->m_argv[1] = ft::strdup(request.m_real_path);
+	this->m_argv[1] = ft::strdup(request.m_stat_file);
 	this->m_argv[2] = 0;
 }
 
@@ -195,7 +195,7 @@ void	Cgi::fillEnv(t_client const & c) {
 	this->m_env_map["REMOTE_IDENT"] =""; //not supported
 	this->m_env_map["REMOTE_USER"] =request.m_remote_user;
 	this->m_env_map["REQUEST_METHOD"] = methods[request.m_method];
-	this->m_env_map["REQUEST_URI"] = request.m_path;
+	this->m_env_map["REQUEST_URI"] = request.m_uri;
 	this->m_env_map["SCRIPT_NAME"] = request.m_file;
 	this->m_env_map["SCRIPT_FILENAME"] = request.m_stat_file; //so it works with php-cgi
 	this->m_env_map["SERVER_NAME"] =SERVER_VERSION;
@@ -285,14 +285,14 @@ void	RequestHandler::handleCgiResponse(t_client &c) {
 
 void	RequestHandler::handleCgiMetadata(t_request &request, std::string &stat_file) {
 	request.m_cgi = true;
-	request.m_path_info = request.m_path;
+	request.m_path_info = request.m_uri;
 	request.m_stat_file= stat_file;
 	if (request.m_real_path.size() == stat_file.size()) {
 		return ;
 	}
-	size_t query_string_index = request.m_path.find('?', 0);
+	size_t query_string_index = request.m_uri.find('?', 0);
 	if (query_string_index != std::string::npos) {
-		request.m_query_string = request.m_path.substr(query_string_index + 1, std::string::npos);
+		request.m_query_string = request.m_uri.substr(query_string_index + 1, std::string::npos);
 		request.m_path_info.resize(query_string_index);
 	}
 	Logger::Log()<<"m_stat_file: "<<request.m_stat_file<<std::endl;

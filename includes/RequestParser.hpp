@@ -43,7 +43,7 @@ class RequestParser
 						c.m_request_data.m_status_code = 400; // no whitespaces aloud in startline except two seperating single space // maybe a 404
 						return ERROR;
 					}
-					c.m_request_data.m_path = line.substr(first, last - first);
+					c.m_request_data.m_uri = line.substr(first, last - first);
 					if (line.find(protocol) != std::string::npos){
 						c.m_request_data.m_protocol = HTTP1;
 						return SUCCESS;
@@ -117,7 +117,7 @@ class RequestParser
 	static void				CleanData(Client& c)
 	{
 		c.m_request_data.m_method = -1;
-		c.m_request_data.m_path.clear();
+		c.m_request_data.m_uri.clear();
 		c.m_request_data.m_protocol = -1;
 		c.m_request_data.m_content_length = 0;
 		c.m_request_data.m_headers.clear();
@@ -266,7 +266,7 @@ class RequestParser
 			case DELETE : Logger::Log() << "method: " << "DELETE" << std::endl;
 				break ;
 		}
-		Logger::Log() << "path: " << c.m_request_data.m_path << std::endl;
+		Logger::Log() << "uri: " << c.m_request_data.m_uri << std::endl;
 		switch (c.m_request_data.m_protocol)
 		{
 			case HTTP1 : Logger::Log() << "protocol: " << "HTTP/1.1" << std::endl;

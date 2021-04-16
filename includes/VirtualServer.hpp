@@ -5,6 +5,7 @@
 # include <sys/socket.h>
 # include <netinet/in.h>
 # include "WebServer.hpp"
+# include <string>
 
 struct	Request;
 class	VirtualServer
@@ -22,7 +23,7 @@ class	VirtualServer
 		explicit VirtualServer(t_v_server_conf conf);
 		void	init();
 		void	close();
-		t_routes::iterator	getLocation(t_request &r);
+		t_routes::iterator	getLocation(std::string const & path);
 	private:
 		void	setAddr();
 		std::string				&m_host;
