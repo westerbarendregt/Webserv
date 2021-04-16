@@ -1,7 +1,9 @@
-import requests
-import  os
-import time
-import logging
+try:
+    import requests, os, time, logging
+except  ImportError:
+    print("Please install the required modules")
+    exit()
+
 
 class bcolors:
     HEADER = '\033[95m'

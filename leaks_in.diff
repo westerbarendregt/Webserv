@@ -1,0 +1,2 @@
+24d23
+< 	system("leaks -quiet webserv; [[ $? == 1 ]] && touch leaks");
