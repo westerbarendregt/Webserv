@@ -67,7 +67,7 @@ void	RequestHandler::handleAutoIndex() {
 			throw HTTPError("RequestHandler::handleAutoIndex ", strerror(errno), 500);
 		}
 		if (S_ISDIR(buf.st_mode) && name.length() < 50) {
-			name.append(1, '/');
+			name.push_back('/');
 		}
 		link = name;
 		if (name.length() > 50) {
@@ -78,7 +78,7 @@ void	RequestHandler::handleAutoIndex() {
 		body += link;
 		body += "\">" + name + "</a>";
 		for (int i = name.length(); i < 51; ++i) {
-			body.append(1, ' ');
+			body.push_back(' ');
 		}
 		timeptr = localtime(&buf.st_mtime);
 		strftime(s, 1024, "%d-%b-%Y %R", timeptr);
@@ -246,7 +246,7 @@ std::string RequestHandler::statusLine(int status_code) {
 
 	status_line.append("HTTP/1.1 ");
 	status_line.append(ft::intToString(status_code));
-	status_line.append(1, ' ');
+	status_line.push_back(' ');
 	status_line.append(m_status_codes[status_code]);
 
 	return status_line + CRLF;
@@ -394,7 +394,7 @@ void	RequestHandler::formatIndex(std::string &stat_file) {
 	if (request.m_location->second.count("index") == 1) {
 		if ((request.m_file_type & S_IFMT) == S_IFDIR) {
 			if (stat_file[stat_file.size() - 1] != '/')
-				stat_file.append("/");
+				stat_file.push_back('/');
 			std::string const &index = request.m_location->second["index"];
 			std::vector <std::string> v = ft::split(index);
 			bool index_exist = false;
@@ -482,7 +482,7 @@ void	RequestHandler::interpretUri(std::string &stat_file) {
 	}
 	else if ((request.m_file_type & S_IFMT) == S_IFDIR) {
 		if (!this->m_path.empty() && this->m_path[this->m_path.size() - 1] != '/') {
-			this->m_path.append(1, '/');
+			this->m_path.push_back('/');
 			SetLocation();
 			throw HTTPError("RequestHandler::handleMetadata::interpretUri", "redirecting...", 301);
 		}
@@ -590,7 +590,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		if (alias.empty())
 			alias = getcwd(buf,  PATH_MAX);
 		if (alias[alias.size() - 1] != '/')
-			alias.append("/");
+			alias.push_back('/');
 		std::size_t uri_len = real_path.find('?');
 		if (uri_len == std::string::npos) {
 			uri_len = real_path.size();
