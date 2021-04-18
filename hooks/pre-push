@@ -2,6 +2,9 @@
 
 full=0
 interactive=0
+leaks=0
+tester="./tests/tester"
+[[ "$(uname)" == "Linux" ]] && tester="./tests/ubuntu_tester"
 
 #when launched as a pre-push hook by git
 # note: won't run 42 tester if FULL_HOOK is not exported in the calling shell
@@ -9,13 +12,16 @@ interactive=0
 
 [[ "$FULL_HOOK" == "1" ]] && full=1
 [[ "$INTERACTIVE_HOOK" == "1" ]] && interactive=1
+[[ "$LEAKS_HOOK" == "1" ]] && leaks=1
 
 #when launched from cli
 for arg in "$@"
 do
 	[[ "$arg" == "--full" ]] && full=1
 	[[ "$arg" == "-i" ]] && interactive=1
+	[[ "$arg" == "--leaks" ]] && leaks=1
 done
+
 
 function clean_exit() {
 	pkill webserv > /dev/null 2>&1
@@ -42,7 +48,7 @@ trap "clean_exit 1" SIGHUP SIGINT SIGTERM
 assert "which python3" "please install python3"
 assert "which php-cgi" "please install php-cgi"
 
-make re config
+make re LEAKS=$leaks config
 
 ./webserv ./conf/tester.conf > /dev/null 2>&1 &
 
@@ -52,9 +58,9 @@ if [ $full -eq 1 ]
 then
 	if [ $interactive -eq 1 ]
 	then
-		assert "./tests/ubuntu_tester http://localhost:8080"
+		assert "time $tester http://localhost:8080"
 	else
-		echo "" | assert "./tests/ubuntu_tester http://localhost:8080"
+		echo "" | assert "time $tester http://localhost:8080"
 	fi
 fi
 
@@ -78,5 +84,7 @@ pkill webserv > /dev/null 2>&1
 
 sleep 1
 assert "tests/multi_name.sh"
+
+[[ $leaks == 1 ]] && if (ls leaks) then echo "leaks detected"; clean_exit 1; fi
 
 clean_exit 0

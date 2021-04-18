@@ -7,10 +7,13 @@ SANITIZE	?=	0
 DEBUG		?=	0
 LOG			?=	0
 LOG_FILE	?=	0
+LEAKS		?= 0
 
 ifeq ($(SANITIZE), 1)
 FLAGS+= -g -fsanitize=address
 endif
+
+
 
 ifeq ($(DEBUG), 1)
 FLAGS+= -g
@@ -69,7 +72,26 @@ define NL
 
 endef
 
-all: $(NAME) config
+
+all: leaks_in $(NAME) config leaks_out
+
+leaks_in:
+ifeq ($(LEAKS), 1)
+ifneq ($(SANITIZE), 1)
+ifneq (, $(shell which leaks))
+	patch $(SRC_DIR)/main.cpp leaks_in.diff -R
+endif 
+endif
+endif
+
+leaks_out:
+ifeq ($(LEAKS), 1)
+ifneq ($(SANITIZE), 1)
+ifneq (, $(shell which leaks))
+	patch $(SRC_DIR)/main.cpp leaks_out.diff
+endif 
+endif 
+endif
 
 $(NAME): $(OBJ)
 	@$(foreach obj, $?, echo Linking $(notdir $(obj))$(NL))
@@ -89,6 +111,7 @@ clean_config:
 fclean:
 	@$(MAKE) clean clean_config
 	$(RM) $(wildcard $(NAME))
+	$(RM) leaks
 
 re:
 	$(MAKE) fclean

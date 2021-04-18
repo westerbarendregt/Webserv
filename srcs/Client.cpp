@@ -87,7 +87,7 @@ Request &Request::operator=(Request const & rhs) {
 	 this->m_real_path      	= rhs.m_real_path;
 	 this->m_file           	= rhs.m_file;
 	 this->m_remote_user		= rhs.m_remote_user;
-	 this->m_file_type           	= rhs.m_file_type;
+	 this->m_file_type          = rhs.m_file_type;
 	 this->m_looking_for_size 	= rhs.m_looking_for_size;
 	 this->m_last_chunk 		= rhs.m_last_chunk;
 	 return *this;

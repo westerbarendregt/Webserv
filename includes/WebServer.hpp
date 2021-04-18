@@ -10,12 +10,12 @@
 # define SERVER_VERSION "webserv/1.0"
 
 enum	e_status {
-	INVALID = -1,
-	SUCCESS = 0,
-	IN = 0,
-	ERROR = 1,
-	CONTINUE = 1,
-	OUT = 1
+	INVALID 	= -1,
+	SUCCESS 	= 0,
+	IN 			= 0,
+	ERROR 		= 1,
+	CONTINUE 	= 1,
+	OUT 		= 1
 };
 
 enum e_methods

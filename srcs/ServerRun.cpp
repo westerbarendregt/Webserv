@@ -44,19 +44,16 @@ void	Server::run(){
 				 		if (ft::fullMetaData(c->m_request_str) == std::string::npos)
 				 			continue ;
 				 		RequestParser::Parse(*c);
-						c->m_request_data.m_metadata_parsed = true;
 						RequestParser::Print(*c);
 						if (c->m_request_data.m_status_code < 400)
 				 			this->m_request_handler.handleMetadata(*c); 
 				 	}
 					else if (!c->m_request_data.m_done){
-							// Logger::Log() << "GETTING BODY!!!!!!!!!!!!" << std::endl;
 				 		RequestParser::GetBody(*c, false);
 						RequestParser::Print(*c);
 					}
 				 	if (c->m_request_data.m_done)
 					{
-						// Logger::Log() <<"YES DONE!" << std::endl;
 				 		this->m_request_handler.handleRequest(*c);
 						FD_CLR(c->m_socket, &this->m_read_all);
 						FD_SET(c->m_socket, &this->m_write_all);

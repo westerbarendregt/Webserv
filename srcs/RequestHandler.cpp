@@ -677,22 +677,6 @@ std::string		RequestHandler::handlePUT()
 	return status_line + response_headers + CRLF;
 }
 
-void	RequestHandler::CheckBodyLimits()
-{
-	std::string& max_body_server = m_client->m_v_server->m_configs.m_directives["client_max_body_size"];
-	std::string& max_body_location = m_request_data->m_location->second["location_max_body_size"];
-	size_t server_body_limit = ft::Atoi(max_body_server.c_str());
-	size_t location_body_limit = ft::Atoi(max_body_location.c_str());
-	// Logger::Log() << "server_limit: " << server_body_limit << std::endl;
-	// Logger::Log() << "location_limit: " << location_body_limit << std::endl;
-
-	if (server_body_limit && server_body_limit < m_request_data->m_content_length)
-		throw HTTPError("RequestHandler::BodyLimit", "body size exceeded limit of server", 413);
-	else if (location_body_limit && location_body_limit < m_request_data->m_content_length)
-		throw HTTPError("RequestHandler::LocationLimit", "body size exceeded limit of location", 413);
-	Logger::Log() << "[BODY SIZE = ALLOWED]"<< std::endl;
-}
-
 void	RequestHandler::handleRequest(t_client &c) {
 	this->m_client = &c;
 	this->m_request_data = &c.m_request_data;
