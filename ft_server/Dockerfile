@@ -10,24 +10,18 @@ RUN apt-get update && \
     apt-get -y install build-essential --no-install-recommends && \
     apt-get -y install clang
 
-RUN mkdir -p /webserv/www/phpmyadmin && \
+RUN mkdir -p /webserv/www/ && \
     mkdir /webserv/conf
 
 WORKDIR /webserv/
 
-COPY ft_server/srcs/wp-config.php www/
-COPY ft_server/srcs/config.inc.php www/phpmyadmin/
+COPY ft_server/srcs/wp-config.php /webserv/www/
 
 RUN service mysql start && \
 	mysql -e "CREATE DATABASE wordpress;" && \
 	mysql -e "CREATE USER 'admin'@'localhost' IDENTIFIED BY 'cheese';" && \
 	mysql -e "GRANT ALL PRIVILEGES ON * . * TO 'admin'@'localhost';" && \
 	mysql -e "FLUSH PRIVILEGES;"
-
-RUN wget https://files.phpmyadmin.net/phpMyAdmin/5.0.1/phpMyAdmin-5.0.1-english.tar.gz -P /tmp && \
-	tar -xzvf /tmp/phpMyAdmin-5.0.1-english.tar.gz --strip-components=1 -C /webserv/www/phpmyadmin && \
-	mkdir /webserv/www/phpmyadmin/tmp && \
-	chmod 777 /webserv/www/phpmyadmin/tmp
 
 RUN wget https://wordpress.org/latest.tar.gz -P /tmp && \
 	tar -xzf /tmp/latest.tar.gz --strip-components=1 -C /webserv/www/ && \
