@@ -5,17 +5,17 @@
 # define CRLF_LEN 2
 # define TYPE_UNDEFINED -1
 # define HEX_STR "0123456789ABCDEF"
-# define RECV_BUF_SIZE 500000
+# define RECV_BUF_SIZE 256000
 
 # define SERVER_VERSION "webserv/1.0"
 
 enum	e_status {
-	INVALID = -1,
-	SUCCESS = 0,
-	IN = 0,
-	ERROR = 1,
-	CONTINUE = 1,
-	OUT = 1
+	INVALID 	= -1,
+	SUCCESS 	= 0,
+	IN 			= 0,
+	ERROR 		= 1,
+	CONTINUE 	= 1,
+	OUT 		= 1
 };
 
 enum e_methods

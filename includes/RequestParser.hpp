@@ -43,7 +43,7 @@ class RequestParser
 						c.m_request_data.m_status_code = 400; // no whitespaces aloud in startline except two seperating single space // maybe a 404
 						return ERROR;
 					}
-					c.m_request_data.m_path = line.substr(first, last - first);
+					c.m_request_data.m_uri = line.substr(first, last - first);
 					if (line.find(protocol) != std::string::npos){
 						c.m_request_data.m_protocol = HTTP1;
 						return SUCCESS;
@@ -105,6 +105,7 @@ class RequestParser
 	{
 		c.m_request_data.m_start = 0;
 		c.m_request_data.m_done = true;
+		c.m_request_data.m_metadata_parsed = true;
 		if (line == 0)
 			Logger::Log() <<  "Error on Request line 1" << std::endl;
 		if (line == 1)
@@ -117,20 +118,30 @@ class RequestParser
 	static void				CleanData(Client& c)
 	{
 		c.m_request_data.m_method = -1;
-		c.m_request_data.m_path.clear();
+		c.m_request_data.m_uri.clear();
 		c.m_request_data.m_protocol = -1;
 		c.m_request_data.m_content_length = 0;
 		c.m_request_data.m_headers.clear();
 		c.m_request_data.m_headers.assign(18, "");
+		c.m_request_data.x_headers.clear();
 		c.m_request_data.m_if_body = false;
 		c.m_request_data.m_body.clear();
-		c.m_request_data.m_done = false;
+		c.m_request_data.m_tmp_body.clear();
 		c.m_request_data.m_metadata_parsed = false;
+		c.m_request_data.m_done = false;
 		c.m_request_data.m_chunked = false;
-		c.m_request_data.m_status_code = 0;
 		c.m_request_data.m_cgi = 0;
+		c.m_request_data.m_autoindex = 0;
+		c.m_request_data.m_status_code = 0;
 		c.m_request_data.m_start = 0;
-
+		c.m_request_data.m_query_string.clear();
+		c.m_request_data.m_path_info.clear();
+		c.m_request_data.m_real_path.clear();
+		c.m_request_data.m_file.clear();
+		c.m_request_data.m_remote_user.clear();
+		c.m_request_data.m_stat_file.clear();
+		c.m_request_data.m_looking_for_size = true;
+		c.m_request_data.m_last_chunk = false;
 	}
 
 	static void				CheckHeaderData(Client& c)
@@ -186,7 +197,6 @@ class RequestParser
 				c.m_request_data.m_body.append(line.substr(0, line.size() - 2));
 			}
 		}
-		Logger::Log() << "this should not happen" << std::endl;
 		return SUCCESS;
 	}
 
@@ -266,7 +276,7 @@ class RequestParser
 			case DELETE : Logger::Log() << "method: " << "DELETE" << std::endl;
 				break ;
 		}
-		Logger::Log() << "path: " << c.m_request_data.m_path << std::endl;
+		Logger::Log() << "uri: " << c.m_request_data.m_uri << std::endl;
 		switch (c.m_request_data.m_protocol)
 		{
 			case HTTP1 : Logger::Log() << "protocol: " << "HTTP/1.1" << std::endl;
@@ -308,6 +318,7 @@ class RequestParser
 		else
 			c.m_request_data.m_done = true;
 		c.m_request_data.m_start = 0;
+		c.m_request_data.m_metadata_parsed = true;
 		return SUCCESS;
 	}
 };

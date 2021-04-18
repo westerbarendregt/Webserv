@@ -31,7 +31,8 @@ int	main(int ac, char **av) {
 	try
 	{
 		if (signal(SIGPIPE, SIG_IGN) == SIG_ERR
-				|| signal(SIGINT, &sigtermClose) == SIG_ERR)
+				|| signal(SIGINT, &sigtermClose) == SIG_ERR
+				|| signal(SIGTERM, &sigtermClose) == SIG_ERR)
 			throw serverError("main: signal:", strerror(errno));
 
 		char	const *path = ac == 2 ? av[1] : DEFAULT_PATH;

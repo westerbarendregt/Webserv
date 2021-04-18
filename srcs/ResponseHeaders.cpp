@@ -18,8 +18,6 @@ void                RequestHandler::AllowedMethods()
     if (allowed.find(method) == std::string::npos) // checking if used method is in allowed methods of location
     {
         SetAllow();
-        // if (c.getRequest().m_method == HEAD)
-        //     throw HTTPError("Allowed Methods", "Method not allowed", 404);
         throw HTTPError("Allowed Methods", "Method not allowed", 405);
     }
     Logger::Log() << "[METHOD = ALLOWED]" << std::endl;
@@ -28,7 +26,6 @@ void                RequestHandler::AllowedMethods()
 void                CheckCorrectCredentials(std::string decoded, std::string path_ht)
 {
     int fd = open(path_ht.c_str(), O_RDONLY);
-    // Logger::Log() << "printing path: " << path_ht.c_str() << std::endl;
     if (fd == -1)
         throw HTTPError("Authentication", "Incorrect path to .htpasswd or .htpasswd couldn't be opended", 403);
     char buf[1001];
@@ -69,7 +66,7 @@ void                RequestHandler::Authenticated()
 
 void                RequestHandler::charsetHeaders(std::string extension){
     std::string &new_path = this->m_response_data->m_content_location;
-    new_path = m_request_data->m_path + "/" + m_request_data->m_file + "." + extension;
+    new_path = this->m_path + "/" + m_request_data->m_file + "." + extension;
     SetContentLocation();
 
     if (this->m_client->m_response_data.m_content_type.empty())
@@ -118,7 +115,7 @@ void                 RequestHandler::GetCharset()
 
 void                RequestHandler::languageHeaders(std::string extension){
     std::string &new_path = this->m_response_data->m_content_location;
-    new_path = m_request_data->m_path + "/" + m_request_data->m_file + "." + extension;
+    new_path = this->m_path + "/" + m_request_data->m_file + "." + extension;
 
     this->m_response_data->m_content_language = extension;
     SetContentLanguage();
@@ -170,17 +167,36 @@ void                 RequestHandler::UserAgent()
 		Logger::Log() << "[NO USER AGENT]" << std::endl; // checking if content-language header is sent with request
         return ;
     }
+    
     const std::string & stat_file = m_request_data->m_stat_file;
     size_t found1 = user_agent.find("curl"); //search for curl in user agent header and save index
     size_t found2 = user_agent.find("Safari"); // search for Safari in user agent header and save index
     size_t found3 = user_agent.find("Chrome"); // search for Safari in user agent header and save index
-    if (found1 < found2 && found1 < found3)
+
+    if (found1 < found2 && found1 < found3){
         if (stat((stat_file + ".curl").c_str(), &statbuf) == 0)
             m_request_data->m_stat_file.append(".curl");
-    if (found2 < found1 && found2 < found3)
+    }
+    else if (found2 < found1 && found2 < found3){
         if (stat((stat_file + ".safari").c_str(), &statbuf) == 0)
             m_request_data->m_stat_file.append(".safari");
-    if (found3 < found2 && found3 < found1)
+    }
+    else if (found3 < found2 && found3 < found1){
         if (stat((stat_file + ".chrome").c_str(), &statbuf) == 0)
             m_request_data->m_stat_file.append(".chrome");
+    }
+}
+
+void	RequestHandler::CheckBodyLimits()
+{
+	std::string& max_body_server = m_client->m_v_server->m_configs.m_directives["client_max_body_size"];
+	std::string& max_body_location = m_request_data->m_location->second["location_max_body_size"];
+	size_t server_body_limit = ft::Atoi(max_body_server.c_str());
+	size_t location_body_limit = ft::Atoi(max_body_location.c_str());
+
+	if (server_body_limit && server_body_limit < m_request_data->m_content_length)
+		throw HTTPError("RequestHandler::BodyLimit", "body size exceeded limit of server", 413);
+	else if (location_body_limit && location_body_limit < m_request_data->m_content_length)
+		throw HTTPError("RequestHandler::LocationLimit", "body size exceeded limit of location", 413);
+	Logger::Log() << "[BODY SIZE = ALLOWED]"<< std::endl;
 }

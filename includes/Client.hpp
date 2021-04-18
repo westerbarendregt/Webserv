@@ -14,11 +14,11 @@ struct	Request
 		void	reset();
 		Client								*m_owner;
 		int                     			m_method;
-		std::string							m_path;
+		std::string							m_uri;
 		int                  	    		m_protocol;
 		size_t								m_content_length;
 		std::vector<std::string> 			m_headers;
-		std::map<std::string, std::string> 		x_headers;
+		std::map<std::string, std::string> 	x_headers;
 		bool								m_if_body;
 		std::string							m_body;
 		std::string							m_tmp_body;
@@ -39,7 +39,6 @@ struct	Request
 		int									m_file_type;
 		bool								m_looking_for_size;
 		bool								m_last_chunk;
-
 };
 
 struct	Response
@@ -58,13 +57,13 @@ struct	Response
 class	Client
 {
 	public:
-		// typedef	Request_handler					t_request_handler;
 		typedef	Request							t_request_data;
 		typedef	Response						t_response_data;
 		typedef VirtualServer					t_v_server;
 		typedef VirtualServer::t_v_server_conf	t_v_server_conf;
 		typedef	std::vector<t_v_server>			t_v_server_blocks;
 		typedef s_v_server_conf::t_directives	t_directives;
+
 		friend class Server;
 		friend class RequestParser;
 		friend class RequestHandler;
@@ -75,18 +74,11 @@ class	Client
 		Client 	&operator=(Client const & rhs);
 		void	updateServerConf();
 
-		// void		testingRequest(std::string str){
-		// 	m_request_str = str;
-		// }
-		// int									testGetError(){
-		// 	return m_request_data.m_error;
-		// }
-		Request&				 			getRequest(){
-			return m_request_data;						
-		}
-		int		&getReadFd();
-		int		&getWriteFd();
-		void	reset();
+		Request&				 			getRequest() {return m_request_data;}
+		int									&getReadFd();
+		int									&getWriteFd();
+		void								reset();
+
 	private:
 		std::string							m_request_str;
 		std::string							m_response_str;

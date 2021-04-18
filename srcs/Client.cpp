@@ -8,7 +8,7 @@
 Request::Request()
 	: m_owner(0),
 	m_method(-1),
-	m_path(""),
+	m_uri(""),
 	m_protocol(-1),
 	m_content_length(0),
 	m_headers(18, ""),
@@ -37,7 +37,7 @@ Request::Request()
 
 Request::Request(Request const & src) 
 	:m_method(src.m_method),
-	 m_path(src.m_path),
+	 m_uri(src.m_uri),
 	 m_protocol(src.m_protocol),
 	 m_content_length(src.m_content_length),
 	 m_headers(src.m_headers.begin(), src.m_headers.end()),
@@ -66,7 +66,7 @@ Request::Request(Request const & src)
 
 Request &Request::operator=(Request const & rhs) {
 	 this->m_method         = rhs.m_method;
-	 this->m_path           = rhs.m_path;
+	 this->m_uri            = rhs.m_uri;
 	 this->m_protocol       = rhs.m_protocol;
 	 this->m_content_length = rhs.m_content_length;
 	 this->m_headers.assign(rhs.m_headers.begin(), rhs.m_headers.end());
@@ -87,7 +87,7 @@ Request &Request::operator=(Request const & rhs) {
 	 this->m_real_path      	= rhs.m_real_path;
 	 this->m_file           	= rhs.m_file;
 	 this->m_remote_user		= rhs.m_remote_user;
-	 this->m_file_type           	= rhs.m_file_type;
+	 this->m_file_type          = rhs.m_file_type;
 	 this->m_looking_for_size 	= rhs.m_looking_for_size;
 	 this->m_last_chunk 		= rhs.m_last_chunk;
 	 return *this;
@@ -95,7 +95,7 @@ Request &Request::operator=(Request const & rhs) {
 
 void	Request::reset() {
 	this->m_method = -1;
-	this->m_path.clear();
+	this->m_uri.clear();
 	this->m_protocol = -1;
 	this->m_content_length = 0;
 	this->m_headers.assign(18, "");

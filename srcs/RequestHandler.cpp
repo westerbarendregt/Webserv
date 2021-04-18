@@ -39,24 +39,26 @@ void	RequestHandler::handleAutoIndex() {
 	struct	dirent*	d;
 	struct	tm*	timeptr;
 	char 	s[1025] = {};
-	std::string&	body = this->m_client->m_response_data.m_body;
+	std::string&	body = this->m_response_data->m_body;
 	std::string	link;
 
-	DIR*	dir = opendir(this->m_client->m_request_data.m_real_path.c_str());
+	DIR*	dir = opendir(this->m_request_data->m_stat_file.c_str());
 	if (dir == NULL) {
 		throw HTTPError("opendir: ", "error opening directory", 500);
 	}
 
 	body += "<html>" CRLF;
-	body += "<head><title>Index of /</title></head>" CRLF;
+	body += "<head><title>Index of ";
+	body += this->m_path;
+	body += "</title></head>" CRLF;
 	body += "<body>" CRLF;
 	body += "<h1>Index of ";
-	body += this->m_client->m_request_data.m_path;
+	body += this->m_path;
 	body += "</h1><hr><pre>" CRLF;
 
 	while ((d = readdir(dir)) != NULL) {
 		std::string	name = d->d_name;
-		std::string	local = this->m_client->m_request_data.m_real_path + d->d_name;
+		std::string	local = this->m_client->m_request_data.m_stat_file + d->d_name;
 
 		if (name == ".") {
 			continue;
@@ -65,7 +67,7 @@ void	RequestHandler::handleAutoIndex() {
 			throw HTTPError("RequestHandler::handleAutoIndex ", strerror(errno), 500);
 		}
 		if (S_ISDIR(buf.st_mode) && name.length() < 50) {
-			name.append(1, '/');
+			name.push_back('/');
 		}
 		link = name;
 		if (name.length() > 50) {
@@ -76,7 +78,7 @@ void	RequestHandler::handleAutoIndex() {
 		body += link;
 		body += "\">" + name + "</a>";
 		for (int i = name.length(); i < 51; ++i) {
-			body.append(1, ' ');
+			body.push_back(' ');
 		}
 		timeptr = localtime(&buf.st_mtime);
 		strftime(s, 1024, "%d-%b-%Y %R", timeptr);
@@ -187,7 +189,7 @@ std::string	RequestHandler::GetLocation(){
 
 	location += "http://";
 	location += m_request_data->m_headers[HOST];
-	location += m_request_data->m_path;
+	location += this->m_path;
 	// location += this->m_client->m_response_data.m_location;
 	return location + CRLF;
 }
@@ -244,7 +246,7 @@ std::string RequestHandler::statusLine(int status_code) {
 
 	status_line.append("HTTP/1.1 ");
 	status_line.append(ft::intToString(status_code));
-	status_line.append(1, ' ');
+	status_line.push_back(' ');
 	status_line.append(m_status_codes[status_code]);
 
 	return status_line + CRLF;
@@ -286,7 +288,7 @@ std::string RequestHandler::handleGET() {
 	return handleHEAD() + this->m_response_data->m_body;
 }
 
- std::string RequestHandler::handleHEAD() {
+std::string RequestHandler::handleHEAD() {
 
 	 std::string status_line = statusLine(200);
 	 if (this->m_client->m_request_data.m_autoindex) {
@@ -392,7 +394,7 @@ void	RequestHandler::formatIndex(std::string &stat_file) {
 	if (request.m_location->second.count("index") == 1) {
 		if ((request.m_file_type & S_IFMT) == S_IFDIR) {
 			if (stat_file[stat_file.size() - 1] != '/')
-				stat_file.append("/");
+				stat_file.push_back('/');
 			std::string const &index = request.m_location->second["index"];
 			std::vector <std::string> v = ft::split(index);
 			bool index_exist = false;
@@ -404,14 +406,15 @@ void	RequestHandler::formatIndex(std::string &stat_file) {
 					(statbuf.st_mode & S_IFMT) == S_IFREG) {
 					request.m_file_type = statbuf.st_mode;
 					index_exist = true;
+					this->m_path.append(*it);
 					if (real_path.size() < path_index.size())
 						real_path = path_index;
 					stat_file = path_index;
-					size_t	query_string =  request.m_path.find('?');
+					size_t	query_string =  request.m_uri.find('?');
 					if (query_string != std::string::npos)
-						request.m_path.insert(query_string, *it);
+						request.m_uri.insert(query_string, *it);
 					else
-						request.m_path.append(*it);
+						request.m_uri.append(*it);
 					Logger::Log() << "real_path: " << real_path << std::endl;
 					break;
 				}
@@ -441,11 +444,11 @@ void	RequestHandler::interpretUri(std::string &stat_file) {
 		// 	extract extension
 		size_t	extension = file.find_last_of('.', file.size());
 		Logger::Log()<<"extension index: "<<extension<<std::endl;
-		request.m_path_info = request.m_path;
+		request.m_path_info = request.m_uri;
 		request.m_stat_file = stat_file;
-		size_t query_string_index = request.m_path.find('?', 0);
-		if (query_string_index != std::string::npos && query_string_index != request.m_path.size() - 1) { 
-			request.m_query_string = request.m_path.substr(query_string_index + 1, std::string::npos);
+		size_t query_string_index = request.m_uri.find('?', 0);
+		if (query_string_index != std::string::npos && query_string_index != request.m_uri.size() - 1) {
+			request.m_query_string = request.m_uri.substr(query_string_index + 1, std::string::npos);
 			request.m_path_info.resize(query_string_index);
 		}
 		if (extension == std::string::npos) {
@@ -478,6 +481,11 @@ void	RequestHandler::interpretUri(std::string &stat_file) {
 		}
 	}
 	else if ((request.m_file_type & S_IFMT) == S_IFDIR) {
+		if (!this->m_path.empty() && this->m_path[this->m_path.size() - 1] != '/') {
+			this->m_path.push_back('/');
+			SetLocation();
+			throw HTTPError("RequestHandler::handleMetadata::interpretUri", "redirecting...", 301);
+		}
 		if (request.m_location->second["autoindex"] == "on") {
 			Logger::Log()<<"dir listing"<<std::endl;
 			request.m_autoindex= true;
@@ -501,7 +509,7 @@ std::string	RequestHandler::statFile() {
 
 	next_prefix = real_path.find("/?", 0);
 	if (next_prefix != std::string::npos) {
-		stat_file = real_path.substr(0, next_prefix);
+		stat_file = real_path.substr(0, next_prefix + 1);
 		if (stat(stat_file.c_str(), &statbuf)) {
 			if (method == POST || method == PUT) {
 				request.m_file_type = TYPE_UNDEFINED;
@@ -551,7 +559,8 @@ void	RequestHandler::handleMetadata(t_client &c) {
 	try {
 		//get virtual server and location
 		m_client->updateServerConf();
-		c.m_request_data.m_location = c.m_v_server->getLocation(c.m_request_data);
+		this->m_path = this->m_request_data->m_uri.substr(0, this->m_request_data->m_uri.find('?'));
+		c.m_request_data.m_location = c.m_v_server->getLocation(this->m_path);
 		c.m_request_data.m_owner = &c;
 
 		Logger::Log()<<"-------FETCHED BLOCK-------\n\tLISTEN "
@@ -560,8 +569,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 			<<"\n\tLOCATION/ROUTE "<< m_client->m_request_data.m_location->first<<"\n-----------"<<std::endl;
 
 		std::string &real_path =  c.m_request_data.m_real_path;
-		real_path = c.m_request_data.m_path;
-		//real_path = c.m_request_data.m_path.substr(0, this->m_request_data->m_path.find('?'));
+		real_path = c.m_request_data.m_uri;
 		std::string const & location = c.m_request_data.m_location->first;
 		std::string alias, index, stat_file;
 
@@ -582,8 +590,13 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		if (alias.empty())
 			alias = getcwd(buf,  PATH_MAX);
 		if (alias[alias.size() - 1] != '/')
-			alias.append("/");
-		size_t	const replace_len = location.size() > real_path.size() ? real_path.size() : location.size();
+			alias.push_back('/');
+		std::size_t uri_len = real_path.find('?');
+		if (uri_len == std::string::npos) {
+			uri_len = real_path.size();
+		}
+		std::size_t const replace_len = std::min(location.size(), uri_len);
+//		size_t	const replace_len = location.size() > uri_len ? uri_len : location.size();
 		real_path.replace(0, replace_len, alias);
 
 		//parse URI
@@ -597,7 +610,7 @@ void	RequestHandler::handleMetadata(t_client &c) {
 		//Log
 		Logger::Log() << "location: " << location << std::endl;
 
-		Logger::Log()<<"m_path: "<<this->m_client->m_request_data.m_path<<std::endl;
+		Logger::Log()<<"m_uri: "<<this->m_client->m_request_data.m_uri<<std::endl;
 		Logger::Log()<<"m_real_path: "<<c.m_request_data.m_real_path<<std::endl;
 		Logger::Log()<<"m_file: "<<c.m_request_data.m_file<<std::endl;
 		Logger::Log()<<"stat file: "<<c.m_request_data.m_stat_file<<std::endl;
@@ -625,10 +638,13 @@ std::string		RequestHandler::handlePUT()
 	std::string const & m_file = this->m_request_data->m_file;
 	std::string upload_store = this->m_request_data->m_location->second["upload_store"];
 	size_t	trim = upload_store.find(" ");
+	char buf[PATH_MAX];
+	char *current_dir;
 
 	if (trim != std::string::npos)
 		upload_store.resize(trim);
-	char* current_dir = getcwd(NULL, 0);
+	if ((current_dir = getcwd(buf, PATH_MAX)) == NULL)
+		throw HTTPError("RequestHandler::handlePUT", strerror(errno), 500);
 	if (chdir(upload_store.c_str()))
 		throw HTTPError("RequestHandler::PUT", "Upload store directory doesn't exist", 500);
 
@@ -661,28 +677,12 @@ std::string		RequestHandler::handlePUT()
 	return status_line + response_headers + CRLF;
 }
 
-void	RequestHandler::CheckBodyLimits()
-{
-	std::string& max_body_server = m_client->m_v_server->m_configs.m_directives["client_max_body_size"];
-	std::string& max_body_location = m_request_data->m_location->second["location_max_body_size"];
-	size_t server_body_limit = ft::Atoi(max_body_server.c_str());
-	size_t location_body_limit = ft::Atoi(max_body_location.c_str());
-	// Logger::Log() << "server_limit: " << server_body_limit << std::endl;
-	// Logger::Log() << "location_limit: " << location_body_limit << std::endl;
-
-	if (server_body_limit && server_body_limit < m_request_data->m_content_length)
-		throw HTTPError("RequestHandler::BodyLimit", "body size exceeded limit of server", 413);
-	else if (location_body_limit && location_body_limit < m_request_data->m_content_length)
-		throw HTTPError("RequestHandler::LocationLimit", "body size exceeded limit of location", 413);
-	Logger::Log() << "[BODY SIZE = ALLOWED]"<< std::endl;
-}
-
 void	RequestHandler::handleRequest(t_client &c) {
 	this->m_client = &c;
 	this->m_request_data = &c.m_request_data;
 	this->m_response_data = &c.m_response_data;
 	try {
-		if (m_request_data->m_status_code >= 400) {
+		if (m_request_data->m_status_code >= 300) {
 			this->m_client->m_response_str = generateErrorPage(m_request_data->m_status_code);
 			return ;
 		}//first generate errorPage before doing any other check 
@@ -710,7 +710,7 @@ void	RequestHandler::handleRequest(t_client &c) {
 		}
 	} catch (HTTPError & e) {
 		std::cerr << e.what() << std::endl;
-		this->m_client->m_request_data.m_status_code = e.HTTPStatusCode();
-		this->m_client->m_response_str = generateErrorPage(this->m_client->m_request_data.m_status_code);
+		this->m_request_data->m_status_code = e.HTTPStatusCode();
+		this->m_client->m_response_str = generateErrorPage(this->m_request_data->m_status_code);
 	}
 }
