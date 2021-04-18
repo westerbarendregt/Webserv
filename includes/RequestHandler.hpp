@@ -48,7 +48,6 @@ class RequestHandler
 		void				UserAgent();
 		void				CheckBodyLimits();
 
-
 		void 				printStatusCodes();
 		void 				printMimeTypes();
 
