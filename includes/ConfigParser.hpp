@@ -62,7 +62,7 @@ class	ConfigParser
 		typedef Server::t_v_server_map		t_v_server_map;
 		typedef Server::t_ip_port			t_ip_port;
 		typedef	std::queue<t_v_server_conf>	t_config_tokens;
-		typedef	std::vector<std::string>			t_fields;
+		typedef	std::vector<std::string>	t_fields;
 
 
 	static void	formatIp(std::string &listen) {

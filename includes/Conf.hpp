@@ -31,12 +31,14 @@ struct	s_prefix_comp {
 struct	s_v_server_conf
 {
 	public:
-		typedef std::map<std::string, std::string> t_directives;
-		typedef std::map<std::string, t_directives, s_prefix_comp> t_routes;
-		typedef std::vector<std::string> t_error_pages;
-		typedef t_routes::value_type 				t_route;
-		typedef	t_routes::key_type					t_route_index;
+		typedef std::map<std::string, std::string> 					t_directives;
+		typedef std::map<std::string, t_directives, s_prefix_comp> 	t_routes;
+		typedef std::vector<std::string> 							t_error_pages;
+		typedef t_routes::value_type 								t_route;
+		typedef	t_routes::key_type									t_route_index;
+
 		s_v_server_conf() {this->m_directives["listen"] = "80";}
+		
 		t_directives				m_directives;
 		t_routes					m_routes;
 		t_error_pages				m_error_pages;

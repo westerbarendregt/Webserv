@@ -199,7 +199,6 @@ int		getline_crlf(std::string& total, std::string& line, int line_break, size_t&
 	}
 	else {
 		line = total.substr(start, total.size() - start);
-		// start = 0;
 	}
 	return 0;
 }

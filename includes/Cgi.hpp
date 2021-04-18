@@ -15,7 +15,7 @@ class	Cgi {
 		typedef	char**								t_cgi_env_array;
 		typedef	char**								t_cgi_argv;
 		typedef	Client								t_client;
-		typedef	t_client::t_request_data					t_request_data;
+		typedef	t_client::t_request_data			t_request_data;
 
 		friend	class	RequestHandler;
 		friend	class	Server;
@@ -37,6 +37,7 @@ class	Cgi {
 		void	reset();
 		void	reset(t_client &c);
 		void	clear();
+		
 		t_cgi_env_map		m_env_map;
 		t_cgi_env_array 	m_env_array;
 		t_cgi_argv			m_argv;

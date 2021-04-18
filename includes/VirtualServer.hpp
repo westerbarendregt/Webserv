@@ -10,21 +10,25 @@ struct	Request;
 class	VirtualServer
 {
 	public:
-		typedef	s_v_server_conf	t_v_server_conf;
-		typedef t_v_server_conf::t_directives t_directives;
-		typedef t_v_server_conf::t_routes t_routes;
-		typedef	Request			t_request;
+		typedef	s_v_server_conf					t_v_server_conf;
+		typedef t_v_server_conf::t_directives 	t_directives;
+		typedef t_v_server_conf::t_routes 		t_routes;
+		typedef	Request							t_request;
+
 		friend class Server;
 		friend class Client;
 		friend class ConfigParser;
 		friend class RequestHandler;
 		friend class Cgi;
-		explicit VirtualServer(t_v_server_conf conf);
-		void	init();
-		void	close();
+
+		explicit 			VirtualServer(t_v_server_conf conf);
+		void				init();
+		void				close();
 		t_routes::iterator	getLocation(t_request &r);
+
 	private:
 		void	setAddr();
+		
 		std::string				&m_host;
 		std::string				m_port;
 		int						m_socket;
