@@ -258,14 +258,18 @@ void	RequestHandler::handleCgiResponse(t_client &c) {
 			}
 			return ;
 		}
-		//add own header
-		c.m_response_str.append(this->statusLine(200));
+		size_t	status_index = c.m_cgi_out_buf.find("Status: ");
+		if (status_index != std::string::npos) {
+			std::string status_str = c.m_cgi_out_buf.substr(status_index + 8,  std::string::npos);
+			c.m_response_str.append(this->statusLine(ft::Atoi(status_str.c_str())));
+		}
+		else {
+			c.m_response_str.append(this->statusLine(200));
+		}
 		c.m_response_str.append(this->GetDate());
 		c.m_response_str.append(this->GetServer());
 		c.m_response_str.append(this->GetTransferEncoding());
-		//add cgi generated headers, need opti
 		c.m_response_str.append(c.m_cgi_out_buf, 0, metadata_index + CRLF_LEN);
-		//
 		c.m_response_str.append(CRLF);
 		c.m_response_data.m_cgi_metadata_parsed = true;
 		c.m_cgi_out_buf.erase(0, metadata_index + CRLF_LEN + CRLF_LEN);
