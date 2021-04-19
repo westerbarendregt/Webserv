@@ -1,6 +1,6 @@
 <?php 
-	session_start();
-	require_once('connection.php');
+	#session_start();
+	#require_once('connection.php');
 
 #	function authenticate($username, $password)
 #	{
@@ -29,14 +29,14 @@
 #	if(isset($_POST['login']))
 #	authenticate($_POST['username'], $_POST['password']);
 
-$_SESSION['userinfo']=$user;
-$_SESSION['username']=$user['username'];
-$_SESSION['name']=$user['name'];      
+#$_SESSION['userinfo']=$user;
+#$_SESSION['username']=$user['username'];
+#$_SESSION['name']=$user['name'];      
 header("Location: tetris.php");
-	
-	//Test login
-	/*
-		authenticate("test", "test");
-		echo "Login success";
-	*/
+#	
+#	//Test login
+#	/*
+#		authenticate("test", "test");
+#		echo "Login success";
+#	*/
 ?>

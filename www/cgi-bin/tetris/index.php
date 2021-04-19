@@ -21,10 +21,6 @@
         <center>
             <h1>Welcome to Tetris</h1>
             <p>Enter credentials to play</p>
-            <?php 
-	            if($_GET['login']=="failed")
-	            	echo "<p class=\"error\">Invalid Username/Password, try again!</p>"; 
-	        ?>
             <form name="login" value="login" action="flogin.php" method="post">
                 <input type="text" class="textbox" name="username" placeholder="Username">
                 <br>
