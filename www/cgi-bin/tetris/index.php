@@ -30,8 +30,8 @@
             </form>
             <hr>
             <br>
-            <span>Don't have an account?&nbsp;</span>
-            <a href="signup.php" class="buttong"><i class="fa fa-user"></i>&nbsp;SIGN UP</a>
+            <!---span>Don't have an account?&nbsp;</span--!>
+            <!--a href="signup.php" class="buttong"><i class="fa fa-user"></i>&nbsp;SIGN UP</a!--->
         </center>
     </div>
     </div>
