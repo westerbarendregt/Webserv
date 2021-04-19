@@ -308,7 +308,9 @@ std::string RequestHandler::handleHEAD() {
  }
 
  std::string RequestHandler::handlePOST() {
-	std::string status_line = statusLine(200);
+	if (this->m_request_data->m_file_type == TYPE_UNDEFINED)
+		throw HTTPError("RequestHandler::handlePost", "post to non-existent file", 404);
+	std::string status_line = this->statusLine(204);
  	SetContentLength();
 	SetContentType();
 	SetDate();
